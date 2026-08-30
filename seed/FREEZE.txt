@@ -1,0 +1,1 @@
+AWIG OS seed, founding 1.30.0, commit c85e69f85cbb713d6ac0aa7d1fde231f91f67cd2, cut 2026-08-30 UTC.
