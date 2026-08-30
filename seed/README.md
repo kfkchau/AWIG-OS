@@ -109,8 +109,21 @@ running both commands there. Anything the run did not touch is not here.
 
 The version this folder was cut at is in `FREEZE.txt`, and the demo prints it
 before anything else. What that founding and that commit identify is the engine:
-the eighteen files under `src/` are byte-identical to the repository at the named
-commit. They do not identify the wrapper around the engine. `FREEZE.txt`, this
+the eighteen files under `src/` are byte-identical to the development repository
+at the named commit.
+
+That repository is private, so treat the commit hash as a provenance stamp rather
+than something you can check. `git cat-file` on it inside this clone fails, and it
+should: the object is not here and never was. That identity was verified before
+publication by hands holding the private copy, which is not the same thing as you
+being able to verify it, and saying so is better than leaving you to find out.
+
+What you can check from here is the rest, and the rest is most of it: that the code
+runs, that the record replays to an identical fingerprint, that the eight checks
+pass, and that `FREEZE.txt` names the founding version this folder actually
+carries, which is check 8's whole job.
+
+The commit does not identify the wrapper around the engine. `FREEZE.txt`, this
 README and `seed_demo.py` have all been written since the commit they name, and
 that is not an untidiness someone could go and fix: a file cannot contain the hash
 of the commit that records it, so the commit stamped inside any of these three is
