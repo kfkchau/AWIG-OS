@@ -57,7 +57,7 @@ Until a contributor community forms, the project runs as a single maintainer wit
 
 The technical design lives in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS actually is as software, how it is being rebuilt from a Linux reference model, its rule engine, its AI organisation.
 
-The theory it implements has its own home: the [**Open Governance Framework**](https://github.com/kfkchau/open-governance-framework), the definitive governance theory infrastructure, under which the full body of work sits, including the concepts and ontology, the rule lifecycle, the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), and the standards that follow. AWIG OS is that theory, running.
+The theory it implements has its own home: the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the definitive governance theory infrastructure, under which the full body of work sits, including the concepts and ontology, the rule lifecycle, the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), and the standards that follow. AWIG OS is that theory, running.
 
 **Provenance.** AWIG OS is delivered as part of the **Open Governance Standard (OGS)** research programme, a multi-year body of work on governance theory and infrastructure. Its public outreach runs through **Legitimacy Under Acceleration (LUA)**, the author's newsletter and outreach campaign on governing institutions in an accelerating world. The project itself belongs to no campaign. It is governed by its own [`GOVERNANCE.md`](./GOVERNANCE.md) and, as a commons, by its contributors and users.
 
