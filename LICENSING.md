@@ -43,7 +43,7 @@ Canonical text: the file [`LICENSE-APACHE`](./LICENSE-APACHE) must contain the v
 
 Plain meaning: copy, redistribute, remix, transform, and build upon all documentation and specification text in this repository, for any purpose, even commercially, provided you give appropriate credit.
 
-Why CC BY for text: the ideas, the philosophy, the governance model, the specification, should travel at full speed with mandatory attribution. The theory infrastructure this project implements is published under the [Open Governance Framework](https://github.com/kfkchau/open-governance-framework) umbrella, including the [Open Meta-Governance Standard](https://github.com/kfkchau/Open-Meta-Governance-Standard/), already under CC BY 4.0. This repository's text follows the same rule and the same attribution.
+Why CC BY for text: the ideas, the philosophy, the governance model, the specification, should travel at full speed with mandatory attribution. The theory infrastructure this project implements is published under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) umbrella, including the [Open Meta-Governance Standard](https://github.com/kfkchau/Open-Meta-Governance-Standard/), already under CC BY 4.0. This repository's text follows the same rule and the same attribution.
 
 Canonical text: [`LICENSE-DOCS`](./LICENSE-DOCS), from <https://creativecommons.org/licenses/by/4.0/legalcode.txt>.
 
@@ -82,5 +82,5 @@ Ring files use `SPDX-License-Identifier: Apache-2.0`. Documentation files carry 
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Framework](https://github.com/kfkchau/open-governance-framework).
+Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
 For attribution, citation, or inquiries: [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau)
