@@ -33,9 +33,9 @@ AWIG OS is being rebuilt layer by layer from a running reference model, in the v
 
 The result is a clean-room reimplementation: written from behaviour and interfaces, not translated from Linux source. It is Linux-compatible, not Linux. "Linux" is a trademark of Linus Torvalds and is not claimed by this project. The reference model is preserved permanently in the repository history as the project's lineage.
 
-## 3. Relationship to the Open Governance Framework
+## 3. Relationship to the Open Governance Standard
 
-The theory underlying AWIG OS begins at the [**Open Governance Framework**](https://github.com/kfkchau/open-governance-framework), the umbrella and definitive home of the complete governance theory infrastructure. Underneath it sits the full body of work: the shared concepts and ontology for rule systems, the rule lifecycle model, and the standards that formalise them, chief among them the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), a domain-agnostic kernel for governing rules themselves. AWIG OS is the operating-system embodiment of that infrastructure.
+The theory underlying AWIG OS begins at the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the umbrella and definitive home of the complete governance theory infrastructure. Underneath it sits the full body of work: the shared concepts and ontology for rule systems, the rule lifecycle model, and the standards that formalise them, chief among them the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), a domain-agnostic kernel for governing rules themselves. AWIG OS is the operating-system embodiment of that infrastructure.
 
 In implementation terms: the OMGS rule lifecycle becomes the system's actual change-management pipeline; the OMGS ontology becomes the system's information schema; OMGS actors (rule users, rule makers, decision makers) become roles with enforced, traceable permissions.
 
@@ -52,5 +52,5 @@ Everything else, the full rule engine, the AI organisation, the automation split
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Framework](https://github.com/kfkchau/open-governance-framework).
+Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
 For attribution, citation, or inquiries: [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau)
