@@ -55,9 +55,9 @@ Until a contributor community forms, the project runs as a single maintainer wit
 
 ## 6. The machine
 
-The technical design lives in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS actually is as software, how it is being rebuilt from a Linux reference model, its rule engine, its AI organisation.
+The technical design is in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS is as software, how it is built, its rule engine, its AI organisation.
 
-The runnable code lives in [`code/`](./code/): a stamped, checked rendering of the engine you can clone and run with the standard library alone (`cd code && python3 check.py`). It carries its own [`code/README.md`](./code/README.md), a per-file provenance stamp in `code/RENDER-STAMP.json`, and an eight-check battery. See [`STATUS.md`](./STATUS.md) for what runs, what is built, and the one honest cap.
+The code you can run is in the [`code`](./code/) folder. Download it and run it with Python 3 and nothing else (`cd code && python3 check.py`). The folder carries its own [`code/README.md`](./code/README.md), a fingerprint of every file in `code/RENDER-STAMP.json`, and eight checks. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, what is only designed, and the one warning.
 
 The theory it implements has its own home: the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the definitive governance theory infrastructure, under which the full body of work sits, including the concepts and ontology, the rule lifecycle, the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), and the standards that follow. AWIG OS is that theory, running.
 

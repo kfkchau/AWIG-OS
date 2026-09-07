@@ -1,11 +1,11 @@
 {
  "files": {
-  "../FREEZE.txt": "59c277cbd527d184125c6058ba527b7b7f07c67fae9207444191f7a1c0098a69",
+  "../FREEZE.txt": "ea8d9cebbc230da9c1c080ee0f33ad35102ccd8e232fbe610dff820672519e9d",
   "../LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
   "../LICENSE-APACHE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
   "../LICENSE-DOCS": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
   "../LICENSING.md": "48045217e3b2d1b4644e615562f4921bc8047bcc03820bf405823b98895480a7",
-  "../README.md": "469075c193a1f6c23096c09c4f03db749086fdbec06c9d949fb8f66b20ff1a24",
+  "../README.md": "db73e8b973fa5938eacfead280c383c27e84d96cca8210cef03f0c05f13c9a7f",
   "../check.py": "34fdfe30297452ce53f02876cd0da2263f0c6c22e2648c306aaa078f0281fdec",
   "../seed_demo.py": "41e5c96a524378670d0228052942f640d9d08e31cc22a1186daed39cf96b3457",
   "bridge/__init__.py": "f439d749dcc0720a83e8b27a19717ec781a78c67fe4fafca12fb3a0a88c8c132",
@@ -60,10 +60,10 @@
   "subsystems/memory.py": "06804784be27cc0181f06697d970008eca7f1807834aad3ac520968293dca07f",
   "subsystems/scheduling.py": "738490756565d2cff48bd6b81034a9236a302b007dfbad1abab4d1148bb9612f"
  },
- "generated_utc": "2026-09-07T23:01:09Z",
+ "generated_utc": "2026-09-07T23:10:51Z",
  "product": "AWIG OS",
  "rendered_extras_from": {
-  "commit": "d908da2f5d3e11bf58b52585f22137eda4110bf3",
+  "commit": "5fa8bbdd864cbce319a3b6b5a995b5a7d0d8e720",
   "repo": "the estate's src/ (private mirror)"
  },
  "rendered_from": {

@@ -1,45 +1,27 @@
 # Releases
 
-A short, honest log of what each published anchor contains. Every figure names where it
-was taken; the full private test ledger does not ship, the eight-check battery does.
+What each public marker contains, in plain words. Every figure names the machine it came from.
 
-## `milestone-0-seed`: the seed
+## `milestone-0-seed`: the seed, 30 August 2026
 
-The first runnable milestone, preserved as a tag on the last commit that carried the
-`seed/` folder. One rule executes in the common format; one permission runs and leaves a
-verifiable trace; a stranger can independently verify both. Two files, stock Python 3.
+The first runnable piece, kept as a tag on the last commit that carried the `seed` folder. Two files and Python 3. One rule runs in the common format, one permission runs and leaves a record you can verify, and a stranger can check both. The folder has since been replaced by the fuller `code` folder below. Its history stays under this tag.
 
-This tag is the public anchor for milestone 0. The folder it named has since been replaced
-in the working tree by the fuller rendering under `code/` (below); its history is kept
-under this tag.
+## The `code` folder: the engine after campaign 4, rulebook version 1.39.0
 
-## The C4 rendering: `code/` at founding 1.39.0
+What campaign 4 added, in plain words:
 
-The tree under [`code/`](./code/) is a stamped, checked rendering of the engine as it stands
-after campaign 4. What campaign 4 built, in shape: guarantees moved from *cannot-do-lawfully*
-and *cannot-do-quietly* toward *cannot-do-undetectably*.
+- The written record is tamper-evident. Change one character of the history and the system can say where.
+- Accounts can hold keys. An account with a key cannot act without signing. Accounts without keys work exactly as before.
+- The program checks its own code at startup and writes the fingerprint into the record.
+- Nothing can be deleted. The only way anything leaves is a formal handover to another party, who signs a receipt.
+- Stored content is locked so that only its intended readers can open it.
+- If the record is damaged, the system repairs it back to the last point that three independent checks agree on, or stops and asks. Damage is located precisely, not by throwing history away.
 
-- Every post-seal record chains to its predecessor's canonical hash; an edited byte of
-  meaning breaks the chain at a provable point.
-- A key-bound account can no longer act unsigned; an unkeyed account is byte-for-byte
-  unaffected. No flag day.
-- The engine attests its own artifact set at boot; the two audit streams gain separate keys.
-- Custody is conserved: no delete in the vocabulary; the one removal is a verified handover
-  leaving a departure scar.
-- Content at rest is sealed per piece to each reader's open key.
-- The recovery family: recover never to wrongness, never truncating; checkpoints with an
-  O(1) head check and Merkle-localized damage; a mutual-receipt buddy; auto-recover under a
-  triple check that proceeds only on all three and halts otherwise.
+**Checked how.** The eight checks in `code/check.py` pass on the Linux machine this release was cut on (Python 3.12.3) and on a Windows laptop running Debian under WSL 2 (Python 3.13.5). The commit number in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belongs to the private development repository and cannot be looked up from here. Treat it as a stamp. The tag above is the anchor you can check.
 
-Verification anchor: the shipped battery `code/check.py` passed 8 of 8 on the estate host
-(Linux, Python 3.12.3) at the cut of this release. Provenance: `code/RENDER-STAMP.json` and
-`code/FREEZE.txt` name a commit in the private source estate. Treat it as a stamp, not a
-thing you can check from here; this repository's tag is the anchor you can hold.
+**What it does not claim.** The locks are not real yet, nobody has attacked it, and an administrator can still edit the file. The full list is in [`STATUS.md`](./STATUS.md). In the build team's exact words on the keys:
 
-**Honest cap.** Every key in this release is a stand-in of the right shape, not real
-cryptography. A reader of the whole record on disk can derive an open key and unseal content.
-Real cryptographic key material under the whole key family is the next unit.
-Protect the disk by other means (full-disk encryption) until it lands.
+> Every key in this release is a stand-in of the right shape, not real cryptography. A reader of the whole record on disk can derive an open key and unseal content. Real cryptographic key material under the whole key family is the next unit. Protect the disk by other means (full-disk encryption) until it lands.
 
 ---
 

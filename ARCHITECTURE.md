@@ -49,13 +49,15 @@ The first runnable milestone is deliberately minimal:
 
 Everything else, the full rule engine, the AI organisation, the automation splitter, grows from that verified seed.
 
-## 5. Honest cap on the shipped code
+## 5. What ships, and the one warning
 
-The runnable tree published under `code/` is a stamped, checked rendering of the engine as it stands. One limit is stated plainly, because it matters to anyone who runs it on real data:
+The runnable code is in the [`code`](./code/) folder, generated from the private source and checked, never edited by hand. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, and what is only designed.
+
+One warning matters to anyone who runs it on real data. The locks are not real yet. The keys are placeholders of the right shape. Anyone who has the disk can read everything on it. Real encryption is the next piece of work. Until then, encrypt the disk yourself. In the build team's exact words:
 
 > Every key in this release is a stand-in of the right shape, not real cryptography. A reader of the whole record on disk can derive an open key and unseal content. Real cryptographic key material under the whole key family is the next unit. Protect the disk by other means (full-disk encryption) until it lands.
 
-Two things every published figure carries with it. The commit named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` is a commit in the estate's own repository, which is private, so treat it as a provenance stamp rather than something you can check; the anchor you can hold is the public tag `milestone-0-seed` on this repository. And the full test ledger does not ship; the eight-check battery under `code/check.py` does. So any test count stated anywhere names the machine it was taken on.
+Two things about the numbers. The commit named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belongs to the private repository and cannot be looked up from here; the tag `milestone-0-seed` on this repository is the anchor you can check. And the full test suite does not ship, only the eight checks in `code/check.py` do, so any test count we publish names the machine it ran on.
 
 ---
 

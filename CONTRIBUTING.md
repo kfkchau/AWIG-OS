@@ -1,44 +1,28 @@
 # Contributing to AWIG OS
 
-Code, architecture review, documentation, translation (Bahasa Indonesia especially),
-and critique of the governance model itself are all welcome. A project about governance
-keeps its own written trace; contributing here follows that same trace.
+Code, design review, documentation, translation (Bahasa Indonesia especially), and criticism of the governance model itself are all welcome. A project about governance keeps a written record of its own decisions, and contributing here works the same way.
 
 ## Before you start
 
-Read [`GOVERNANCE.md`](./GOVERNANCE.md), which is how decisions here are proposed,
-discussed, and recorded, and [`LICENSING.md`](./LICENSING.md), which sets the layer
-each file lives under.
+Read [`GOVERNANCE.md`](./GOVERNANCE.md), which says how decisions here are proposed, discussed and recorded, and [`LICENSING.md`](./LICENSING.md), which says which licence each part of the project is under.
 
 ## How a change happens
 
-The flow is deliberately simple and open:
+1. **Propose it in writing.** Open an issue or a pull request that says what you want to change and why.
+2. **Discuss it in that thread,** in the open.
+3. **A decision is recorded,** accepted or rejected, and kept either way. Keeping the refusals honest is what makes the acceptances mean something.
 
-1. **Propose, in writing.** An issue or a pull request that says what and why.
-2. **Discuss, in that thread.** In the open.
-3. **A recorded decision.** Accepted or rejected, preserved either way. A community
-   that keeps its refusals honest keeps its acceptances meaningful.
+Big proposals, such as a new layer, a change to the rule format, or anything touching the project's name or licences, start as a written proposal before any code.
 
-Substantial proposals (a new layer, a change to the rule format, anything that touches
-the naming or licensing commitments) start as a written proposal before code.
+## Signing your work
 
-## Developer Certificate of Origin
-
-Every commit carries a DCO sign-off: add `Signed-off-by: Your Name <email>` with
-`git commit -s`, certifying you have the right to submit the work under this project's
-licenses (see <https://developercertificate.org/>). You keep your copyright; your work
-stays yours, licensed to the project under its layer's license.
+Every commit carries a sign-off line, `Signed-off-by: Your Name <email>`, which `git commit -s` adds for you. It certifies that you have the right to contribute the work under this project's licences (the Developer Certificate of Origin, <https://developercertificate.org/>). You keep your copyright. Your work stays yours, licensed to the project under the licence of the part it belongs to.
 
 ## Working with the code
 
-The runnable engine is under [`code/`](./code/); it is a **rendering** of a private
-source estate, never edited by hand; `code/README.md` explains how it is generated,
-stamped, and checked. Fixes to the engine are proposed against the upstream source
-through the flow above, not by editing the rendered tree. Documentation and this
-repository's own root files can be proposed directly.
+The runnable engine is in the [`code`](./code/) folder. It is generated from a private source repository and checked, never edited by hand. `code/README.md` explains how it is made and how to check it. To fix something in the engine, propose the fix through the flow above and it goes into the source. Documentation and the files at the root of this repository can be proposed directly.
 
-Keep it running on the standard library alone: `cd code && python3 check.py` must stay
-green (exit 0), and check 6 must stay able to fail.
+Keep it running on Python's standard library alone. `cd code && python3 check.py` must keep passing, and check 6 must keep being able to fail.
 
 ---
 

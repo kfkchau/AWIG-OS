@@ -1,38 +1,31 @@
-# Security policy
+# Reporting a security problem
 
-AWIG OS is pre-alpha. It is a reference model and a seed, not a system to put real
-secrets behind yet. This file says how to report a problem and states, plainly, the
-one limit you must design around before you trust it with anything.
+Email **kelvin@rootrebuilder.org** with "security" in the subject line. Do not open a public issue. Include the line from `code/FREEZE.txt`, your operating system, and the smallest steps that show the problem.
 
-## The cap you must read first
+You will get an acknowledgement within a few days. We agree a disclosure date with you and credit you when it is fixed, unless you ask us not to.
 
-> Every key in this release is a stand-in of the right shape, not real cryptography.
-> A reader of the whole record on disk can derive an open key and unseal content.
-> Real cryptographic key material under the whole key family is the next unit.
-> Protect the disk by other means (full-disk encryption) until it lands.
+## Read this before you report
 
-This is by design and it is stated everywhere the keys appear. Signatures, open keys,
-and attestation seals are shape-true modelled material; real cryptographic key material
-under the whole family is the next named unit of work. Until it lands, treat the record
-file as readable by anyone who holds the disk, and protect the disk itself.
+AWIG OS is at an early stage. Do not put real secrets behind it yet.
 
-## Reporting a vulnerability
+The locks are not real yet. The keys are placeholders of the right shape. Anyone who has the disk can read everything on it. Real encryption is the next piece of work. Until then, encrypt the disk yourself. In the build team's exact words:
 
-> Report privately to **kelvin@rootrebuilder.org**, and mark the message as a security report.
+> Every key in this release is a stand-in of the right shape, not real cryptography. A reader of the whole record on disk can derive an open key and unseal content. Real cryptographic key material under the whole key family is the next unit. Protect the disk by other means (full-disk encryption) until it lands.
 
-Please report privately, not in a public issue, anything that lets an act evade the gate,
-a record be edited without breaking the chain, a refusal go unrecorded, or a reader see
-content they hold no open key for. Include the version (`code/FREEZE.txt`), the platform,
-and the smallest steps that show it.
+## What counts as a security problem here
 
-We aim to acknowledge a report within a few days, agree a disclosure timeline with you,
-and credit you when it is fixed, unless you ask us not to.
+- An action that gets past the rulebook without being written down.
+- A refusal that is not written down.
+- A change to the history that the chain does not catch.
+- Content removed without a signed receipt.
+- Someone reading content they were not given a key for.
+- A secret readable by any route.
 
-## Scope
+## What does not count, for now
 
-In scope: the engine under `code/src`, the seed scripts, and the release rendering and its
-stamp. Out of scope for now, because they are documented caps rather than defects: the
-modelled key material above, and any test count that does not name the machine it ran on.
+- The placeholder keys. Known, and stated above.
+- An administrator editing the record file. Known. The chain shows where, and cannot stop it.
+- Timing and hardware side channels, and denial of service. Out of scope until stated otherwise.
 
 ---
 
