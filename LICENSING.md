@@ -10,7 +10,7 @@ The license is this project's first rule: written down, legible to everyone, bin
 
 | Layer | What it covers | License | In one sentence |
 |---|---|---|---|
-| **Core** | The operating-system engine: kernel, bridge, subsystems and founding, shipped in this release under `code/src`, together with the runnable seed scripts `code/seed_demo.py` and `code/check.py`. | **GNU GPLv3** | Use it freely for anything; if you distribute a modified version, your modifications must be published under this same license. It stays open, in every hand, forever. |
+| **Core** | The operating-system engine: kernel, bridge, subsystems and founding, shipped in this release under `code/src`, together with the two root scripts `code/seed_demo.py` and `code/check.py`. | **GNU GPLv3** | Use it freely for anything; if you distribute a modified version, your modifications must be published under this same license. It stays open, in every hand, forever. |
 | **Ring** | SDKs, client libraries, rule-format tooling, examples. No Ring component ships in this release; `LICENSE-APACHE` is included as the standing text for them. | **Apache License 2.0** | Do anything, including building closed commercial products on top. Keep the notices. Contributors grant patent rights. |
 | **Text** | Documentation and specification text: this file, the README, `ARCHITECTURE.md`, `GOVERNANCE.md`, `STATUS.md`, and the docs shipped under `code/` (`code/README.md`, `code/LICENSING.md`). | **CC BY 4.0** | Share and adapt freely for any purpose, with attribution. |
 

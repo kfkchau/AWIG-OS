@@ -8,7 +8,8 @@ one limit you must design around before you trust it with anything.
 
 > Every key in this release is a stand-in of the right shape, not real cryptography.
 > A reader of the whole record on disk can derive an open key and unseal content.
-> Protect the disk by other means (full-disk encryption).
+> Real cryptographic key material under the whole key family is the next unit.
+> Protect the disk by other means (full-disk encryption) until it lands.
 
 This is by design and it is stated everywhere the keys appear. Signatures, open keys,
 and attestation seals are shape-true modelled material; real cryptographic key material
