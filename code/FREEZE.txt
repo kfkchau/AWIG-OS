@@ -1,1 +1,1 @@
-AWIG OS rendering, founding 1.39.0, commit 8861dd589d73b4f6b769b767d18810d48daa1913, extras commit 053d307d39339ac722292bd5c1c5ce87116e8c09, rendered by tools/release/render.py 61c89c5abf7e.
+AWIG OS rendering, founding 1.39.0, commit 8861dd589d73b4f6b769b767d18810d48daa1913, extras commit d908da2f5d3e11bf58b52585f22137eda4110bf3, rendered by tools/release/render.py 61c89c5abf7e.

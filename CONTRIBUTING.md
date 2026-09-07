@@ -6,17 +6,17 @@ keeps its own written trace; contributing here follows that same trace.
 
 ## Before you start
 
-Read [`GOVERNANCE.md`](./GOVERNANCE.md) — it is how decisions here are proposed,
-discussed, and recorded — and [`LICENSING.md`](./LICENSING.md), which sets the layer
+Read [`GOVERNANCE.md`](./GOVERNANCE.md), which is how decisions here are proposed,
+discussed, and recorded, and [`LICENSING.md`](./LICENSING.md), which sets the layer
 each file lives under.
 
 ## How a change happens
 
 The flow is deliberately simple and open:
 
-1. **Propose, in writing** — an issue or a pull request that says what and why.
-2. **Discuss, in that thread** — in the open.
-3. **A recorded decision** — accepted or rejected, preserved either way. A community
+1. **Propose, in writing.** An issue or a pull request that says what and why.
+2. **Discuss, in that thread.** In the open.
+3. **A recorded decision.** Accepted or rejected, preserved either way. A community
    that keeps its refusals honest keeps its acceptances meaningful.
 
 Substantial proposals (a new layer, a change to the rule format, anything that touches
@@ -32,7 +32,7 @@ stays yours, licensed to the project under its layer's license.
 ## Working with the code
 
 The runnable engine is under [`code/`](./code/); it is a **rendering** of a private
-source estate, never edited by hand — `code/README.md` explains how it is generated,
+source estate, never edited by hand; `code/README.md` explains how it is generated,
 stamped, and checked. Fixes to the engine are proposed against the upstream source
 through the flow above, not by editing the rendered tree. Documentation and this
 repository's own root files can be proposed directly.

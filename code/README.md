@@ -1,4 +1,4 @@
-# AWIG OS — the rendered code (campaign-4 completed tree)
+# AWIG OS: the rendered code (campaign-4 completed tree)
 
 This folder is a **rendering** of AWIG OS's source at one named commit. It is
 generated, stamped and checked; it is never edited by hand. If you want to
@@ -9,7 +9,7 @@ check described below.
 ## What is here
 
     src/                the operating-system code: kernel, bridge, subsystems, founding
-    src/founding/       founding-pack.json — the constitution every world is founded from
+    src/founding/       founding-pack.json, the constitution every world is founded from
     seed_demo.py        one rule, one act allowed, one act refused citing its rule, one
                         kill-and-replay with matching hashes (python3 seed_demo.py)
     check.py            the seed check battery: eight readings of the machinery, each in
@@ -17,7 +17,7 @@ check described below.
     RENDER-STAMP.json   the source commit, the renderer's hash, every file's sha256
     FREEZE.txt          the same in one line
     LICENSE             GPLv3 (the core) · LICENSE-APACHE (the ring) · LICENSE-DOCS (CC BY 4.0)
-    LICENSING.md        the licensing map in plain language — the licence is this
+    LICENSING.md        the licensing map in plain language; the licence is this
                         project's first rule
 
 ## Run it
@@ -96,11 +96,11 @@ the private copy, which is not the same thing as you being able to verify it,
 and saying so is better than leaving you to find out.
 
 You will also find, in the code's comments and docstrings, references to the
-estate's own design and planning documents — paths like `design/16` or
+estate's own design and planning documents, paths like `design/16` or
 `planning/build`. These are provenance references of the same kind as that
 commit: pointers into the private repository where a decision was written down,
 left in place so the reasoning keeps an address. They are not files in this
-folder and `git` cannot resolve them here, and that is on purpose — read them
+folder and `git` cannot resolve them here, and that is on purpose; read them
 the way you read the commit, a stamp of where a thing came from rather than
 something you can open from here.
 
@@ -111,5 +111,5 @@ actually carries, which is check 8's whole job.
 
 ## Licence
 
-Code under GPLv3, tools under Apache 2.0, documents under CC BY 4.0 —
+Code under GPLv3, tools under Apache 2.0, documents under CC BY 4.0;
 see `LICENSING.md`. Copyright (C) 2026 Kelvin Chau and AWIG OS contributors.

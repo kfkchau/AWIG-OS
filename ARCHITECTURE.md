@@ -1,4 +1,4 @@
-# AWIG OS — Architecture
+# AWIG OS: the architecture
 
 This document holds the technical design of AWIG OS. The philosophy it implements lives in the [README](./README.md). This is the machine that carries it.
 
@@ -55,7 +55,7 @@ The runnable tree published under `code/` is a stamped, checked rendering of the
 
 > Every key in this release is a stand-in of the right shape, not real cryptography. A reader of the whole record on disk can derive an open key and unseal content. Real cryptographic key material under the whole key family is the next unit. Protect the disk by other means (full-disk encryption) until it lands.
 
-Two things every published figure carries with it. The commit named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` is a commit in the estate's own repository, which is private, so treat it as a provenance stamp rather than something you can check; the anchor you can hold is the public tag `milestone-0-seed` on this repository. And the full test ledger does not ship — the eight-check battery under `code/check.py` does — so any test count stated anywhere names the machine it was taken on.
+Two things every published figure carries with it. The commit named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` is a commit in the estate's own repository, which is private, so treat it as a provenance stamp rather than something you can check; the anchor you can hold is the public tag `milestone-0-seed` on this repository. And the full test ledger does not ship; the eight-check battery under `code/check.py` does. So any test count stated anywhere names the machine it was taken on.
 
 ---
 
