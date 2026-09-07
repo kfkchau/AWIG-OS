@@ -1,0 +1,37 @@
+# AWIG-OS is a PUBLIC repo. Anything matched here stays on this laptop only.
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+*~
+.obsidian/
+
+# the local push tooling — clickable script, never belongs on the public remote
+push.sh
+push-awig-os.desktop
+
+# dependencies / build (guarded defensively — none yet)
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# private notes — LOCAL ONLY (raw chat, reasoning, drafts you don't want public)
+private/
+**/private/
+
+# large binaries — a public docs repo should never carry these
+*.tar.xz
+*.tar.gz
+*.zip
+*.iso
+*.qcow2
+*.img
+
+# secrets — must NEVER reach a public remote
+*.env
+*.pem
+*.key
+**/ai-config.json
+**/llm-key.txt

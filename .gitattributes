@@ -1,0 +1,8 @@
+# Line endings.
+#
+# Every sha256 in code/RENDER-STAMP.json is taken over each file's bytes with
+# Unix (LF) line endings. Pin the shipped code tree to LF on checkout so the
+# stamp verifies to the same digest on every platform; a CRLF checkout would
+# make a stranger's stamp check fail on files that never changed.
+* text=auto
+code/** text=auto eol=lf

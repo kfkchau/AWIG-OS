@@ -1,0 +1,20 @@
+# The public check: the shipped eight-check battery, on every push and pull request.
+# A red badge is public the day it breaks — that is the point. Stock Python 3, no deps.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  battery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3"
+      - name: Run the seed check battery
+        run: |
+          cd code
+          python3 check.py

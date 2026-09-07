@@ -57,11 +57,13 @@ Until a contributor community forms, the project runs as a single maintainer wit
 
 The technical design lives in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS actually is as software, how it is being rebuilt from a Linux reference model, its rule engine, its AI organisation.
 
+The runnable code lives in [`code/`](./code/): a stamped, checked rendering of the engine you can clone and run with the standard library alone (`cd code && python3 check.py`). It carries its own [`code/README.md`](./code/README.md), a per-file provenance stamp in `code/RENDER-STAMP.json`, and an eight-check battery. See [`STATUS.md`](./STATUS.md) for what runs, what is built, and the one honest cap.
+
 The theory it implements has its own home: the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the definitive governance theory infrastructure, under which the full body of work sits, including the concepts and ontology, the rule lifecycle, the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), and the standards that follow. AWIG OS is that theory, running.
 
 **Provenance.** AWIG OS is delivered as part of the **Open Governance Standard (OGS)** research programme, a multi-year body of work on governance theory and infrastructure. Its public outreach runs through **Legitimacy Under Acceleration (LUA)**, the author's newsletter and outreach campaign on governing institutions in an accelerating world. The project itself belongs to no campaign. It is governed by its own [`GOVERNANCE.md`](./GOVERNANCE.md) and, as a commons, by its contributors and users.
 
-**Status.** Pre-alpha, design and reference-model stage. The first milestone is small on purpose: one rule executes in the common format, one permission runs and leaves a verifiable trace, and a stranger can independently verify both. Everything grows from that seed.
+**Status.** Pre-alpha, design and reference-model stage. The first milestone was small on purpose: one rule executes in the common format, one permission runs and leaves a verifiable trace, and a stranger can independently verify both. That milestone is preserved under the tag `milestone-0-seed`; the current runnable engine is in [`code/`](./code/), and [`STATUS.md`](./STATUS.md) says plainly what is built, what is designed, and the one cap. Everything grows from that seed.
 
 ## 7. Contributing
 

@@ -27,7 +27,7 @@ AWIG OS does not prescribe what your rules should say. It guarantees how rules e
 
 AWIG OS is being rebuilt layer by layer from a running reference model, in the verified-kernel tradition: an executable specification first, with the production implementation written and checked against it.
 
-1. **Reference model.** A complete, running reimplementation of the original minimal Linux core (about 10k LOC in scope; no device drivers), currently about 99% Python. This is the executable specification. It defines 100% of required behaviour.
+1. **Reference model.** A complete, running reimplementation of the original minimal Linux core (no device drivers in scope), implemented in Python. This is the executable specification. It defines the required behaviour the production core is checked against.
 2. **Layer-by-layer replacement.** Each layer of the reference core is replaced by the new governance-native core while the whole remains running and behaviour-verified against the model. Replace the heart while the robot keeps walking.
 3. **Behavioural compatibility.** The system preserves the syscall-level contract, so it is *Linux-compatible* to the programs above it while being independent code beneath.
 
@@ -48,6 +48,14 @@ The first runnable milestone is deliberately minimal:
 > One rule executes in the standard format; one permission runs and leaves a verifiable trace; a third party can independently verify both.
 
 Everything else, the full rule engine, the AI organisation, the automation splitter, grows from that verified seed.
+
+## 5. Honest cap on the shipped code
+
+The runnable tree published under `code/` is a stamped, checked rendering of the engine as it stands. One limit is stated plainly, because it matters to anyone who runs it on real data:
+
+> Every key in this release is a stand-in of the right shape, not real cryptography. A reader of the whole record on disk can derive an open key and unseal content. Real cryptographic key material under the whole key family is the next unit. Protect the disk by other means (full-disk encryption) until it lands.
+
+Two things every published figure carries with it. The commit named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` is a commit in the estate's own repository, which is private, so treat it as a provenance stamp rather than something you can check; the anchor you can hold is the public tag `milestone-0-seed` on this repository. And the full test ledger does not ship — the eight-check battery under `code/check.py` does — so any test count stated anywhere names the machine it was taken on.
 
 ---
 
