@@ -44,8 +44,10 @@ Contributors from Indonesia, and corrections to how this heritage is described, 
 
 1. **No enclosure.** This project will never register, claim, or assert trademark or any exclusive right over "AWIG", "awig", or "awig-awig", and will never object to any traditional, cultural, community, or commercial use of these words by anyone.
 2. **No litigation.** This project will never initiate or sustain legal action over its name.
-3. **Fold-fast.** If any party ever formally demands that this project stop using the name, the project will comply and rename within 30 days.
+3. **No fight over the name, and no surrender on demand.** The name is not worth a lawsuit, and this project will not spend its life in one. Any demand, and the project's answer to it, is published here in full and unedited, on arrival.
 4. **Permanent record.** The meaning of the name, this acknowledgment, and, if it ever occurs, the full record of any demand to erase it will be preserved permanently in this project's history.
+
+*Amended 8 September 2026: clause 3 previously promised to rename within 30 days of any formal demand. A demand is a letter, and a letter is not a right; the clause handed the name to whoever wrote first. The project now answers demands in public and does not surrender on demand. Nothing else changed.*
 
 ## 5. How this project governs itself
 
@@ -59,11 +61,9 @@ The technical design is in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS 
 
 The code you can run is in the [`code`](./code/) folder. Download it and run it with Python 3 and nothing else (`cd code && python3 check.py`). The folder carries its own [`code/README.md`](./code/README.md), a fingerprint of every file in `code/RENDER-STAMP.json`, and eight checks. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, what is only designed, and the one warning.
 
-The theory it implements has its own home: the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the definitive governance theory infrastructure, under which the full body of work sits, including the concepts and ontology, the rule lifecycle, the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), and the standards that follow. AWIG OS is that theory, running.
+The theory it runs on is the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard), and under it the [Open Meta-Governance Standard](https://github.com/kfkchau/Open-Meta-Governance-Standard/): a kernel for governing rules themselves, rules about rules. Read them if that interests you. AWIG OS is that theory, running.
 
-**Provenance.** AWIG OS is delivered as part of the **Open Governance Standard (OGS)** research programme, a multi-year body of work on governance theory and infrastructure. Its public outreach runs through **Legitimacy Under Acceleration (LUA)**, the author's newsletter and outreach campaign on governing institutions in an accelerating world. The project itself belongs to no campaign. It is governed by its own [`GOVERNANCE.md`](./GOVERNANCE.md) and, as a commons, by its contributors and users.
-
-**Where this stands, {{PUSH DATE}}.** The smallest piece runs, and you can check it in two commands: `cd code && python3 seed_demo.py && python3 check.py` (Linux, stock Python; on Windows, WSL). What runs is the governing layer: one record as the only truth, every act a row citing its rule, refusals recorded the same way, the whole world rebuilt from the record alone, hash for hash. The record is chained and sealed, keys are rows, the engine attests itself at boot, and there is no delete: the constitution says so, thirty-nine amendments in. Every key in this release is a stand-in of the right shape, not real cryptography, and the tree says that on its own front page. `STATUS.md` holds what is built, what is designed and every cap, dated. The first milestone, the seed, is kept in history at the tag `milestone-0-seed`.
+**Where this stands, 8 September 2026.** The smallest piece runs, and you can check it in two commands: `cd code && python3 seed_demo.py && python3 check.py` (Linux, stock Python; on Windows, WSL). What runs is the governing layer: one record as the only truth, every act a row citing its rule, refusals recorded the same way, the whole world rebuilt from the record alone, hash for hash. The record is chained and sealed, keys are rows, the engine attests itself at boot, and there is no delete: the constitution says so, thirty-nine amendments in. Every key in this release is a stand-in of the right shape, not real cryptography, and the tree says that on its own front page. `STATUS.md` holds what is built, what is designed and every cap, dated. The first milestone, the seed, is kept in history at the tag `milestone-0-seed`.
 
 ## 7. Contributing
 
