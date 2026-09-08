@@ -33,13 +33,11 @@ AWIG OS is being rebuilt layer by layer from a running reference model, in the v
 
 The result is a clean-room reimplementation: written from behaviour and interfaces, not translated from Linux source. It is Linux-compatible, not Linux. "Linux" is a trademark of Linus Torvalds and is not claimed by this project. The reference model is preserved permanently in the repository history as the project's lineage.
 
-## 3. Relationship to the Open Governance Standard
+## 3. The theory it runs on
 
-The theory underlying AWIG OS begins at the [**Open Governance Standard**](https://github.com/kfkchau/Open-Governance-Standard), the umbrella and definitive home of the complete governance theory infrastructure. Underneath it sits the full body of work: the shared concepts and ontology for rule systems, the rule lifecycle model, and the standards that formalise them, chief among them the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/), a domain-agnostic kernel for governing rules themselves. AWIG OS is the operating-system embodiment of that infrastructure.
+The [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) is the home of the theory, and under it the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/) is a kernel for governing rules themselves: rules about rules, who may make them, how they change, and how a change is recorded. AWIG OS is that kernel as an operating system: the rule lifecycle becomes the system's change process, the ontology becomes its information schema, and the roles (rule users, rule makers, decision makers) become accounts with recorded, traceable permissions.
 
-In implementation terms: the OMGS rule lifecycle becomes the system's actual change-management pipeline; the OMGS ontology becomes the system's information schema; OMGS actors (rule users, rule makers, decision makers) become roles with enforced, traceable permissions.
-
-Earlier expressions of the kernel, the 2021 Governance Lifecycle Framework and the 2025 [Universal Governance Lifecycle Standard](https://github.com/kfkchau/gov-lifecycle/), are documented in the OMGS repository. OMGS (CC BY 4.0) can be implemented by anyone, in any system, open or closed, without any license contact with this repository. AWIG OS is its open reference implementation.
+OMGS is CC BY 4.0. Anyone can implement it, in any system, open or closed, without contacting this project.
 
 ## 4. Milestone 0: the seed
 
