@@ -59,6 +59,8 @@ Until a contributor community forms, the project runs as a single maintainer wit
 
 The technical design is in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS is as software, how it is built, its rule engine, its AI organisation.
 
+Read this as a reference model, not a product. The code that runs is an executable specification of the governing layer, built first so the rules run and can be tested before the kernel underneath them exists; the design papers are the contracts it implements, and `STATUS.md` says what is true today. The kernel is being built to the same contracts and arrives when a stranger can boot it.
+
 The code you can run is in the [`code`](./code/) folder. Download it and run it with Python 3 and nothing else (`cd code && python3 check.py`). The folder carries its own [`code/README.md`](./code/README.md), a fingerprint of every file in `code/RENDER-STAMP.json`, sixteen checks, and the program's own test suite. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, what is only designed, and the one warning.
 
 The theory it runs on is the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard), and under it the [Open Meta-Governance Standard](https://github.com/kfkchau/Open-Meta-Governance-Standard/): a kernel for governing rules themselves, rules about rules. Read them if that interests you. AWIG OS is that theory, running.
