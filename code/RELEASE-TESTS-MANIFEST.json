@@ -329,6 +329,11 @@
    "module": "test_keymat.py",
    "private_file": "the estate vault source bytes (the byte-freeze pin)",
    "reason": "pins the estate source's exact bytes (a byte-freeze guard); the shipped rendering carries a header and public wording"
+  },
+  {
+   "module": "test_ep47b.py",
+   "private_file": "the repair commit",
+   "reason": "a probe that can fail by chance (a substring assertion over the record's text collides with timestamp and hash digits); repaired in the estate at 9a3f08b2, ships at the next pin"
   }
  ],
  "tree_checksums": {

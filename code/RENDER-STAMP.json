@@ -1,6 +1,6 @@
 {
  "files": {
-  "../FREEZE.txt": "e8052291edee6d71933f5cde0eadadc44b1cc7c95cce5eff498b19401e230d3b",
+  "../FREEZE.txt": "ad5ee8e126d8e87b9a40dc9e0df3629d9eceb6eb5fab737260a6c03ae42d1057",
   "../LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
   "../LICENSE-APACHE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
   "../LICENSE-DOCS": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
@@ -65,10 +65,10 @@
   "subsystems/scheduling.py": "738490756565d2cff48bd6b81034a9236a302b007dfbad1abab4d1148bb9612f",
   "subsystems/sockets.py": "15d03cd8629d4ee430eaa6ea6a7830bac98662d1ed7b67db6e6460d4da4ce36f"
  },
- "generated_utc": "2026-09-13T05:06:18Z",
+ "generated_utc": "2026-09-13T07:22:42Z",
  "product": "AWIG OS",
  "rendered_extras_from": {
-  "commit": "98adf92e1f982341571489de29924eb5e92675a9",
+  "commit": "53fb771d5b95d1a61dbb63eccd5e68d1e9262649",
   "repo": "the estate's src/ (private mirror)"
  },
  "rendered_from": {
@@ -261,7 +261,7 @@
  },
  "tool": {
   "path": "tools/release/render.py",
-  "sha256": "9da6832dfc2cbf4a91914b95f5f377d3344346d6f533fe5c4aae56b85420e80a"
+  "sha256": "d44706023126c0a0074703b1565e6ed9357ee728f1cd08bffb7a5ca567a75d2c"
  },
  "tools_files": {
   "tools/board/board.py": "7c08e4276f1c1a5a1fe85bace207a6cbd2c121dc749aeaabcf0dffc1cb831c13",

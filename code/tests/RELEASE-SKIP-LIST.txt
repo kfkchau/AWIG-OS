@@ -63,3 +63,4 @@ test_instr_public_claims.py	reads a private estate file outside the shipped src/
 test_maint_outside_2.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
 test_maint_outside_3.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
 test_keymat.py	pins the estate source's exact bytes (a byte-freeze guard); the shipped rendering carries a header and public wording	the estate vault source bytes (the byte-freeze pin)
+test_ep47b.py	a probe that can fail by chance (a substring assertion over the record's text collides with timestamp and hash digits); repaired in the estate at 9a3f08b2, ships at the next pin	the repair commit
