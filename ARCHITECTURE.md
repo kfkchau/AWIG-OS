@@ -6,11 +6,13 @@ This document holds the technical design of AWIG OS. The philosophy it implement
 
 ## 0. How to read this work
 
-The code you can run is a reference model of the governing layer: an executable specification, built first so that the rules, the record and the gate run and can be tested before the kernel underneath them exists. Read it as that, not as a finished product. seL4 was built the same way, a running model before the real kernel, and the model is what the kernel is checked against.
+The code you can run is a reference model of the governing layer: an executable specification, built first so that the rules, the record and the gate run and can be tested before the kernel underneath them exists. Read it as that, not as a finished product. seL4 was built the same way, a running model before the real kernel, and the model is what the kernel is checked against. The line the model draws runs between the unstructured and the structured, what is said and what is done: prose, an AI's included, never moves the system; a structured row that passed a rule does, and the crossing is the gate.
 
 The design papers in `design/` are the contracts that model implements; the map at `design/README.md` names the ten contracts in force, each with its paper and its code, and the note at `design/00-RENDER-NOTE.md` lists every paper with its status. `STATUS.md` says what is true today, machine by machine. The kernel is being built underneath the same contracts, in the private repository, and arrives here when a stranger can boot it.
 
 A defect in a mechanism is not a defect in its contract, and the pages say which is which: a test that fails is listed with what it needs; a promise the code does not yet keep is listed under what is not true yet.
+
+The fence and the two openings. An agent behind a fence holds one permission set for a session and acts directly on everything inside it; the known failure is a document that turns the agent, and the fence has no answer because the agent's act is its own. Here an AI organisation is an entity with two watched openings, the demand side and the supply side. A turned document arrives on the demand side. Whatever the organisation then wants arrives on the supply side as a proposal the gate decides against the rulebook, and taking data out needs a grant that was never made, so the proposal comes back as a refusal row citing the rule. What this bounds is the damage, to the grant set; a turned organisation with a grant can misuse the grant. The border that makes an outside submission a draft the gate decides is built and proven in test worlds between a host and a guest (design 49, `bridge/`); the organisation between the openings is a stand-in pack today (design 51, EP-51).
 
 ## 1. Five architectural commitments
 

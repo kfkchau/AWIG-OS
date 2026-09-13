@@ -28,6 +28,8 @@ All rules in the system share one common, readable, executable format. There is 
 
 Like water through the terraces, every exercise of permission leaves a visible trace. Authority that leaves no trace does not run. The powerful are not asked to be good. They are structured to be seen.
 
+This year the largest operating systems began to fence what an AI agent may touch: which folders, which apps, which network, granted once for the session, off until an administrator switches it on. AWIG OS has no switch. Every act, by an agent or a person, crosses one gate as its own decision, citing the written rule that allowed it, and the row of that decision is the act. An AI organisation inside it meets the world at two openings only, what it is asked and what it asks for, and nothing arriving at the second executes until a rule says so. The two openings are built and proven in test worlds; the organisation between them is the work now under way.
+
 AI inside AWIG OS lives as a governed community, not an oracle. It is bounded, inspectable, constitutional, and the human owner stands above the whole, the way subak members stand above their own institutions.
 
 The commons stays common. This project takes no trademark, sells nothing, and is licensed so that no one, however large, can close it and sell it back to the world with the accountability stripped out. The license is this project's first rule: written down, binding on everyone, heaviest on the strongest. See [`LICENSING.md`](./LICENSING.md).
@@ -56,6 +58,8 @@ A project about governance keeps its own awig-awig, visibly. [`GOVERNANCE.md`](.
 Until a contributor community forms, the project runs as a single maintainer with a full written trace, and moves to community governance as participation grows, the way a rulebook grows with its village.
 
 ## 6. The machine
+
+Every organisation keeps five things in five places: a rulebook, an audit log, an institution, a constitution, and the machine that acts, and reads its own history from copies of copies. Here they are one record and five names for it. The record is the definitive; every view, every log, every screen is derived from it and can be thrown away and rebuilt, hash for hash. Fix the definitive and the derivative follows. One kind of rule governs everything in it, from who may open a file to how the rules themselves may change, with no special language for anyone. An AI organisation lives inside it on the far side of one boundary: what it says stays unstructured, what the institution does is structured rows, and nothing crosses from the one to the other except by passing a rule, every yes and every no on the record. The record, the gate and the rules run today in the layer below; the organisation's room has its two doors built and nothing yet living between them. What this is for, situation by situation: [`WHAT-THIS-IS-FOR.md`](./WHAT-THIS-IS-FOR.md).
 
 The technical design is in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS is as software, how it is built, its rule engine, its AI organisation.
 
