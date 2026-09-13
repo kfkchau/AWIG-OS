@@ -8,7 +8,7 @@ This document holds the technical design of AWIG OS. The philosophy it implement
 
 The code you can run is a reference model of the governing layer: an executable specification, built first so that the rules, the record and the gate run and can be tested before the kernel underneath them exists. Read it as that, not as a finished product. seL4 was built the same way, a running model before the real kernel, and the model is what the kernel is checked against.
 
-The design papers in `design/` are the contracts that model implements; the note at `design/00-RENDER-NOTE.md` lists every paper with its status, and a one-page map of the contracts in force is being written. `STATUS.md` says what is true today, machine by machine. The kernel is being built underneath the same contracts, in the private repository, and arrives here when a stranger can boot it.
+The design papers in `design/` are the contracts that model implements; the map at `design/README.md` names the ten contracts in force, each with its paper and its code, and the note at `design/00-RENDER-NOTE.md` lists every paper with its status. `STATUS.md` says what is true today, machine by machine. The kernel is being built underneath the same contracts, in the private repository, and arrives here when a stranger can boot it.
 
 A defect in a mechanism is not a defect in its contract, and the pages say which is which: a test that fails is listed with what it needs; a promise the code does not yet keep is listed under what is not true yet.
 
