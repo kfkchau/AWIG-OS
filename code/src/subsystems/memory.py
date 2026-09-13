@@ -134,20 +134,60 @@ class MemoryView:
         # subset's cost per read, not the record's length. It holds only locations; every answer
         # is still folded from the record at read time.
         self._records = MemoryProjection(store)
+        # R12 (EP-MAINT-OUTSIDE-4): the mapping-table fold, MEMOISED in a KILLABLE cache keyed by
+        # as_of (the FilterView / SocketsView kill_cache pattern, T-CACHE-KILL: kill it and the next
+        # read re-folds an IDENTICAL table — the cache is a convenience, never the truth). It is
+        # INVALIDATED ON APPEND so `fault()` on the hot path serves an O(1) hit between decisions
+        # instead of re-folding |decisions| every call, yet never serves a table older than the
+        # record. Killing on append keeps the number that names its world (|MEMORY family|, not
+        # |record|) the fold's cost, paid once per decision rather than once per fault.
+        self._map_cache = {}
+        # Auto-invalidate on append WHERE THE STORE OFFERS THE HOOK (EventStore / WorldStore). A
+        # minimal store double (a static replay stub) offers no `on_append`; there the cache is only
+        # ever built over a fixed record, so no invalidation is owed — the memoisation stays correct.
+        if hasattr(store, "on_append"):
+            store.on_append(lambda e: self.kill_cache())
+
+    def kill_cache(self):
+        """Drop every cached mapping table. The record is untouched; the next read re-folds it."""
+        self._map_cache = {}
+
+    def _fold_all(self, as_of=None):
+        """THE WHOLE MAPPING TABLE (all holders) — fold of MEM-GRANT / MEM-PROTECT / MEM-EVICT
+        DECISIONS, memoised (R12). R1 (EP-MAINT-OUTSIDE-4): a row a LATE law OVERTURNED is skipped —
+        the store's live-rows predicate applied here, so a mapping an overturn undid is not held. R9:
+        the table is folded WHOLE, never filtered mid-fold, so a re-grant of a region to holder B
+        supersedes holder A's entry for that region rather than being skipped past (a per-holder fold
+        left A's stale entry standing). Callers filter by holder AFTER the fold."""
+        if as_of not in self._map_cache:
+            # R1: the live-rows predicate's source, where the store offers it (EventStore / WorldStore).
+            # A minimal store double carries no overturn machinery — nothing is overturned there.
+            overturned = (self.store.overturned_seqs(as_of)
+                          if hasattr(self.store, "overturned_seqs") else set())
+            m = {}
+            for e in self._records.all(as_of):
+                if e["seq"] in overturned:
+                    continue                                 # R1: an overturned decision is not live
+                a, p = e["action"], (e.get("payload") or {})
+                if a == "MEM-GRANT":
+                    m[p["region"]] = {"holder": p.get("holder"), "size": p.get("size"),
+                                      "prot": p.get("prot")}
+                elif a == "MEM-PROTECT" and p.get("region") in m:
+                    m[p["region"]]["prot"] = p["prot"]
+                elif a == "MEM-EVICT":
+                    m.pop(p.get("region"), None)
+            self._map_cache[as_of] = m
+        return self._map_cache[as_of]
 
     def mappings(self, holder=None, as_of=None):
         """The mapping table / VMAs = fold of MEM-GRANT / MEM-PROTECT / MEM-EVICT DECISIONS. A
-        re-grant OVERWRITES its region; an eviction removes it. Pure function of recorded data."""
-        m = {}
-        for e in self._records.all(as_of):
-            a, p = e["action"], (e.get("payload") or {})
-            if a == "MEM-GRANT" and (holder is None or p.get("holder") == holder):
-                m[p["region"]] = {"holder": p.get("holder"), "size": p.get("size"), "prot": p.get("prot")}
-            elif a == "MEM-PROTECT" and p.get("region") in m:
-                m[p["region"]]["prot"] = p["prot"]
-            elif a == "MEM-EVICT":
-                m.pop(p.get("region"), None)
-        return m
+        re-grant OVERWRITES its region (R9 — even to another holder); an eviction removes it; a late
+        law's overturn undoes it (R1). Pure function of recorded data. `holder` filters the WHOLE
+        fold, so no other holder's re-grant is hidden by a per-holder fold."""
+        m = self._fold_all(as_of)
+        if holder is None:
+            return dict(m)
+        return {r: v for r, v in m.items() if v["holder"] == holder}
 
     def resident_size(self, holder, as_of=None):
         """The holder's resident total = sum of its mapped regions' sizes. NOT stored — re-derived
@@ -159,12 +199,13 @@ class MemoryView:
         """THE HOT PATH (design/22 §3) — THE A3 FRAME. A minor fault resolves against the derived
         mapping cache and RECORDS NOTHING: it applies an already-recorded grant. Pure S — a
         deterministic function of (recorded mapping decisions) + (the fault address); no append, no
-        model call, no judgment. This is the code whose records-per-fault the MAX/guest dispatch
-        measures under a real fault storm; its structural shape is records-per-fault = |decisions| /
-        |faults|, which FALLS toward the governance floor as the fault rate rises with decisions
-        fixed. A fault on no granted region is a governed refusal (SIGSEGV) — the only branch that
-        would touch the log — and is NOT this cache-fill path."""
-        return region in self.mappings(as_of=as_of)
+        model call, no judgment. R12: the fold is MEMOISED (invalidated on append), so a fault storm
+        with decisions fixed serves O(1) hits rather than re-folding the table per fault — its
+        structural shape is records-per-fault = |decisions| / |faults|, which FALLS toward the
+        governance floor as the fault rate rises with decisions fixed. A fault on no granted region
+        is a governed refusal (SIGSEGV) — the only branch that would touch the log — and is NOT this
+        cache-fill path."""
+        return region in self._fold_all(as_of)
 
     def evictions(self, as_of=None):
         """The eviction DECISIONS, each carrying the evidence_summary it FROZE at the decision

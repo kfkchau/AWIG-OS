@@ -1,0 +1,35 @@
+{
+  "name": "fixture-replay-diverges",
+  "kind": "governed",
+  "description": "Deliberately wrong on the REPLAY leg ONLY. It records and it replays, and the replay is missing one entry — the shape of a tree that is served from somewhere other than the record. It is a SELF-TEST fixture, not a gov-os custody surface: its replay folds the tree each record carried rather than re-deriving a filesystem. The first real record and replay adapters land with the mount at EP-25.",
+  "capabilities": [],
+  "coalescing_policies": [
+    "FIXTURE-COALESCE-1"
+  ],
+  "transport": {
+    "type": "local",
+    "scratch": "/tmp/govos-conformance/fixture-replay-diverges/scratch",
+    "python": "python3 <HOME>/Documents/Claude/apps/gov-os/tools/conformance/fixtures/fixture_shim.py <HOME>/Documents/Claude/apps/gov-os/tools/conformance/fixtures/config-replay-diverges.json"
+  },
+  "record": {
+    "jsonl": "/tmp/govos-conformance/fixture-replay-diverges/record.jsonl"
+  },
+  "class_map": {
+    "python": "tools.conformance.fixtures.fixture_shim:CLASS_MAP"
+  },
+  "covers_map": {
+    "python": "tools.conformance.fixtures.fixture_shim:COVERS_MAP",
+    "note": "design/10 §11.4a, declared by the target: what each record kind is ABOUT. The class-named kinds declare \"*\" — they are appended by the wrapper around the subject call itself, so the act they cover is the act under test and is named in their own payload. The deferred kinds name their act, because their whole point is to land in a later step than the one that caused them."
+  },
+  "replay": {
+    "python": "tools.conformance.fixtures.fixture_shim:replay_from_record",
+    "config": {
+      "mode": "replay-diverges",
+      "record": "/tmp/govos-conformance/fixture-replay-diverges/record.jsonl"
+    }
+  },
+  "subject": {
+    "path": "/tmp/govos-conformance/fixture-replay-diverges",
+    "fstype": "directory"
+  }
+}

@@ -1,0 +1,65 @@
+# module	reason	private dependency (EP-RELEASE-TESTS skip census)
+ep24b_differential.py	reads a private estate file outside the shipped src/tests/tools	design/28-TARGET-STATE-HOST-KERNEL.md
+test_checkvocab.py	reads a private estate file outside the shipped src/tests/tools	design/28-TARGET-STATE-HOST-KERNEL.md
+test_ep14.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep16.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep24.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep24d.py	reaches the conformance fixtures by an absolute estate path	tools/conformance/fixtures (absolute estate path)
+test_ep25.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_ep28.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_ep28_w8.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28c_w4b.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28c_w4d.py	asserts an estate-host property (the runner kernel differs from the pinned guest)	the pinned guest kernel
+test_ep28c_w7.py	asserts an estate-host property (the store's barrier amortisation across a batch — a timing relation of this host's storage; a virtual disk never amortises)	this host's storage timing
+test_ep28c_w4e.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28c_w4e_c.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28c_w4e_c2.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28c_w8.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28e_w2.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_ep28e_w5.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_ep28f.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28h.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28i.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep28j.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28k.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep28m.py	reaches the conformance fixtures by an absolute estate path	tools/conformance/fixtures (absolute estate path)
+test_ep28m_census.py	reaches the conformance fixtures by an absolute estate path	tools/conformance/fixtures (absolute estate path)
+test_ep28n.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep28n2.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28p.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28r.py	reads a private estate file outside the shipped src/tests/tools	planning/vm/govosfs/govosfs.c
+test_ep28z.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep28zd.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep29.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30_c1.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30_c2.py	reads a private estate file outside the shipped src/tests/tools	DOC-MAP_v3.md
+test_ep30_c3.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30_c4.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30_c4w.py	reads a private estate file outside the shipped src/tests/tools	design/28-TARGET-STATE-HOST-KERNEL.md
+test_ep30_c6.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep30_k1.py	reads a private estate file outside the shipped src/tests/tools	design/36-CAMPAIGN-3-DEPTH.md
+test_ep30_k2.py	reads a private estate file outside the shipped src/tests/tools	design/28-TARGET-STATE-HOST-KERNEL.md
+test_ep31.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep32.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep33a.py	reads a private estate file outside the shipped src/tests/tools	CLAUDE.md
+test_ep35.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep36.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep37.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_ep39.py	reads the estate git history (the public tree carries no .git)	the estate .git history
+test_founding_is_logged.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep48.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep48g.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep49a.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep49b.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep49c.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep49d.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep50.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_ep52.py	reads a private estate file outside the shipped src/tests/tools	planning/build/BUILD-PROGRESS_v3.md
+test_instr_boundary_sweep.py	reads a private estate file outside the shipped src/tests/tools	planning/evidence/EP-INSTRUMENTS-1/
+test_instr_effect_order.py	reads a private estate file outside the shipped src/tests/tools	planning/evidence/EP-INSTRUMENTS-1/
+test_instr_refusal_census.py	reads a private estate file outside the shipped src/tests/tools	planning/evidence/EP-INSTRUMENTS-1/
+test_instr_public_claims.py	reads a private estate file outside the shipped src/tests/tools	../awig-os and awig-deploy pages
+test_maint_outside_2.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_maint_outside_3.py	needs the fusepy adapter, a third-party package outside the shipped stdlib core	fusepy (third-party adapter, not shipped)
+test_keymat.py	pins the estate source's exact bytes (a byte-freeze guard); the shipped rendering carries a header and public wording	the estate vault source bytes (the byte-freeze pin)

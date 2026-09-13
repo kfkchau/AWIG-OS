@@ -1052,6 +1052,27 @@ class EventStore:
             record["prev_hash"] = canonical_hash(self.events[-1])
             record["invoker_sig"] = SIG_PENDING
             record["store_sig"] = SIG_PENDING
+        # THE SYSTEM COUNTERSIGNATURE, REACHING THE RECORD (EP-47C; design/51 N10; design/37 Q2). Once a
+        # system signing key is BOUND (the boot ceremony's KEY-LAW-BIND, compose.seal_system_signer),
+        # every record this store appends carries a REAL countersignature over its recording fact — or
+        # the append is REFUSED. The hook is compose's `append_countersign`, attached at full compose and
+        # reading the boot-seeded signer live. CONDITIONAL exactly like record_stream / prev_hash above: a
+        # bare kernel (no compose) and every UNBOUND world return None and set NO key, so a record that is
+        # not in the real era serialises BYTE-FOR-BYTE as it did before this field existed and the whole
+        # prior ledger is untouched (A3). WHEN BOUND the mark is REAL where the vetted library is present
+        # (A1) and the append is REFUSED — CeremonyNotRun (bound, ceremony not run this boot) or
+        # crypto.LibraryAbsent (bound, library absent) — raised HERE, BEFORE the write, so no partial
+        # record lands and NEVER a modelled mark once bound (the after-bind no-fallback, theorem 3 / N10;
+        # A2). The refusal is carried to THIS submitter alone (_publish_one's per-sub error catch), never
+        # poisoning the store or wedging a neighbour, so an unbound / bound-present append still lands
+        # (A5 too-wedged). Gating on system_key_bound — which flips at the bind row's COMMIT, so it is
+        # False during the bind row's own append — keeps the ceremony's ceremony/bind rows on the
+        # byte-identical path and begins the REAL mark at the first governed append after the ceremony.
+        _countersign = getattr(self, "_append_countersign", None)
+        if _countersign is not None:
+            _mark = _countersign(record)          # None (unbound) · real mark (bound+present) · RAISES (bound+absent/un-ceremonied)
+            if _mark is not None:
+                record["countersign"] = _mark
         # The append IS the commit: write the line and force it to the disk (H2) so a crash
         # cannot lose the tail; record_time/seq are already fixed, so a crash mid-write leaves
         # either a full line or none (a partial line has no closing newline and is dropped on
@@ -1262,6 +1283,37 @@ class EventStore:
 
     def by_seq(self, seq):
         return self.events[seq - 1] if 1 <= seq <= len(self.events) else None
+
+    # ---- THE LIVE-ROWS PREDICATE (EP-MAINT-OUTSIDE-4 R1) --------------------------------------
+    # A row a LATE law overturned is NOT live. ONE mechanism, HERE in the store, read through by
+    # EVERY fold that derives authority or resources (authority.grants, memory.mappings) — never a
+    # per-fold standing patch and never a new rule. With an overturned grant made ABSENT by `live`,
+    # the act's EXISTING authority/prerequisite check refuses on the absence (ROOT-NEG-3/-1). The
+    # overturn fold itself is `reconcile.overturned_targets`, REUSED (a row overturned is a fact on
+    # the record, folded once); it is imported LAZILY because the store is a LOWER layer than
+    # reconcile (the module graph store<-reconcile<-gate<-store forbids a load-time import — the
+    # same deferred-import discipline gate.py already uses).
+    def overturned_seqs(self, as_of_seq=None):
+        """The set of record seqs a late law has overturned — the standing predicate's source. Read
+        through the INDEXED `by_action("OVERTURN")` SUBSET, never `all()`: the folds that apply this
+        run on the per-act path, which must not read the whole record (EP-24C T-PER-ACT-PATH-READS-
+        SUBSETS). Overturn rows are appended `action=="OVERTURN", kind==overturn` (reconcile.py), so
+        the subset is exactly them; `overturned_targets` remains the whole-record fold for the sweep,
+        which is not on the per-act path. The kind constant is read lazily to stay drift-free."""
+        from . import reconcile as _reconcile   # lazy: a constant read; store is below reconcile
+        out = set()
+        for e in self.by_action("OVERTURN", as_of_seq):
+            p = e.get("payload") or {}
+            if p.get("kind") == _reconcile.OVERTURN_KIND and isinstance(p.get("target_seq"), int):
+                out.add(p["target_seq"])
+        return out
+
+    def live(self, as_of_seq=None):
+        """Every record NOT overturned by a late law — the rows a resource/authority fold may stand on.
+        A fold reading through this can carry NO overturned act into its answer, so standing is applied
+        by the store and not re-derived per fold (R1's one mechanism)."""
+        overturned = self.overturned_seqs(as_of_seq)
+        return [e for e in self.all(as_of_seq) if e["seq"] not in overturned]
 
     def find(self, pred, as_of_seq=None):
         return [e for e in self.all(as_of_seq) if pred(e)]

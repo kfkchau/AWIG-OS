@@ -108,8 +108,14 @@ def main(argv=None):
     # one inode are one inode because the record says so — not because the kernel happened to
     # collapse them. Zero attribute/entry timeouts keep the kernel from serving a cached
     # answer the record has since moved past, which would be a view answering out of date.
+    # `direct_io` (B2) keeps the kernel from caching a written byte and serving it back to a
+    # reader on its OWN authority: a write whose covering decision the gate refuses leaves the
+    # burst un-committed (POSIX un-fsynced semantics), and the mount must not let the page
+    # cache serve that un-durable byte to a fresh reader — the adapter's read path decides
+    # what a reader sees, so it must be the one thing the kernel asks. (The mmap consequence
+    # of direct_io is measured by I3's native-control row, not assumed here.)
     FUSE(fs, mnt, foreground=True, nothreads=True, default_permissions=True, use_ino=True,
-         attr_timeout=0, entry_timeout=0, negative_timeout=0)
+         direct_io=True, attr_timeout=0, entry_timeout=0, negative_timeout=0)
     return 0
 
 

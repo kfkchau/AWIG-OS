@@ -1,0 +1,343 @@
+{
+ "group": "09-time-signals",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a79",
+ "title": "Time & signals",
+ "subsystem_derivation": "03 \u00a74.1 (scheduling) + the clock-as-sensor ruling (00-READ-FIRST \u00a74, 03 \u00a72 INPUT class). Timer ticks and expiries are INPUTS; a schedule is a recorded rule and its firing a recorded activity. Signal disposition is per-process policy; signal delivery is a comms decision.",
+ "active": false,
+ "activates_at": "EP-32",
+ "rows": [
+  {
+   "row_id": "time.clock_gettime",
+   "syscall": "clock_gettime",
+   "variants": [
+    "gettimeofday",
+    "time",
+    "clock_getres"
+   ],
+   "what_it_does": "Read a clock / its resolution.",
+   "subsystems": [
+    "time"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "CACHE-only read (sensor read). Reading the clock is reading a sensor value \u2014 no record (the clock-as-sensor ruling). Timer ticks enter the record as INPUTS; reading the time does not. CLOCK_MONOTONIC/REALTIME/BOOTTIME, vDSO fast-path semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "time.clock_settime",
+   "syscall": "clock_settime",
+   "variants": [
+    "settimeofday",
+    "adjtimex",
+    "clock_adjtime"
+   ],
+   "what_it_does": "Set / discipline the system clock.",
+   "subsystems": [
+    "time"
+   ],
+   "recording_class": [
+    "LAW",
+    "DECISION"
+   ],
+   "conformance_note": "LAW/DECISION. Changing the authoritative time base is a governed, recorded decision citing authority (the time base is significant to ordering). EPERM on unprivileged, EINVAL on bad value identical.",
+   "status": "DISPUTED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a79's clock_settime row heads 'LAW/DECISION' and its note then says only 'a governed, recorded decision citing authority', so which class the record carries is not settled. Both are encoded and the choice is raised."
+  },
+  {
+   "row_id": "time.nanosleep",
+   "syscall": "nanosleep",
+   "variants": [
+    "clock_nanosleep"
+   ],
+   "what_it_does": "Sleep for a duration / until an absolute time.",
+   "subsystems": [
+    "scheduling",
+    "time"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "block/wake DECISION + INPUT (timer expiry). The sleep is a recorded scheduling decision ('wake at T', a scheduled rule); the timer expiry is a recorded input that wakes it. TIMER_ABSTIME, remaining-time on EINTR semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "time.timer_create",
+   "syscall": "timer_create",
+   "variants": [
+    "timer_settime",
+    "timer_gettime",
+    "timer_delete",
+    "timer_getoverrun"
+   ],
+   "what_it_does": "POSIX per-process interval timers.",
+   "subsystems": [
+    "time",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT",
+    "CACHE"
+   ],
+   "conformance_note": "create/settime = DECISION (scheduled rule); expiry = INPUT; gettime/overrun = CACHE read. Arming a timer records a scheduled rule ('fire at/every T'); expiry arrives as a recorded input delivered as a signal or via sigevent. Overrun counting semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "time.setitimer",
+   "syscall": "setitimer",
+   "variants": [
+    "getitimer"
+   ],
+   "what_it_does": "Legacy interval timers (REAL/VIRTUAL/PROF).",
+   "subsystems": [
+    "time",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION",
+    "CACHE",
+    "INPUT"
+   ],
+   "conformance_note": "set = DECISION (scheduled rule); get = CACHE read; expiry = INPUT. As POSIX timers. Delivered signals (SIGALRM/VTALRM/PROF) semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "time.alarm",
+   "syscall": "alarm",
+   "variants": [],
+   "what_it_does": "Schedule a one-shot SIGALRM.",
+   "subsystems": [
+    "time",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "DECISION (scheduled rule) + INPUT (expiry). Records the scheduled rule; returns seconds remaining on the previous alarm identically.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "time.timerfd",
+   "syscall": "timerfd_create",
+   "variants": [
+    "timerfd_settime",
+    "timerfd_gettime"
+   ],
+   "what_it_does": "Timers delivered via a readable fd.",
+   "subsystems": [
+    "time",
+    "scheduling",
+    "devices"
+   ],
+   "recording_class": [
+    "CACHE",
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "create = CACHE (delivery fd); settime = DECISION (scheduled rule); expiry = INPUT. Arming records the scheduled rule; expiries arrive as recorded inputs readable as an 8-byte count. TFD_TIMER_ABSTIME, CLOCK_* semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigaction",
+   "syscall": "rt_sigaction",
+   "variants": [
+    "sigaction"
+   ],
+   "what_it_does": "Install a signal handler / disposition.",
+   "subsystems": [
+    "process",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (amends signal-disposition policy). The per-process rule for handling signal N is amended \u2014 recorded. SA_RESTART/SA_SIGINFO/SA_NODEFER, siginfo semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigprocmask",
+   "syscall": "rt_sigprocmask",
+   "variants": [
+    "sigprocmask"
+   ],
+   "what_it_does": "Block / unblock signals (change the mask).",
+   "subsystems": [
+    "process",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (disposition change) \u2014 coalescible. Changes which signals are deliverable \u2014 a recorded disposition change. Note: trivial save/restore mask toggles (common in libc) may be coalesced under the recorded coalescing policy, parallel to write-coalescing (03 \u00a74.3); never a silent loss. SIG_BLOCK/UNBLOCK/SETMASK semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "coalescible": true
+   }
+  },
+  {
+   "row_id": "sig.sigpending",
+   "syscall": "rt_sigpending",
+   "variants": [
+    "sigpending"
+   ],
+   "what_it_does": "Query pending (blocked) signals.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigsuspend",
+   "syscall": "rt_sigsuspend",
+   "variants": [
+    "sigsuspend"
+   ],
+   "what_it_does": "Atomically set a mask and wait for a signal.",
+   "subsystems": [
+    "scheduling",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "block/wake DECISION + INPUT (signal arrival). The wait is a scheduling decision; signal delivery is a recorded comms input. Always returns -EINTR after the handler \u2014 identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigtimedwait",
+   "syscall": "rt_sigtimedwait",
+   "variants": [
+    "sigtimedwait",
+    "sigwaitinfo"
+   ],
+   "what_it_does": "Synchronously wait for a signal.",
+   "subsystems": [
+    "scheduling",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "block/wake DECISION + INPUT. As above with a timeout; siginfo return semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.pause",
+   "syscall": "pause",
+   "variants": [],
+   "what_it_does": "Sleep until any signal is delivered.",
+   "subsystems": [
+    "scheduling",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "block/wake DECISION + INPUT. Wait is a scheduling decision; delivery an input. Always -EINTR \u2014 identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigaltstack",
+   "syscall": "sigaltstack",
+   "variants": [],
+   "what_it_does": "Set an alternate signal-handler stack.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Per-process attribute; derived state. SS_DISABLE/SS_ONSTACK, ENOMEM on too-small identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.sigreturn",
+   "syscall": "rt_sigreturn",
+   "variants": [],
+   "what_it_does": "Return from a signal handler (context restore).",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "CACHE-only (mechanism). Internal trampoline \u2014 restores saved context; not a governance event, no record. Never called directly by application code.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sig.restart_syscall",
+   "syscall": "restart_syscall",
+   "variants": [],
+   "what_it_does": "Kernel-internal restart of an interrupted call.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "CACHE-only (mechanism). Internal; no record. Transparent to userland.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the time/signals group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

@@ -1,0 +1,340 @@
+{
+ "placeholder_map": {
+  "claude_projects_path": "<PROJECTS>",
+  "guest_user": "<GUEST>",
+  "home_laptop_path": "<HOME>",
+  "key_path": "<KEYPATH>",
+  "loopback_port": "<LOOPBACK-PORT>",
+  "private_email": "<EMAIL>",
+  "repository_url": "<REPO-URL>",
+  "ssh_invocation": "<SSH-INVOCATION>"
+ },
+ "skip_list": [
+  {
+   "module": "ep24b_differential.py",
+   "private_file": "design/28-TARGET-STATE-HOST-KERNEL.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_checkvocab.py",
+   "private_file": "design/28-TARGET-STATE-HOST-KERNEL.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep14.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep16.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep24.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep24d.py",
+   "private_file": "tools/conformance/fixtures (absolute estate path)",
+   "reason": "reaches the conformance fixtures by an absolute estate path"
+  },
+  {
+   "module": "test_ep25.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_ep28.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_ep28_w8.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28c_w4b.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28c_w4d.py",
+   "private_file": "the pinned guest kernel",
+   "reason": "asserts an estate-host property (the runner kernel differs from the pinned guest)"
+  },
+  {
+   "module": "test_ep28c_w7.py",
+   "private_file": "this host's storage timing",
+   "reason": "asserts an estate-host property (the store's barrier amortisation across a batch \u2014 a timing relation of this host's storage; a virtual disk never amortises)"
+  },
+  {
+   "module": "test_ep28c_w4e.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28c_w4e_c.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28c_w4e_c2.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28c_w8.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28e_w2.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_ep28e_w5.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_ep28f.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28h.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28i.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28j.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28k.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28m.py",
+   "private_file": "tools/conformance/fixtures (absolute estate path)",
+   "reason": "reaches the conformance fixtures by an absolute estate path"
+  },
+  {
+   "module": "test_ep28m_census.py",
+   "private_file": "tools/conformance/fixtures (absolute estate path)",
+   "reason": "reaches the conformance fixtures by an absolute estate path"
+  },
+  {
+   "module": "test_ep28n.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28n2.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28p.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28r.py",
+   "private_file": "planning/vm/govosfs/govosfs.c",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep28z.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep28zd.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep29.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30_c1.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30_c2.py",
+   "private_file": "DOC-MAP_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep30_c3.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30_c4.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30_c4w.py",
+   "private_file": "design/28-TARGET-STATE-HOST-KERNEL.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep30_c6.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep30_k1.py",
+   "private_file": "design/36-CAMPAIGN-3-DEPTH.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep30_k2.py",
+   "private_file": "design/28-TARGET-STATE-HOST-KERNEL.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep31.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep32.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep33a.py",
+   "private_file": "CLAUDE.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep35.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep36.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep37.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_ep39.py",
+   "private_file": "the estate .git history",
+   "reason": "reads the estate git history (the public tree carries no .git)"
+  },
+  {
+   "module": "test_founding_is_logged.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep48.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep48g.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep49a.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep49b.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep49c.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep49d.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep50.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_ep52.py",
+   "private_file": "planning/build/BUILD-PROGRESS_v3.md",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_instr_boundary_sweep.py",
+   "private_file": "planning/evidence/EP-INSTRUMENTS-1/",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_instr_effect_order.py",
+   "private_file": "planning/evidence/EP-INSTRUMENTS-1/",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_instr_refusal_census.py",
+   "private_file": "planning/evidence/EP-INSTRUMENTS-1/",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_instr_public_claims.py",
+   "private_file": "../awig-os and awig-deploy pages",
+   "reason": "reads a private estate file outside the shipped src/tests/tools"
+  },
+  {
+   "module": "test_maint_outside_2.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_maint_outside_3.py",
+   "private_file": "fusepy (third-party adapter, not shipped)",
+   "reason": "needs the fusepy adapter, a third-party package outside the shipped stdlib core"
+  },
+  {
+   "module": "test_keymat.py",
+   "private_file": "the estate vault source bytes (the byte-freeze pin)",
+   "reason": "pins the estate source's exact bytes (a byte-freeze guard); the shipped rendering carries a header and public wording"
+  }
+ ],
+ "tree_checksums": {
+  "src": "7965777e09a59ba940d258721311bcb1f3497725dfb8e3cf5d1dd61951faf126",
+  "tests": "74a24b961bfa9831e0d0f164ec34830f20875af40b1c0afd2fb62593ea01f032",
+  "tools": "445a2cf1cebeecc537d49fe5806edf37d31c6de33285af5d536086db7f33c9c4"
+ },
+ "unit": "EP-RELEASE-TESTS"
+}

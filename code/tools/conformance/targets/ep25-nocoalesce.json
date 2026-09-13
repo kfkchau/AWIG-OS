@@ -1,0 +1,39 @@
+{
+  "name": "ep25-nocoalesce",
+  "kind": "governed",
+  "description": "The SAME M2 mount in a world where the write-coalescing policy has been superseded to nothing, so every write appends its own covering decision (the fail-closed direction T-COALESCE-CITED proves). It exists to measure what the recorded granularity policy costs the conformance rows, which is the evidence the owner's calibration needs. Its subject is established before any row runs, and its scratch lives inside the mountpoint: design/10 §11.2b. Raise the mount first: PYTHONPATH=src python3 -m bridge.mount /tmp/govos-m2b/rec.jsonl /tmp/govos-m2b/blobs /tmp/govos-m2b/mnt",
+  "capabilities": [],
+  "coalescing_policies": [
+    "FS-WRITE-COALESCING",
+    "FS-READ-AGGREGATION"
+  ],
+  "subject": {
+    "path": "/tmp/govos-m2b/mnt",
+    "fstype": "fuse"
+  },
+  "transport": {
+    "type": "local",
+    "scratch": "/tmp/govos-m2b/mnt/conformance-scratch",
+    "python": "python3"
+  },
+  "record": {
+    "jsonl": "/tmp/govos-m2b/rec.jsonl"
+  },
+  "class_map": {
+    "python": "bridge.custody:CUSTODY_CLASS_MAP"
+  },
+  "covers_map": {
+    "json": "ep25-custody-covers.json",
+    "note": "The record vocabulary's covered acts (design/10 §11.4a), shared by both M2 worlds because both run the same mount. Each entry is DERIVED from which handler in the mount appends the record and from which syscalls the kernel routes to that handler; the entries for FILE-WRITE and FILE-READ-AGGREGATE include fallocate/copy_file_range/sendfile/splice because a filesystem with no allocation or copy operation of its own sees those calls arrive as reads and writes at the port, which the no-coalescing world confirms by landing each record inside the step that caused it. An empty list says the kind is about no act a caller made; \"*\" says the kind names its own act in its payload, which is the shape of a gate refusal."
+  },
+  "replay": {
+    "command": [
+      "python3",
+      "-m",
+      "bridge.replay_snapshot",
+      "/tmp/govos-m2b/rec.jsonl",
+      "/tmp/govos-m2b/blobs",
+      "{row_id}"
+    ]
+  }
+}

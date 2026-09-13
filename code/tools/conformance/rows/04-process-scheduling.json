@@ -1,0 +1,692 @@
+{
+ "group": "04-process-scheduling",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a74",
+ "title": "Process, scheduling & lifecycle",
+ "subsystem_derivation": "03 \u00a74.1 (scheduling \u2014 governing attention). LAW = scheduling policy records; DECISIONS = admit/block/wake/halt/kill; INPUTS = timer ticks and wake-causing events; CACHE = the runnable set; STREAM = per-tick dispatch aggregates. Process creation also touches memory (03 \u00a74.2) via the new address space.",
+ "active": false,
+ "activates_at": "EP-32",
+ "activation_note": "design/36 \u00a76 gives scheduling to EP-32 (M7, last and strictest) and memory to EP-31; the process-lifecycle rows touch both and no milestone owns 'process' alone. They are pinned to the LAST of the two, EP-32, so no row activates before every subsystem it touches has taken custody \u2014 and the missing home is raised.",
+ "rows": [
+  {
+   "row_id": "sched.fork",
+   "syscall": "fork",
+   "variants": [
+    "clone_legacy"
+   ],
+   "what_it_does": "Create a child process (COW copy of the caller).",
+   "subsystems": [
+    "scheduling",
+    "memory",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Admit-a-process decision: recorded, cites the budget/permission rule that admitted it. Returns child PID to parent, 0 to child \u2014 identical. EAGAIN/ENOMEM must match on budget/RLIMIT exhaustion (the budget is LAW).",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.vfork",
+   "syscall": "vfork",
+   "variants": [],
+   "what_it_does": "Fork sharing the address space until execve/exit.",
+   "subsystems": [
+    "scheduling",
+    "memory",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Same admit decision plus a recorded shared-space grant (the parent's suspension is a scheduling decision). ABI: parent blocks until child execs/exits \u2014 identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.clone",
+   "syscall": "clone",
+   "variants": [
+    "clone3"
+   ],
+   "what_it_does": "Create a process/thread with explicit sharing flags.",
+   "subsystems": [
+    "scheduling",
+    "memory",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Admit decision records the CLONE_* sharing set (VM/FILES/SIGHAND) as the grant's terms. Threads = a share-everything grant. TID/CLONE_SETTLS semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.execve",
+   "syscall": "execve",
+   "variants": [
+    "execveat"
+   ],
+   "what_it_does": "Replace the process image from a file.",
+   "subsystems": [
+    "process",
+    "memory",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "A governed re-image: permission check on the binary (files subsystem open), new memory grants recorded, old mappings revoked. ENOEXEC/EACCES/ETXTBSY must match. The exec point is a natural decision boundary.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.exit",
+   "syscall": "exit",
+   "variants": [
+    "exit_group"
+   ],
+   "what_it_does": "Terminate the calling thread / whole process.",
+   "subsystems": [
+    "scheduling",
+    "memory",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Halt decision: the actor leaves the runnable set; its grants (memory, fds, locks) are released as recorded revocations. Exit status becomes readable derived state (see wait4).",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.wait",
+   "syscall": "wait4",
+   "variants": [
+    "waitpid",
+    "waitid"
+   ],
+   "what_it_does": "Wait for and reap a child's state change.",
+   "subsystems": [
+    "scheduling",
+    "process"
+   ],
+   "recording_class": [
+    "CACHE",
+    "DECISION"
+   ],
+   "conformance_note": "CACHE-only read (+ block/wake DECISION; reap = release DECISION). Blocking is a recorded scheduling decision; the child's exit was already a recorded DECISION; this call reads that derived status (CACHE). The zombie reap is a recorded release. WNOHANG, ECHILD, status-macro encoding identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.kill",
+   "syscall": "kill",
+   "variants": [
+    "tkill",
+    "tgkill"
+   ],
+   "what_it_does": "Send a signal to a process/thread.",
+   "subsystems": [
+    "comms",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Governed delivery: permission checked (may this actor signal that target?), recorded, rule-cited. EPERM/ESRCH must match. Signal number semantics unchanged.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.pidfd_send_signal",
+   "syscall": "pidfd_send_signal",
+   "variants": [],
+   "what_it_does": "Send a signal via a pidfd (race-free target).",
+   "subsystems": [
+    "comms",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "As kill; the pidfd removes PID-reuse races \u2014 recorded delivery cites the same permission rule.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.pidfd_open",
+   "syscall": "pidfd_open",
+   "variants": [],
+   "what_it_does": "Open a stable handle to a process.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Creates a derived reference to an existing admitted process; no new grant. ESRCH on dead PID identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.setscheduler",
+   "syscall": "sched_setscheduler",
+   "variants": [
+    "sched_setparam"
+   ],
+   "what_it_does": "Set a task's scheduling policy/priority.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "The clearest LAW case: policy is a rule-of-rules. Recorded as a policy amendment with authority. EINVAL/EPERM on invalid class or unprivileged raise identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.getscheduler",
+   "syscall": "sched_getscheduler",
+   "variants": [
+    "sched_getparam"
+   ],
+   "what_it_does": "Read a task's policy/priority.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Reads current LAW-derived state; no record. Returned values identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.setaffinity",
+   "syscall": "sched_setaffinity",
+   "variants": [],
+   "what_it_does": "Pin a task to a CPU set.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Affinity is placement policy \u2014 recorded amendment. EINVAL on empty mask identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.getaffinity",
+   "syscall": "sched_getaffinity",
+   "variants": [],
+   "what_it_does": "Read a task's CPU mask.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Pure query.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.yield",
+   "syscall": "sched_yield",
+   "variants": [],
+   "what_it_does": "Yield the CPU to the run-queue.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "STREAM"
+   ],
+   "conformance_note": "Canonical STREAM call: applies already-recorded policy, produces a per-tick dispatch, changes no law. Sampled in aggregate, never individually recorded. Always returns 0 \u2014 identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.nice",
+   "syscall": "nice",
+   "variants": [
+    "setpriority"
+   ],
+   "what_it_does": "Adjust the nice value of a process/group/user.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Nice is priority policy \u2014 recorded amendment. getpriority counterpart is CACHE-only. EACCES/EPERM on raising priority identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.getpriority",
+   "syscall": "getpriority",
+   "variants": [],
+   "what_it_does": "Read the nice value.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query only.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.getcpu",
+   "syscall": "sched_getcpu",
+   "variants": [],
+   "what_it_does": "Which CPU is the caller on.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Reads derived placement.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "sched.rr_get_interval",
+   "syscall": "sched_rr_get_interval",
+   "variants": [],
+   "what_it_does": "Read the RR timeslice for a policy.",
+   "subsystems": [
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Reads LAW-derived value.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.getpid",
+   "syscall": "getpid",
+   "variants": [
+    "getppid",
+    "gettid"
+   ],
+   "what_it_does": "Return caller / parent / thread identifiers.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Pure derived-state read. Values identical; PID namespace semantics preserved.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.getpgid",
+   "syscall": "getpgid",
+   "variants": [
+    "getsid"
+   ],
+   "what_it_does": "Read process-group / session id.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.setpgid",
+   "syscall": "setpgid",
+   "variants": [
+    "setsid"
+   ],
+   "what_it_does": "Restructure process-group / session hierarchy.",
+   "subsystems": [
+    "process",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Changes law-derived process structure \u2014 recorded. EPERM/EACCES on cross-session moves identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.getuid",
+   "syscall": "getuid",
+   "variants": [
+    "geteuid",
+    "getgid",
+    "getegid",
+    "getgroups"
+   ],
+   "what_it_does": "Read the caller's credentials.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.setuid",
+   "syscall": "setuid",
+   "variants": [
+    "setgid",
+    "setresuid",
+    "setgroups"
+   ],
+   "what_it_does": "Change the caller's credentials.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (amends permission LAW). Credential change alters the actor's authority \u2014 recorded, cites the rule authorising the transition. EPERM on unprivileged raise identical; saved-set-id semantics preserved exactly.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.capget",
+   "syscall": "capget",
+   "variants": [],
+   "what_it_does": "Read a process's capability set.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query over capability LAW.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.capset",
+   "syscall": "capset",
+   "variants": [],
+   "what_it_does": "Set a process's capability set.",
+   "subsystems": [
+    "devices",
+    "process"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Capability is law (03 \u00a74.4 pattern: the R14 amendment shape). Recorded amendment with authority. EPERM identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.prctl.query",
+   "syscall": "prctl",
+   "variants": [],
+   "what_it_does": "Miscellaneous per-process control: the query sub-ops (PR_GET_*).",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Op-dependent: queries (PR_GET_*) = CACHE-only. [Sub-row of design/10 \u00a74's mixed prctl row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.prctl.no_new_privs",
+   "syscall": "prctl",
+   "variants": [],
+   "what_it_does": "Miscellaneous per-process control: PR_SET_NO_NEW_PRIVS.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "NO_NEW_PRIVS is a gate-restricting amendment (LAW). [Sub-row of design/10 \u00a74's mixed prctl row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.prctl.setters",
+   "syscall": "prctl",
+   "variants": [],
+   "what_it_does": "Miscellaneous per-process control: the remaining setters (PR_SET_DUMPABLE, PR_SET_NAME, ...).",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "DECISION",
+    "LAW"
+   ],
+   "conformance_note": "Setters that change disposition/name/policy (e.g. PR_SET_DUMPABLE) = DECISION/LAW recorded. Each sub-op classified by effect.",
+   "status": "DISPUTED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a74's prctl row writes 'DECISION/LAW recorded' for the setters as a group and settles only NO_NEW_PRIVS explicitly, so which of the two classes each remaining setter carries is not settled by the map. Both classes are encoded as written and the split is raised \u2014 reclassification is a governed amendment to design/10, never an edit here."
+  },
+  {
+   "row_id": "proc.seccomp",
+   "syscall": "seccomp",
+   "variants": [],
+   "what_it_does": "Install a syscall filter on the caller.",
+   "subsystems": [
+    "process",
+    "devices"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Installs law at the gate (03 L1): restricts which registered operations exist for this actor. Recorded amendment, cites authority. Filter semantics and SECCOMP_RET_* identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.bpf.attach",
+   "syscall": "bpf",
+   "variants": [],
+   "what_it_does": "Load / attach BPF programs.",
+   "subsystems": [
+    "devices",
+    "process"
+   ],
+   "recording_class": [
+    "LAW",
+    "DECISION"
+   ],
+   "conformance_note": "Attaching kernel-resident logic is a governed, authorized amendment (recorded). EPERM/EACCES identical. Heavily gated.",
+   "status": "DISPUTED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a74's bpf row heads with 'LAW / DECISION' and its note says attaching is 'a governed, authorized amendment (recorded)' without saying which of the two classes the attach record carries. Both are encoded and the choice is raised."
+  },
+  {
+   "row_id": "proc.bpf.map_lookup",
+   "syscall": "bpf",
+   "variants": [],
+   "what_it_does": "Query BPF maps.",
+   "subsystems": [
+    "devices",
+    "process"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Map lookups are CACHE reads. [Sub-row of design/10 \u00a74's bpf row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.ptrace",
+   "syscall": "ptrace",
+   "variants": [],
+   "what_it_does": "Observe and control another process.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "A governed grant of control over another actor \u2014 permission-gated, recorded, rule-cited. EPERM under Yama/ptrace_scope identical; stop/continue semantics preserved.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.getrlimit",
+   "syscall": "getrlimit",
+   "variants": [
+    "prlimit64_get"
+   ],
+   "what_it_does": "Read a resource limit.",
+   "subsystems": [
+    "memory",
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Reads a budget (LAW-derived); no record.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.setrlimit",
+   "syscall": "setrlimit",
+   "variants": [
+    "prlimit64_set"
+   ],
+   "what_it_does": "Set a resource limit.",
+   "subsystems": [
+    "memory",
+    "scheduling"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Limits are budgets \u2014 the budgets-flow-down rule (03 \u00a74.2). Recorded amendment with authority. EPERM on raising hard limit identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.personality",
+   "syscall": "personality",
+   "variants": [],
+   "what_it_does": "Set the process execution domain.",
+   "subsystems": [
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (amends per-process policy). Rarely used; recorded when it changes behaviour. ABI flags identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "proc.tid_bookkeeping",
+   "syscall": "set_tid_address",
+   "variants": [
+    "set_robust_list",
+    "get_robust_list"
+   ],
+   "what_it_does": "Register thread-exit / robust-futex bookkeeping.",
+   "subsystems": [
+    "process",
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Per-thread derived bookkeeping; reconstructible. No governance decision. Used by the futex machinery (see \u00a78).",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the process/scheduling group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

@@ -42,10 +42,16 @@ class CommsView:
         every opening into a `set()` of strings, so the derived state of every channel in the
         estate had no owner in it and two entities opening one name were one entry.
 
-        A CLOSE IS STILL NAME-KEYED, and that is stated rather than hidden: `COMMS-CLOSE` carries
-        only `channel`, so a close drops every live entry with that name — the retired semantics
-        preserved exactly. Under two entities holding one name it drops both. This pass does not
-        cure it; the closing op's own law would have to name whose channel it closes. RAISED."""
+        THE CLOSE IS NOW WHOSE-KEYED, AND THAT CAP IS CURED (EP-49C; the raise this fold carried
+        since EP-30-C1). A `COMMS-CLOSE` carries only `channel`, so whose channel it closes cannot
+        come from the payload — it comes from the closer, the record's own ACTOR, which is
+        unforgeable by construction. A close drops exactly `(actor, channel)` — the closer's own
+        opening — and leaves a second entity's same-named opening live. COMMS-CLOSE's own
+        `live_present` check (opdefs.py, EP-49C) refuses a close by an entity that holds no such
+        opening, so the entry this pop names is present whenever a close is recorded; a close by a
+        non-holder is refused, not silently dropping nothing. Two folds over one record cannot
+        disagree here because this is the SAME whose-keyed close `live_present` folds (comms.py and
+        opdefs read one record, one polarity of the close, one keying)."""
         live = {}
         # K12 FAMILY SOURCE (MAINT-K12-SUBSYSTEM-VIEWS; design/36 ADDENDUM S). Live channel
         # openings depend only on COMMS-OPEN / COMMS-CLOSE records, so read that family through
@@ -57,8 +63,7 @@ class CommsView:
             if a == "COMMS-OPEN":
                 live[(p.get("entity"), p["channel"])] = p.get("role")
             elif a == "COMMS-CLOSE":
-                for key in [k for k in live if k[1] == p["channel"]]:
-                    live.pop(key, None)
+                live.pop((e.get("actor"), p["channel"]), None)
         return live
 
     def declared_roles(self, as_of=None):

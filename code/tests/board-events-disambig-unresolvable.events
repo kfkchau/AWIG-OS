@@ -1,0 +1,25 @@
+# A STATIC COMMITTED FIXTURE (EP-28X W3). It is NEVER the live board of record.
+#
+# It exists so that ONE row can drive a FOLD-TIME refusal all the way out of `main()`.
+# Every other DISAMBIGUATED red world in `tests/test_board_tool.py` is exercised against a
+# line list built by value, which reaches `fold()` directly. This file reaches it through
+# the file path, so the refusal is proved to arrive at a CALLER as a named refusal with a
+# line number and the declared code — never as a traceback. The refusal is raised in
+# `fold()` rather than in the read, which is a path the read-time refusals do not cover.
+#
+# The DISAMBIGUATED below names `2026-03-02 CLOSED`. ITEM-A has no `CLOSED` event at all,
+# so the reference resolves to ZERO earlier events. That is not informational residue the
+# way an unpinned `CORRECTED` reference is: this verb's reference IS its whole content, so
+# the fold refuses the file WHOLE rather than letting a state claim that could not act
+# read as one that landed.
+#
+# The extension is deliberately NOT `.log`: the repository's .gitignore matches `*.log`,
+# so a fixture named that way would be untracked and absent from a fresh clone while the
+# suite that needs it stayed green here.
+# ==================== SEED BLOCK ====================
+EVT | 2026-02-01 | ITEM-A | AUTHORED | seat | the seed
+# ================== END SEED BLOCK ==================
+EVT | 2026-03-01 | ITEM-A | HELD(on: a world) | seat |
+EVT | 2026-03-01 | ITEM-A | OWED(by: seat, act: a ruling) | seat |
+EVT | 2026-03-02 | ITEM-A | ACCEPTED | seat | ambiguous: it names neither open state
+EVT | 2026-03-04 | ITEM-A | DISAMBIGUATED(ending: 2026-03-02 CLOSED, ended: HELD) | seat | names an ending this item does not have

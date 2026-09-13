@@ -334,21 +334,32 @@ def handover_handler(gate, blobs, views):
                         "no valid received-custody receipt from the receiving hand — the receipt is "
                         "the gate: no receipt, no removal, custody stays here (nothing departed)")
 
-        # STEP 4: remove the local blob bytes, line-by-line, EACH REMOVAL VERIFIED — the demoted
-        # transfer TAIL (blobs.hand_off), reachable ONLY here, only after the receipt verified. The
-        # bytes leave this store because another named hand now provably holds them.
-        blobs.hand_off([target], receipt)
+        # STEP 4-5, IN THE ORDER DECIDE -> EFFECT -> APPEND (EP-MAINT-OUTSIDE-1 B1; §2's principle).
+        # The handler here PROPOSES: it builds the departure DRAFT and defers the irreversible byte
+        # removal as the gate's EFFECT, run AFTER the gate's decide passes have decided this draft
+        # and BEFORE the append. Performing hand_off inline (as it did) removed the bytes before the
+        # gate's own rules pass could refuse the act — so a standing rule that refused HANDOVER at
+        # the gate left the effect already real (a refused act with an effect). Deferring keeps
+        # erasure.py:296's law WHOLE: the removal still precedes the append, so the departure never
+        # attests an un-happened transfer; it only moves the removal to AFTER the decision. The gate
+        # runs `blobs.hand_off([target], receipt)` at the reserved key, then appends this draft.
+        from kernel.gate import IRREVERSIBLE_EFFECT             # lazy: no import cycle (as elsewhere here)
 
         # STEP 5: the DEPARTURE record (design/46 member 4). WHAT (by hash) / TO WHOM / WHEN (the
         # record's own minted seq + record_time) / under WHICH rule / RECEIPT cited — the handed-over
         # CONTENT absent by construction (the departure reveals the act and the receiving hand, never
         # the bytes). Its store countersignature is the envelope addition every record carries (EP-36
         # keys.countersign); this op mints no signature of its own.
-        return {"actor": actor, "action": HANDOVER_OP, "object": target,
-                "rule_cited": HANDOVER_LAW,
-                "payload": {"kind": DEPARTURE_RECORD, CLASS: "DECISION",
-                            TARGET_HASH: target, RECEIVER: receiver, RETENTION_RULE: rule,
-                            RECEIPT_CITED: _receipt_citation(receipt)}}
+        draft = {"actor": actor, "action": HANDOVER_OP, "object": target,
+                 "rule_cited": HANDOVER_LAW,
+                 "payload": {"kind": DEPARTURE_RECORD, CLASS: "DECISION",
+                             TARGET_HASH: target, RECEIVER: receiver, RETENTION_RULE: rule,
+                             RECEIPT_CITED: _receipt_citation(receipt)}}
+        # STEP 4 (the demoted transfer TAIL, blobs.hand_off) DEFERRED as the gate's irreversible
+        # effect: the bytes leave this store only after the gate decides, because another named hand
+        # provably holds them AND no standing rule refused the act.
+        draft[IRREVERSIBLE_EFFECT] = lambda: blobs.hand_off([target], receipt)
+        return draft
     return _handover
 
 
@@ -539,6 +550,37 @@ def recovered_point(events):
             point = {TARGET_HEAD: p.get(TARGET_HEAD), TARGET_SEQ: p.get(TARGET_SEQ),
                      CHECKPOINT_REF: p.get(CHECKPOINT_REF), "seq": e.get("seq")}
     return point
+
+
+def recovered_points(events):
+    """ALL LIVE recover splices — the set whose adjudicated-broken tails the served fold must skip the
+    UNION of (A-2; EP-MAINT-OUTSIDE-2). `recovered_point` (singular, above) keeps only the LATEST
+    splice, so a fold that skips one tail REPLAYS an earlier broken tail whenever a later recovery woke
+    to a point AFTER the earlier splice — two disjoint breaks, only the second skipped. This returns
+    every LIVE splice so the fold skips the union of their tails. `recovered_point` is UNCHANGED for
+    its callers; this is the additive plural the fold now reads.
+
+    LIVENESS. A later recovery that wakes to a point BEFORE an earlier splice re-adjudicates that
+    range, so the earlier splice's OWN record sits inside the later's broken tail and is superseded —
+    not live. Only a LATER splice can supersede an earlier one (an earlier tail (T,S] can never reach a
+    later splice's seq, which is > S), so liveness is one backward walk from the latest: the latest
+    splice is always live; an earlier one is live only when its own seq is not inside an already-
+    collected live tail. Splices with no adjudicated target seq or no minted seq are not fold-actionable
+    and are excluded (as `custody.fold` already required of the singleton). Returned in seq order, each
+    a dict shaped like `recovered_point`'s."""
+    splices = []
+    for e in events:
+        p = e.get("payload") or {}
+        if p.get("kind") == RECOVER_RECORD and p.get(TARGET_SEQ) is not None and e.get("seq") is not None:
+            splices.append({TARGET_HEAD: p.get(TARGET_HEAD), TARGET_SEQ: p.get(TARGET_SEQ),
+                            CHECKPOINT_REF: p.get(CHECKPOINT_REF), "seq": e.get("seq")})
+    splices.sort(key=lambda s: s["seq"])
+    live = []
+    for s in reversed(splices):                                     # latest first
+        if not any(l[TARGET_SEQ] < s["seq"] <= l["seq"] for l in live):
+            live.append(s)                                          # not inside a later live tail -> live
+    live.sort(key=lambda s: s["seq"])
+    return live
 
 
 def recover_handler(gate, blobs, views):

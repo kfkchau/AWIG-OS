@@ -177,6 +177,24 @@ def _dim_subset(sub, sup):
     return ss <= sp
 
 
+# ---- the live-rows predicate, reached from a store OR a projection (R1) ----------------------
+
+def _live_rows(source, as_of=None):
+    """The rows a fold may stand on — the store's LIVE-ROWS predicate (R1), applied whether `source`
+    is the store itself (EventStore full-record / WorldStore world-scoped, both offering
+    `overturned_seqs`) or a `RecordProjection` accelerator over it. An authority projection subsets
+    OUT the overturn rows, so the overturned set is read from the projection's underlying store
+    (`_store`) — the same store the projection resolves through. One mechanism (`overturned_seqs`),
+    one application; a source offering neither degrades to the whole subset (a bare test double)."""
+    if hasattr(source, "overturned_seqs"):
+        overturned = source.overturned_seqs(as_of)          # a store: world-full or world-scoped
+    elif hasattr(getattr(source, "_store", None), "overturned_seqs"):
+        overturned = source._store.overturned_seqs(as_of)   # a projection: overturns live in its store
+    else:
+        overturned = set()
+    return [e for e in source.all(as_of) if e["seq"] not in overturned]
+
+
 # ---- the grant fold (J3) ---------------------------------------------------------------
 
 def grants(store, as_of=None):
@@ -185,8 +203,13 @@ def grants(store, as_of=None):
     SUPERSEDES it (latest-wins) — removed from the live set, NOTHING cascades because nothing
     downstream was stored. A later GRANT with the same id re-mints it. The founding openness
     grant parses here as a normal grant (grantee/actions/info all `*`, space the mother)."""
+    # R1 (EP-MAINT-OUTSIDE-4): read through the store's LIVE rows, so a GRANT a late law overturned
+    # is ABSENT from this fold — the act's own authority check then refuses on the missing grant
+    # (ROOT-NEG-3/-1), no per-fold standing patch and no new rule. `_live_rows` applies the store's
+    # ONE live-rows predicate whether `store` is the store itself (EventStore full / WorldStore
+    # world-scoped) or a RecordProjection accelerator over it (the accelerated authority fold).
     live = {}
-    for e in store.all(as_of):
+    for e in _live_rows(store, as_of):
         a = e["action"]
         p = e.get("payload") or {}
         if a == "GRANT" and p.get("kind") == "grant":
@@ -351,3 +374,72 @@ def reaches_space(store, account, target, as_of=None):
         if space_reaches(store, g["space"], target, as_of):
             return True
     return False
+
+
+# ---- EP-49B — IDENTITY AT THE TUNNEL: establishment IS the identity; a peer's claim is INPUT ----
+# design/51 §3 N4, §9; design/39 §1; design/43 §5. An entity is its RECORDED ESTABLISHMENT — not a
+# process handle, not a peer-minted token, not a session (the API-gateway reference design/51 §5
+# refuses). Its incarnations (processes in RAM) are a VIEW; permissions are computed from its record
+# (design/39 §1). And what a peer asserts is admitted as INPUT (the world's claim), never as a
+# DECISION the record authors: nothing from a peer's own record is trusted as a fact this box made.
+
+#: The recording classes a peer-asserted fact may / may NOT be admitted under (design/51 N4). Named
+#: as strings — the tokens of the observation legend (observe/classmap.py: the `peer` window -> INPUT)
+#: — so the kernel does not import the observe layer: the record plane's layering runs observe->kernel
+#: (observe reads the record), never kernel->observe. classmap.py is the DATA home; this is the
+#: identity/authority EVALUATION the fence (EP-49B §6) places here.
+PEER_FACT_CLASS = "INPUT"          #: what a peer's assertion IS admitted under — the world's claim
+_DECISION_CLASS = "DECISION"       #: what it may NEVER be authored as — a fact the record decided
+
+
+def establishment_of(store, entity, as_of=None):
+    """An entity's identity IS its recorded ESTABLISHMENT (design/39 §1): the genesis CREATE-ACTOR
+    or the CREATE-ACCOUNT record that founded it, keyed by its stable id. Returns
+    {'entity', 'established_by', 'seq'} or None. A transient handle — a process id, an in-band
+    token, an incarnation's runtime name — resolves to None, because an incarnation is a VIEW of an
+    entity and never the entity itself (RW-INCARNATION-AS-IDENTITY): the box holds no establishment
+    record for a bare handle, so it is nobody on the record. Read fresh every call — no stored
+    session, no login cached (design/30 §2's discipline, at the identity layer)."""
+    for act in ("CREATE-ACTOR", "CREATE-ACCOUNT"):
+        for e in store.by_action(act, as_of):
+            p = e.get("payload") or {}
+            aid = p.get("actor_id") or p.get("account_id") or e.get("object")
+            if aid == entity:
+                return {"entity": aid, "established_by": act, "seq": e.get("seq")}
+    return None
+
+
+def is_established(store, entity, as_of=None):
+    """Does the record establish `entity`? The identity question answered from the record, never
+    from a claim the entity carries (design/39 §1; the API-gateway reference refused, design/51 §5)."""
+    return establishment_of(store, entity, as_of) is not None
+
+
+def identity_of_crossing(store, crossing, as_of=None):
+    """The IDENTITY a crossing is attributed to (N4): the recorded establishment of the entity that
+    WILLED it — never the system (the courier rule, design/39 §3, EP-49A), never an incarnation's
+    transient handle. A crossing cites the establishment, so `identity_of_crossing` of a real
+    crossing resolves; a crossing whose willing name is a process handle resolves to None (it names
+    no establishment — RW-INCARNATION-AS-IDENTITY). Takes a crossing dict (border.crossings) so a
+    red world can hand it a planted incarnation-as-identity and watch this NOT resolve it."""
+    willed = crossing.get("willed_by") or crossing.get("entity")
+    return establishment_of(store, willed, as_of)
+
+
+def peer_fact_admitted_class():
+    """The class a peer-ASSERTED fact is admitted under (design/51 N4): INPUT — the world's claim,
+    recorded as an input, NEVER a DECISION the record authors. The token is the observation legend's
+    (observe/classmap.py `peer` window). A peer's own record is admitted only as what CROSSED."""
+    return PEER_FACT_CLASS
+
+
+def peer_facts_authored_as_decision(records):
+    """THE TRUST-FAILURE CENSUS (T-PEER-RECORD-NOT-TRUSTED; RW-PEER-TRUSTED, design/51 N4): every
+    record that is a PEER ASSERTION (`payload.source == 'peer'`) yet carries `record_class`
+    DECISION — a peer's claim admitted as a fact the box decided rather than a fact the world
+    claimed. EMPTY on any real world by construction (a peer fact is INPUT). ABLE TO FAIL: hand it a
+    planted peer-asserted record marked DECISION and it fires (the census read from the SET, the
+    EP-49A RW-COURIER discipline). A pure predicate over any iterable of records."""
+    return [r for r in records
+            if (r.get("payload") or {}).get("source") == "peer"
+            and (r.get("payload") or {}).get("record_class") == _DECISION_CLASS]

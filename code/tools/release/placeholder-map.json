@@ -1,0 +1,13 @@
+{
+  "_note": "EP-RELEASE-TESTS class->placeholder map. Each entry maps a private-literal CLASS to its public placeholder NAME. It carries NO private value: the values below are synthetic tokens, never a real path, host, key, port, repo or email. The release renderer (tools/release/render.py, --with-tests-tools) rewrites every occurrence of a class's private FORM in the shipped tests/ and tools/ bytes to the class's token at render time; no past test or tool file is edited. The shipped tree therefore carries the tokens, never the private literals, so pushscan is clean and the A2 grep of the class patterns over the shipped tree is empty.",
+  "classes": {
+    "home_laptop_path": "<HOME>",
+    "ssh_invocation": "<SSH-INVOCATION>",
+    "key_path": "<KEYPATH>",
+    "loopback_port": "<LOOPBACK-PORT>",
+    "guest_user": "<GUEST>",
+    "repository_url": "<REPO-URL>",
+    "claude_projects_path": "<PROJECTS>",
+    "private_email": "<EMAIL>"
+  }
+}

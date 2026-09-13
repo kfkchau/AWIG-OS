@@ -41,6 +41,17 @@ from bridge import custody  # noqa: E402
 from kernel import erasure  # noqa: E402  — the departure view: a handed-over hash replays as DEPARTURE
 
 
+class MissingBlobError(SystemExit):
+    """THE MISSING-CONTENT REFUSAL, NAMED (A-4; EP-MAINT-OUTSIDE-2). B10 refuses a record that names
+    content bytes that are neither departed nor present — a missing blob — rather than serving it as an
+    empty file. B10 raised a bare `SystemExit` (the CLI idiom), so a caller that wants to CATCH the
+    refusal (I2's replay leg) could only match the whole CLI-exit family. This is the assertable class:
+    a caller does `except MissingBlobError` and gets exactly this case. It SUBCLASSES `SystemExit` so
+    the CLI idiom is UNCHANGED — an uncaught refusal still exits the `python3 -m` process cleanly with
+    its message, and any existing `except SystemExit` still catches it — while a library caller now has
+    a named refusal to bind to instead of a process-exit signal it cannot distinguish."""
+
+
 #: The probe's own type vocabulary (`probe._ftype`), matched exactly. The replay leg has to
 #: speak the shape the ABI leg speaks or check 3 compares two spellings of agreement and
 #: calls them a divergence.
@@ -136,6 +147,16 @@ def snapshot(record_path, blob_dir, row_id=None, root=None):
                 data = erasure.DEPARTURE
             elif node.content_hash and blobs.has(node.content_hash):
                 data = blobs.get(node.content_hash)
+            elif node.content_hash:
+                # B10: the record names content bytes that are neither departed nor present — a
+                # MISSING blob. It is a missing-content refusal, NEVER served as an empty file
+                # (which is a legitimately distinct state; the module's own :68-92 note names the
+                # ambiguity). "The row created an empty file" and "the content is gone" produce the
+                # same empty dict and mean opposite things, so this says which out loud.
+                raise MissingBlobError(
+                    "replay: content %s for /%s is missing from the blob store — a "
+                    "missing blob is a missing-content refusal, never empty content "
+                    "(and it was not handed over)" % (node.content_hash, rel))
             entry["size"] = len(data)
             entry["sha256"] = hashlib.sha256(data).hexdigest()[:16]
         out[rel] = entry

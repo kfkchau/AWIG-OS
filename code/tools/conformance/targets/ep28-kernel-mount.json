@@ -1,0 +1,41 @@
+{
+  "name": "ep28-kernel-mount",
+  "kind": "governed",
+  "description": "EP-28's M3 filesystem: a real directory tree served from the append-only record by an in-kernel module, `govosfs`, with the record machine's brain in user space. THE INSTRUMENT RUNS INSIDE THE GUEST AND THAT IS THE WHOLE OF WHY THIS DESCRIPTOR EXISTS SEPARATELY (EP-28 ADDENDUM 7, R-6 ruled). EP-00 rule 9 puts the module in the VM guest and nowhere else, and `establish_subject` reads THIS host's /proc/self/mountinfo and refuses any non-local transport by design (design/10 §11.2b) — so the instrument goes where the subject is rather than reaching across a boundary to it. The harness tree and the pinned ep21-ubuntu-guest baseline are copied into the guest and `verify` is run there, where the mount, the record file and the replay command are all local and the subject check works natively. That is deployment, not harness code: no file under harness/ is changed to make this target reachable, and if one turned out to need changing that is a STOP, because the instrument is never repaired by the EP it judges. Raise the subject first, in the guest: ~/govosfs/m3-up.sh (insmod, attach the brain, mount).",
+  "capabilities": [],
+  "coalescing_policies": [
+    "FS-WRITE-COALESCING",
+    "FS-READ-AGGREGATION"
+  ],
+  "world_note": "THE FIVE PATHS BELOW NAME `<HOME>/govos-m3` AND NOT `/tmp/govos-m3` [EP-28D W2, 2026-07-30]. EP-28B W4 moved the governed world out of `/tmp` because the guest clears `/tmp` at boot, which invalidated any claim of the form `the world survives X` unless X included a reboot; the world was moved rather than re-founded and proved byte-identical across a full reboot. This file was left naming the abandoned path, so a run against it would have reported about this descriptor rather than about the mount — design/10 §11.2b's family arriving through a config file. They are written ABSOLUTE rather than as `~/govos-m3` deliberately, and the reason is a measured asymmetry in the harness rather than a style choice: `subject.path`, `transport.scratch` and `record.jsonl` are all passed through expansion before use, but the two paths in `replay.command` are handed to a subprocess with no shell and no expansion, so a `~` there resolves to a directory literally named `~` — which is not hypothetical, it happened once and the harness reported ABI 40 of 40 against it (§11.2b). Half a file expanding and half not is the trap; one form throughout is the fix. The guest's home is `<HOME>`, which is what the scripts' `$HOME` resolves to there, so this states the same world `m3-up.sh` raises.",
+  "subject": {
+    "path": "<HOME>/govos-m3/mnt",
+    "fstype": "govosfs"
+  },
+  "transport": {
+    "type": "local",
+    "scratch": "<HOME>/govos-m3/mnt/conformance-scratch",
+    "python": "python3"
+  },
+  "record": {
+    "jsonl": "<HOME>/govos-m3/rec.jsonl"
+  },
+  "class_map": {
+    "python": "bridge.custody:CUSTODY_CLASS_MAP"
+  },
+  "covers_map": {
+    "json": "ep25-custody-covers.json",
+    "note": "THE SAME COVERS MAP AS THE M2 MOUNTS, AND SHARING IT IS THE DERIVATION RATHER THAN THE SHORTCUT. A covers map states which acts a RECORD KIND is about (design/10 §11.4a) — it is a property of the record vocabulary, not of a mount — and EP-28's whole result is that the vocabulary did not move: the in-kernel port uses the same op definitions as the FUSE mount, founding unchanged at 1.12.0, because the transport changed and the law did not. A covers map that differed here would be asserting that a kernel-resident write is a different governed act from a user-space one, which is exactly what this EP proved it is not. What DOES differ between the two stances is which handlers exist, and that is not what this file encodes: at this stance the module's operation vectors carry no mknod, no extended-attribute, no lock and no timestamp handler, so those kinds are simply never emitted here and their entries are never consulted. The one place the shared map is a superset is FILE-CREATE's mknod/mknodat pair, which cannot reach this module — stated rather than trimmed, because trimming it would encode a handler inventory into a file whose subject is the vocabulary."
+  },
+  "replay": {
+    "command": [
+      "python3",
+      "-m",
+      "bridge.replay_snapshot",
+      "<HOME>/govos-m3/rec.jsonl",
+      "<HOME>/govos-m3/blobs",
+      "{row_id}"
+    ],
+    "note": "Run with PYTHONPATH pointing at the guest's copy of src/, which the runner's own environment supplies and the replay child inherits. The command kills every derived structure and rebuilds the answer from the record alone — the leg that no imported suite runs and the one the journaling template dies on."
+  }
+}

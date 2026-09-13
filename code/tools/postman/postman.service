@@ -1,0 +1,14 @@
+# gov-os postman — user systemd unit. THE OWNER INSTALLS THIS, not any seat:
+#   cp tools/postman/postman.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now postman
+# It runs the no-AI message carrier. Stop it any time: systemctl --user stop postman
+[Unit]
+Description=gov-os postman (no-AI message carrier)
+[Service]
+WorkingDirectory=<HOME>/Documents/Claude/apps/gov-os
+ExecStart=/usr/bin/python3 <HOME>/Documents/Claude/apps/gov-os/tools/postman/postman.py
+Restart=on-failure
+RestartSec=5
+[Install]
+WantedBy=default.target

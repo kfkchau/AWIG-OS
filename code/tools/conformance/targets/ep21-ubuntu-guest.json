@@ -1,0 +1,16 @@
+{
+  "name": "ep21-ubuntu-guest",
+  "kind": "stock",
+  "description": "The EP-21 lab guest: Ubuntu 24.04.4 LTS on the distribution kernel, booted from a fresh overlay on the pristine cloud image, reached over ssh on the host's port 2222. It is a stock kernel and it governs nothing; the harness's only lawful use of it is --capture. Brought up with ~/gov-lab/m0-up.sh and down with ~/gov-lab/m0-down.sh (planning/vm/M0-EVIDENCE.md §9). It is disposable: the `clean` snapshot is the baseline to return to.",
+  "capabilities": ["root"],
+  "transport": {
+    "type": "ssh",
+    "host": "127.0.0.1",
+    "port": 2222,
+    "user": "ubuntu",
+    "key": "<KEYPATH>",
+    "scratch": "/tmp",
+    "python": "python3",
+    "sudo": "sudo -n"
+  }
+}

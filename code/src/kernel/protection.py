@@ -246,10 +246,24 @@ class Protection:
         Returns the diverging ref_seqs, routed to the owner queue. Neither stream writer computes this."""
         a = {m["payload"]["ref_seq"]: m["payload"] for m in self.store.by_action("dual-audit-record", as_of)}
         b = {m["payload"]["ref_seq"]: m["payload"] for m in self.store.by_action("dual-audit-b-record", as_of)}
+        # R7 (EP-MAINT-OUTSIDE-4): the expected set is the RETAINED GOVERNANCE ACTIONS in the record,
+        # not merely the refs the streams happen to hold. A governance action present in the record but
+        # absent from BOTH streams is a divergence the old union (set(a) | set(b)) could never see — it
+        # named neither stream, so it fell out of the enumeration and no cross-check ever ran on it. The
+        # expected referents are exactly the acts the `dual-audit-actions` pack says get mirrored.
+        audit = self._audit_actions()
+        expected = {e["seq"] for e in self.store.all(as_of) if e["action"] in audit}
         out = []
-        for ref_seq in sorted(set(a) | set(b)):
+        for ref_seq in sorted(expected | set(a) | set(b)):
             ref = self.store.by_seq(ref_seq)
             pa, pb = a.get(ref_seq), b.get(ref_seq)
+            # R7: a retained governance referent missing from EITHER stream is a divergence — a stream
+            # that never mirrored a governance act it was supposed to has diverged from the record,
+            # whether or not the other stream did. This catches the absent-from-both case the digest
+            # comparison below cannot (None != None is False), and the absent-from-one case alike.
+            if ref_seq in expected and (pa is None or pb is None):
+                out.append(ref_seq)
+                continue
             da = pa["digest"] if pa else None
             db = pb["digest"] if pb else None
             ca = _digest(ref, pa.get("digest_algo", "json")) if (ref is not None and pa) else None

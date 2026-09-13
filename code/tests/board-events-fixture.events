@@ -1,0 +1,20 @@
+# A STATIC COMMITTED FIXTURE (EP-28W W2). It is NEVER the live board of record.
+#
+# It exists so that rows asserting "the positive control runs at EVERY invocation" can
+# drive `board.main()` through a real file path WITHOUT reading
+# planning/build/BOARD-EVENTS.log. Those rows previously used main()'s DEFAULT path, which
+# is the live record — so a lawful edit to the record reported as a code failure. The
+# ruling took four rows out of the suite; two more reached the same file through a default
+# rather than through a name, and a check phrased over "a reference to the path" could not
+# see them.
+#
+# The extension is deliberately NOT `.log`: the repository's .gitignore matches `*.log`,
+# so a fixture named that way would be untracked and absent from a fresh clone while the
+# suite that needs it stayed green here.
+# ==================== SEED BLOCK ====================
+EVT | 2026-02-01 | FIXTURE-A | AUTHORED | seat | the seed
+EVT | 2026-02-01 | FIXTURE-B | AUTHORED | seat | the seed
+# ================== END SEED BLOCK ==================
+EVT | 2026-03-01 | FIXTURE-A | DISPATCHED | seat |
+EVT | 2026-03-02 | FIXTURE-A | CLOSED | seat |
+EVT | 2026-03-01 | FIXTURE-B | HELD(on: a world that has not moved) | seat |

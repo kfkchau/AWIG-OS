@@ -69,7 +69,11 @@ def _receipt_covers(receipt, hashes):
     it."""
     if not isinstance(receipt, Mapping):
         return False
-    return receipt.get("object") in set(hashes)
+    # R6 (EP-MAINT-OUTSIDE-4): the receipt must cover EVERY hash being removed, not merely one of a
+    # list. A receipt names ONE object, so a call removing several distinct hashes under a single
+    # receipt is refused (only the one it names is covered). The governed handover passes a singleton;
+    # this lower API now enforces the same, so no byte leaves under a receipt that does not name it.
+    return bool(hashes) and set(hashes).issubset({receipt.get("object")})
 
 
 class BlobStore:
@@ -80,19 +84,49 @@ class BlobStore:
     def __init__(self, dir_path):
         self.dir = Path(dir_path)
         self.dir.mkdir(parents=True, exist_ok=True)
+        # R3 (EP-MAINT-OUTSIDE-4): the DURABILITY MARK. The paths whose directory barrier THIS process
+        # has completed. A `put` on an existing path re-runs the barrier UNLESS it is marked, so a
+        # retry after a directory-sync failure (the rename landed, the parent fsync did not) re-runs
+        # the barrier the first attempt missed. The mark is in-memory: a fresh process holds none, so
+        # a restart conservatively re-runs the barrier on the first put per path — never skips it.
+        self._barriered = set()
+
+    def _barrier(self, p):
+        """Make the NAME durable: fsync the parent directory (idempotent). Marks the path so a later
+        dedup put does not re-fsync a name this process already made durable (R3)."""
+        dfd = os.open(str(p.parent), os.O_RDONLY)
+        try:
+            os.fsync(dfd)
+        finally:
+            os.close(dfd)
+        self._barriered.add(str(p))
 
     def put(self, data):
         """Store bytes; return the content hash "sha256:<hex>". Identical bytes dedup.
 
         Returns only once the content is durable under its own name, per the ordering
         law in this module's docstring.
+
+        R3 (EP-MAINT-OUTSIDE-4): the dedup path is not a bare `p.exists()` pass. It VERIFIES the
+        stored bytes against the hash (a name whose bytes do not hash to it is missing content and is
+        REFUSED, never served) and re-runs the directory barrier unless the durability mark says this
+        process already ran it — so a retry after a failed parent-fsync completes the durability the
+        first attempt left half-done.
         """
         if isinstance(data, str):
             data = data.encode("utf-8")
         h = "sha256:" + hashlib.sha256(data).hexdigest()
         p = self._path(h)
         if p.exists():
-            return h                       # write-once: these bytes are already durable
+            # DEDUP — but verify first (never serve a name whose bytes were lost or corrupted).
+            stored = p.read_bytes()
+            if "sha256:" + hashlib.sha256(stored).hexdigest() != h:
+                raise ValueError(
+                    "blob %s exists but its bytes do not hash to it — the stored content is missing "
+                    "or corrupt; refusing to return the hash for content the store cannot serve" % h)
+            if str(p) not in self._barriered:
+                self._barrier(p)           # IDEMPOTENT durability: re-run the barrier a retry may owe
+            return h
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_name(p.name + ".part")
         fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
@@ -101,18 +135,22 @@ class BlobStore:
             f.flush()
             os.fsync(f.fileno())           # the BYTES are durable
         os.replace(str(tmp), str(p))       # write-once, and atomically visible
-        dfd = os.open(str(p.parent), os.O_RDONLY)
-        try:
-            os.fsync(dfd)                  # the NAME is durable too, not only the bytes
-        finally:
-            os.close(dfd)
+        self._barrier(p)                   # the NAME is durable too, not only the bytes
         return h
 
     def get(self, h):
         return self._path(h).read_bytes()
 
     def has(self, h):
-        return self._path(h).exists()
+        # An existence CHECK answers False for a malformed address rather than raising (R4 keeps
+        # containment — a malformed name never resolves to a path, so it is certainly not stored, and
+        # answering False reads nothing outside the directory). `put`/`get`/`_remove_bytes` still
+        # refuse a malformed address through `_path`; only this boolean read is lenient, so a caller
+        # probing an absent-or-sentinel hash ("sha256:absent") gets "not present", not a crash.
+        try:
+            return self._path(h).exists()
+        except ValueError:
+            return False
 
     def hand_off(self, hashes, receipt):
         """THE REMOVAL TAIL of a completed, verified custody transfer (design/46 member 3) — the
@@ -180,5 +218,16 @@ class BlobStore:
         return True
 
     def _path(self, h):
+        # R4 (EP-MAINT-OUTSIDE-4): CONTAINMENT AT THE PATH. A blob address is a STRICT 64-hex sha256
+        # ("sha256:<64 lowercase hex>") and nothing else. Without this check a malformed name (fewer
+        # bytes, a "..", a slash) resolves to a path OUTSIDE the blob directory; the strict form
+        # refuses it here, at the one place a name becomes a path, so no read or write can escape the
+        # store. The estate's addresses are lowercase `hexdigest()` output, so the form is exact.
+        if not (isinstance(h, str) and h.startswith("sha256:")):
+            raise ValueError("a blob address is 'sha256:<64 hex>'; %r is not one" % (h,))
         digest = h.split(":", 1)[1]
+        if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+            raise ValueError(
+                "a blob address is a 64-character lowercase-hex sha256; %r is malformed and would "
+                "resolve outside the blob directory — refused (containment at the path)" % (h,))
         return self.dir / digest[:2] / digest[2:]  # fanout by first byte

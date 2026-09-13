@@ -18,6 +18,7 @@ An unregistered op does not exist — a Closure Hit (the bank has no counter, P3
 Enumeration of the registry IS the completeness guarantee.
 """
 
+import base64
 import threading
 from collections.abc import Mapping
 
@@ -114,6 +115,29 @@ class DecideRegion:
 P3_CLOSURE = "P3-CLOSURE"  # invoked op is not registered -> Closure Hit
 AR2 = "AR-2"               # nonconforming call (a required parameter is missing)
 
+# THE B8 XATTR-BYTES TAG (EP-MAINT-OUTSIDE-1 B8; the SOURCE OF TRUTH for the tag string is
+# src/bridge/records_fs.py:99 `_XATTR_BYTES_TAG` / :113 the base64 encode). The kernel MUST NOT import
+# the bridge adapter (records_fs imports `kernel.errors`, so kernel->bridge would be circular and would
+# invert the layering), so the tag is RE-USED here — the SAME string and the SAME base64 scheme, not a
+# new encoding — with this pointer to its home. A `bytes`-kind param carrying a raw (non-`str`) byte
+# value is encoded to this form AT THE DOOR (below) so it is JSON-serialisable BEFORE the group commit,
+# where a raw `bytes` value would raise TypeError -> BatchFailed and fail the whole barrier.
+_XATTR_BYTES_TAG = "__xattr_bytes_b64__"   # keep byte-identical to records_fs.py:99
+
+
+def _encode_bytes_param(value):
+    """The B8 form for a raw byte value, READ from records_fs.py:99/:113 and reused (not re-authored).
+    A valid-UTF-8 byte value becomes a plain string (byte-identical to text); a non-UTF-8 byte value
+    becomes the TAGGED base64 form (a canonical-safe, JSON-serialisable dict). IDEMPOTENT by
+    construction: only a `bytes`/`bytearray` value is transformed, so an already-tagged dict or an
+    already-decoded `str` is not a byte value and passes through untouched — the caller checks
+    `isinstance(pv, (bytes, bytearray))` before calling, matching records_fs `_xattr_store_value`."""
+    raw = bytes(value)
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return {_XATTR_BYTES_TAG: base64.b64encode(raw).decode("ascii")}
+
 # AUTHORITY REGIME IS DATA (EP-17 Y2; the mentor's #1a, retiring the code constant that named the
 # four power-structure ops). The ops that WRITE the power structure — grant/revoke/space/role — are
 # governed by ATTENUATION, not a covering grant: gating the creation of a grant BY a covering grant
@@ -178,6 +202,26 @@ def _draft_matches(draft, when):
 # store and no primitive minted; the signature model is possession-plus-minted-provenance
 # (keys.countersign's shape), and the real cryptographic primitive arrives later (design/37 §9).
 SIGN_LAW = "SIGN-LAW"
+# THE IRREVERSIBLE EFFECT, DEFERRED PAST THE DECISION (EP-MAINT-OUTSIDE-1 B1; the §2 principle).
+# A handler whose effect CANNOT be undone (a handover's byte removal) must not perform it inline,
+# because the gate's decide passes run AFTER the handler returns — a standing rule that refuses the
+# act at the gate would then leave the effect already real (a refused act with an effect, the one
+# shape the estate forbids). Such a handler returns its effect as a THUNK on the draft under this
+# reserved top-level key; `_decide` runs it AFTER every decide pass has decided the draft and BEFORE
+# the append. The order is DECIDE -> EFFECT -> APPEND: a refusal leaves NO effect, and the append
+# still attests an effect that is already real (erasure.py:296's law, kept whole — a departure
+# never claims an un-happened removal). Popped before the append, so it never lands in a record.
+IRREVERSIBLE_EFFECT = "_irreversible_effect"
+# THE DEFERRED EFFECT'S FAILURE, RECORDED AS A ROW (A-1; EP-MAINT-OUTSIDE-2). The irreversible effect
+# runs AFTER the decision and BEFORE the append. If it RAISES there, the act's own record is never
+# appended (the raise propagates before the write) — so without this a PARTIAL effect could stand with
+# NOTHING on the record naming it. The gate records the effect's failure as a row under the ACT'S OWN
+# rule, carrying the exception text AND whatever partial outcome the effect conveys on the exception's
+# `outcome` attribute (for a byte-removal: which targets were removed, line by line). The effect's
+# outcome is then ALWAYS on the record: success by the appended act, failure by this row — "failed"
+# alone would answer two worlds (nothing happened / half happened) with one string.
+EFFECT_FAILED = "op-effect-failed"
+EFFECT_OUTCOME = "outcome"           # the attribute a raising effect may carry its partial outcome on
 # The invoker's signature travels in PARAMS (the caller's input) and is recorded in PROVENANCE
 # (design/37 Q2: "the invoking account's signature in provenance") — NOT a new envelope field
 # (§8-i): EP-35's store-minted invoker_sig/store_sig envelope is its own honest-degrade domain and
@@ -905,6 +949,28 @@ class Gate:
         )
         raise OpError(rule, message)
 
+    def _record_effect_failure(self, actor, draft, exc):
+        """RECORD A DEFERRED EFFECT'S FAILURE AS A ROW (A-1; EP-MAINT-OUTSIDE-2). The act was lawfully
+        decided and its irreversible effect then RAISED — so a partial effect may stand and the act's
+        own record was never appended. Append a failure row under the ACT'S OWN rule, carrying the
+        exception text and whatever partial outcome the effect conveyed on its exception (an `outcome`
+        attribute — for a byte-removal, which targets were removed, line by line). The caller re-raises,
+        so the failure still reaches the invoker; what this adds is that the partial effect is now on
+        the record rather than standing unrecorded. Written through `_append` exactly as `refuse` is —
+        the gate is still the sole appender."""
+        payload = {"op": draft.get("action"), "of_object": draft.get("object"),
+                   "effect_error": str(exc), EFFECT_OUTCOME: getattr(exc, EFFECT_OUTCOME, None)}
+        self.store._append(
+            {
+                "actor": "SYSTEM",
+                "action": EFFECT_FAILED,
+                "target": actor,
+                "rule_cited": draft.get("rule_cited"),   # the act's OWN rule (A-1)
+                "payload": payload,
+                "refused": True,                         # the act did not complete; no permit stands
+            }
+        )
+
     def execute(self, name, actor, params=None):
         """THE DECIDE REGION'S SPAN (EP-28G W1), wrapped around the act it protects.
 
@@ -994,6 +1060,43 @@ class Gate:
                 # name a domain law (e.g. FS-LAW-PERM) that never fired.
                 # refuse BEFORE the handler runs — the handler is never entered.
                 self.refuse(actor, name, AR2, f'nonconforming call: parameter "{p}" required for {name}')
+        # THE PARAM-KINDS GUARD (C-1/C-3; EP-MAINT-OUTSIDE-2, archi :3520). A DECLARED param kind (the
+        # op's meta carries the map, driven from the pack) is validated at the door BEFORE the handler,
+        # so a malformed value never reaches the group commit (where it crashes it). Refusals are AR-2
+        # nonconforming-call refusals, WITH A ROW. A present value only: an absent optional param is
+        # governed by the required-params check above.
+        #   quantity  -> a NON-NEGATIVE INTEGER (a size/length/ceiling cannot be < 0); a boolean (an int
+        #               in Python, so excluded FIRST — the fold_threshold door's idiom) is not a count,
+        #               and a float is not a whole quantity.
+        #   text      -> a UTF-8 STRING; a raw `bytes` value is not serialisable (json.dumps -> TypeError
+        #               -> BatchFailed at the group commit), so it is refused HERE, before that crash.
+        #   bytes     -> a byte payload legitimately carries non-UTF-8, but a RAW `bytes` value is not
+        #               JSON-serialisable and crashes the group commit (BatchFailed). The door ENCODES it
+        #               to the B8 tagged form (EP-MAINT-OUTSIDE-3 PART 1) BEFORE the handler, so the
+        #               payload the handler records is serialisable. IDEMPOTENT: an already-encoded
+        #               (`str`/tagged-dict) value is not `bytes`, so it is left untouched.
+        #   measurement -> NO scalar guard: the op's own structured-field refusal stands (EP-30 custody).
+        for pname, kind in entry["meta"].get(opdefs.PARAM_KINDS, {}).items():
+            pv = params.get(pname)
+            if pv is None:
+                continue
+            if kind == "quantity" and (isinstance(pv, bool) or not isinstance(pv, int) or pv < 0):
+                self.refuse(actor, name, AR2,
+                            f'nonconforming call: quantity "{pname}" for {name} must be a non-negative '
+                            f'integer (a count of bytes / a size / a length / a ceiling cannot be '
+                            f'negative, fractional, or a boolean) — got {pv!r}')
+            elif kind == "text" and isinstance(pv, (bytes, bytearray)):
+                self.refuse(actor, name, AR2,
+                            f'nonconforming call: text param "{pname}" for {name} must be a UTF-8 string, '
+                            f'not raw bytes (a non-UTF-8 byte value is not recordable and crashes the '
+                            f'record write) — got {type(pv).__name__}')
+            elif kind == "bytes" and isinstance(pv, (bytes, bytearray)):
+                # ENCODE (not refuse): a byte payload is lawful — carry it in the B8 tagged form so the
+                # record write does not crash on a non-serialisable value. Mutates the local `params`
+                # so the handler records the encoded form; a well-formed caller (the FUSE adapter's
+                # `setxattr`) already B8-encodes, so this fires only on a raw-bytes value and is a no-op
+                # on an already-encoded one (idempotent).
+                params[pname] = _encode_bytes_param(pv)
         # R28 (EP-10): the brake's AUTHORITY refuses AT THE GATE — never accepted-and-inert (the R18
         # doctrine: an act the system will not honour REFUSES, cited + recorded; it does not
         # record-and-shrug). A4-style actor checks, no new check vocabulary; the fold's exemptions
@@ -1014,6 +1117,11 @@ class Gate:
         if name == "RESOLVE-WATCHER" and actor != brake_root:
             self.refuse(actor, name, "BOOT-INT", "only the root authority holder may resolve a watcher brake — resolution is the root's")
         result = entry["handler"](actor, params)
+        # B1: an irreversible-effect handler (a handover) returns its byte-removal as a thunk on the
+        # draft. Lift it OUT of the draft NOW — before any decide pass runs — so a pass that refuses
+        # and records the draft (refuse(draft=...)) never embeds a non-serialisable function, and so
+        # the run below is the ONE place the effect fires: after the decision, before the append.
+        deferred_effect = result.pop(IRREVERSIBLE_EFFECT, None) if isinstance(result, dict) else None
         # The one write. A DRAFT (a plain dict not yet appended, so carrying no minted
         # `seq`) is appended here — the gate is the only path to the record. An already
         # appended record (a MappingProxyType, which is not a dict, carrying `seq`) is
@@ -1053,6 +1161,15 @@ class Gate:
             from . import crossing as _crossing
             from . import reconcile as _reconcile
             _crossing.correlation_guard(self, self.store, actor, name, result)
+            # ---- THE BORDER CHOKEPOINT (EP-49A W1; design/51 N3) ----
+            # A DISTINCT family beside the crossing chokepoint, same discipline (the N2 lesson): a
+            # BORDER-REPLY / BORDER-REFUSAL binds to its BORDER-SUBMIT by the store's recomputation of
+            # the submit's content hash, never by the reply's own in-band `crossing_id` claim. Here,
+            # not in a handler, for the EP-18 R-A reason a leash lives where every write converges. A
+            # reply/refusal citing a crossing id that is the content hash of no submit binds nothing
+            # and is refused (RW-CROSSING-ID-DRIFT).
+            from . import border as _border
+            _border.reply_binding_guard(self, self.store, actor, name, result)
             # ---- THE OVERTURN LEASH, WIRED AT BIRTH (EP-26 W4; design/36 §4b.7 as corrected by
             # ADDENDUM E.1). At the chokepoint, not in OVERTURN's handler, for the EP-18 R-A reason:
             # a leash inside one op's handler is reached past by any other op minting the same
@@ -1100,6 +1217,22 @@ class Gate:
                 if verified_sig is not None:
                     prov[INVOKER_SIG] = verified_sig
                 result["provenance"] = prov
+            # ---- THE IRREVERSIBLE EFFECT RUNS AFTER THE DECISION, BEFORE THE APPEND (B1) ----
+            # Every decide pass above has now DECIDED this draft — any refusal already raised and
+            # this line is unreached — so the deferred effect (lifted off the draft after the
+            # handler returned) runs here, after the decision and before the append: a standing rule
+            # that refuses the act at the gate leaves NO effect, and the append that follows attests
+            # an effect that is already real (DECIDE -> EFFECT -> APPEND; erasure.py:296's law whole).
+            if deferred_effect is not None:
+                try:
+                    deferred_effect()
+                except Exception as exc:
+                    # THE EFFECT RAISED AFTER THE DECISION (A-1). A partial effect may stand and the
+                    # act's own record is never appended (this raise propagates before the write below).
+                    # Record the failure as a row under the act's own rule — the effect's outcome is
+                    # always on the record — then re-raise so the invoker still sees the failure.
+                    self._record_effect_failure(actor, result, exc)
+                    raise
             # THE ONE WRITE, AND IT IS THE PUBLISH HALF ONLY (EP-28G W1). `_publish` mints,
             # writes, flushes and makes the record visible to every fold; it returns BEFORE
             # the record is durable. The durability wait is `execute`'s, taken once the

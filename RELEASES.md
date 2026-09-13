@@ -6,9 +6,27 @@ What each public marker contains, in plain words. Every figure names the machine
 
 The first runnable piece, kept as a tag on the last commit that carried the `seed` folder. Two files and Python 3. One rule runs in the common format, one permission runs and leaves a record you can verify, and a stranger can check both. The folder has since been replaced by the fuller `code` folder below. Its history stays under this tag.
 
-## The `code` folder: the engine after campaign 4, rulebook version 1.39.0
+## `c5-close`: the engine after campaign 5, rulebook version 1.50.0, 13 September 2026
 
-What campaign 4 added, in plain words:
+The `code` folder is replaced whole. The previous contents stay under the tag `c4-close`. What campaign 5 added, in plain words:
+
+- Real cryptography, off until you install one library. With it installed, signatures, key wrapping and sealed content are real, and the program seals its own signing key at startup. Without it, the keys are stand-ins of the right shape and any act that needs a real signature is refused rather than faked.
+- Network actions are governed. Opening, binding, listening, connecting, accepting and closing a socket are each a recorded decision citing a rule; the live socket table is computed from those records.
+- The border is governed. Something arriving from outside is a draft the rulebook decides before it has any effect; the reply seals exactly what was shown; the sender's identity is established at the door.
+- One row, one receipt, two bodies. A record sent from one machine is received by another as input, and the receiver writes its own receipt in its own record.
+- The firewall is rules in the record; every filtering decision is a recorded act.
+- The repairs from two rounds of outside review, listed on [`STATUS.md`](./STATUS.md), with the tests that prove them.
+- The test suite and the release tools ship beside the code for the first time. `run_public_suite.py` runs 95 test files on a stock machine and skips 64, each naming what it would need.
+
+**Checked how.** Sixteen checks in `code/check.py` and the shipped suite (95 run, 95 passed, 0 failed, 64 skipped) on the Linux machine this release was cut on (Python 3.12.3). A more serious run on Windows under Debian in WSL 2 (Python 3.13.5) found a disk-batching measurement that platform cannot make, which now skips there, and one timing test that fails under load and passes alone; neither breaks a promise of the code, and the timing test is addressed in the next release. The commits in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belong to the private development repository and cannot be looked up from here. Treat them as stamps. The tag above is the anchor you can check.
+
+**What it does not claim.** The locks are real only when installed, an administrator can still read the machine's memory and the disk, and the box for the AI team is empty. The full list is in [`STATUS.md`](./STATUS.md). In the build team's exact words on the keys:
+
+> Real cryptography is in this code and is off until you turn it on. Install the one vetted library it names and every key is real: signatures, key wrapping and sealed content are done by that library, never by our own code, and the signing seed never touches the disk. Install nothing, and the code runs exactly as the previous release did, with keys that are stand-ins of the right shape; anything that asks for a real signature is then refused rather than faked, so a real key can never quietly become a stand-in. Two limits stay true in both states: a reader who has the disk can read the sealed bytes of the secrets store, and an administrator of the running machine can read the program's memory, where the keys that open sealed content live. Protect the disk and the machine by other means; this code does not.
+
+## `c4-close`: the engine after campaign 4, rulebook version 1.39.0, 8 September 2026
+
+Kept under the tag `c4-close`. What campaign 4 added, in plain words:
 
 - The written record is tamper-evident. Change one character of the history and the system can say where.
 - Accounts can hold keys. An account with a key cannot act without signing. Accounts without keys work exactly as before.

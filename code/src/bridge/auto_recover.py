@@ -34,12 +34,19 @@ THE THREE CHECKS — composed HERE, across the layer, because THE BRIDGE IS THE 
       op's OWN never-to-wrongness + chain adjudication, REUSED (`erasure._seq_of_head` +
       `store.verify_chain`), never re-implemented: a fabricated head folds to `None` (the laundering-
       door stays shut); a head beyond the break is not within `verified_through`.
-  (2) CHECKPOINT — the "hash rematch" (owner ruling :3057): the checkpoint's pinned `chain_head` equals
-      the LIVE head (`checkpoint.check_head` == CURRENT, EP-44). Engine-free (the air rider :2963) — a
-      single string comparison, no record walk. A moved/stale head does not rematch and HALTS.
+  (2) CHECKPOINT — the FULL VERIFIER (`checkpoint.verify`, EP-44; R5 EP-MAINT-OUTSIDE-4): the checkpoint
+      recomputes against THIS store's record + blobs — tree, chain head, founding-pack sha AND
+      attestation head — not merely a `check_head` string-compare of the pinned head (which a moved
+      tree, a swapped pack or a stale attestation would slip past). Still engine-free (the air rider
+      :2963 — no gate, no views); the walk is the recompute the verifier already does. `check_head`
+      keeps its role (live staleness — a moved head still HALTS). It is BOUND to the recovering subject
+      by the checkpoint's pinned IDENTITY (chain head + Merkle root), never by file path — the diving
+      buddy's two bodies are independent replicas at DIFFERENT paths; a pair naming no member that pins
+      this store's content has no subject to verify and HALTS.
   (3) BUDDY — the diving-buddy mutual receipt (`checkpoint.pairing_verdict`, EP-45): two checkpoints by
       INDEPENDENT folds, each confirming the other's Merkle root; neither alone is authority. Engine-
-      free (the air rider). A one-sided receipt HALTS.
+      free (the air rider). A one-sided receipt HALTS — and (R5) a pair that does not NAME this store
+      (a valid receipt about two OTHER stores) does not authorise a recover of THIS one and HALTS.
 
 LAYERING (§8-h, RW5). This is a BRIDGE module: bridge sits ABOVE the kernel. It consumes the kernel
 recover op read-only (via the gate) and the two bridge checks; the KERNEL never imports the bridge —
@@ -96,17 +103,40 @@ def triple_check(store, cp, target_head, buddy_pair):
 
     `buddy_pair` is the 6-tuple `checkpoint.pairing_verdict` takes:
     `(cp_a, record_path_a, blob_dir_a, cp_b, record_path_b, blob_dir_b)` — the two INDEPENDENT folds."""
+    # THE PAIR MUST NAME THIS STORE (R5, EP-MAINT-OUTSIDE-4). The recovering subject is the store whose
+    # checkpoint `cp` pins THIS content — its chain head and Merkle root. The buddy pair carries two
+    # cross-attested checkpoints (each over an INDEPENDENT replica record file — the diving-buddy's two
+    # bodies, at DIFFERENT paths by design). Binding by file PATH would reject that legitimate model, so
+    # the subject is bound by pinned IDENTITY: the pair member whose checkpoint pins the same content as
+    # `cp`. A valid pair about two OTHER stores names no such member and does not authorise a recover of
+    # THIS store — both the checkpoint and the buddy check then fail.
+    def _ident(c):
+        p = c.get("provenance") or {}
+        return (p.get("chain_head"), p.get("merkle_root"))
+    cp_a, rp_a, bd_a, cp_b, rp_b, bd_b = buddy_pair
+    cp_ident = _ident(cp)
+    mine = next(((c, rp, bd) for (c, rp, bd) in ((cp_a, rp_a, bd_a), (cp_b, rp_b, bd_b))
+                 if _ident(c) == cp_ident), None)
+    names_this_store = mine is not None
     # (1) CHAIN — the kernel op's OWN adjudication, reused. A fabricated head -> None (never to
     #     wrongness, the laundering-door shut); a head beyond the break -> not within verified_through.
     fold = store.verify_chain()
     target_seq = erasure._seq_of_head(store, target_head)
     chain = (target_seq is not None and target_seq <= fold["verified_through"])
-    # (2) CHECKPOINT — the hash rematch: the checkpoint's pinned head equals the live head (CURRENT),
-    #     a single string comparison (engine-free). A moved/stale head is not a rematch.
-    cp_ok = (checkpoint.check_head(cp, _live_head(store)) == checkpoint.CURRENT)
+    # (2) CHECKPOINT — LIVE STALENESS *and* the FULL VERIFIER (R5). `check_head` keeps its role: the
+    #     pinned head must equal the LIVE head (a moved head halts — a check the verifier over a frozen
+    #     replica cannot make). ADDED is the previously-UNUSED full verifier `checkpoint.verify`, which
+    #     recomputes the tree, the chain head, the founding-pack sha AND the attestation head from the
+    #     record + blobs the checkpoint pins (still engine-free — the air rider) — so a matching head
+    #     over a corrupt tree, a swapped pack or a stale attestation now HALTS where the O(1) string
+    #     compare passed. Bound to this store's own identity; a pair not naming this store fails.
+    cp_ok = (names_this_store
+             and checkpoint.check_head(cp, _live_head(store)) == checkpoint.CURRENT
+             and bool(checkpoint.verify(cp, mine[1], mine[2])["ok"]))
     # (3) BUDDY — the diving-buddy mutual receipt (engine-free): both witnesses confirm the other's root
     #     against an independent recompute, and the two folds are independent. A one-sided receipt fails.
-    buddy = bool(checkpoint.pairing_verdict(*buddy_pair)["ok"])
+    #     R5: the pairing must ALSO name this store — a valid pair about two OTHER stores does not pass.
+    buddy = bool(checkpoint.pairing_verdict(*buddy_pair)["ok"]) and names_this_store
     verdict = {"chain": chain, "checkpoint": cp_ok, "buddy": buddy}
     verdict["ok"] = chain and cp_ok and buddy
     verdict["failed"] = [name for name in CHECKS if not verdict[name]]

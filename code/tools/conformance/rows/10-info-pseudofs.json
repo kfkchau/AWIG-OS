@@ -1,0 +1,231 @@
+{
+ "group": "10-info-pseudofs",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a710",
+ "title": "Information & pseudo-filesystems",
+ "subsystem_derivation": "03 \u00a75 (the ports \u2014 pseudo-filesystem surface). /proc and /sys are rendered as what they always morally were \u2014 computed views, now honestly derived from the record. Reads are CACHE-only reads over a computed view; their values reflect gov-os's true derived state, so byte-for-byte equality of dynamic fields is NOT promised \u2014 shape and schema are.",
+ "active": false,
+ "activates_at": null,
+ "activation_note": "This group has no single home: design/36 \u00a76 lands the /proc files slices at EP-28 and the scheduling slices at EP-32, and names no home for the whole-system information calls (uname, sysinfo, getrusage, getrandom, syslog). Rows carry their own activates_at where the paper settles it and null where it does not; the nulls are raised, never guessed.",
+ "rows": [
+  {
+   "row_id": "info.uname",
+   "syscall": "uname",
+   "variants": [],
+   "what_it_does": "Report kernel name / release / version / machine.",
+   "subsystems": [
+    "info"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Computed identity view. sysname/release fields report gov-os's true identity (a governed kernel), while the ABI struct shape is identical. Programs that gate on version strings see gov-os's honest values (03 \u00a75).",
+   "status": "ENCODED",
+   "activates_at": "UNASSIGNED",
+   "probe": null,
+   "probe_absent_reason": "design/36 \u00a76 gives the /proc slices two homes \u2014 the files slices at EP-28 and the scheduling slices at EP-32 \u2014 and names no home for the whole-system information calls. This row's activation EP is therefore UNASSIGNED and is raised rather than guessed; assigning it is a plan decision, not this instrument's.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.sysinfo",
+   "syscall": "sysinfo",
+   "variants": [],
+   "what_it_does": "Report memory / load / uptime aggregates.",
+   "subsystems": [
+    "info"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Derived aggregates over recorded state + STREAM samples. Struct shape identical; values are gov-os's true derived state (some fields are honest-boundary observability, 03 \u00a71.5).",
+   "status": "ENCODED",
+   "activates_at": "UNASSIGNED",
+   "probe": null,
+   "probe_absent_reason": "design/36 \u00a76 gives the /proc slices two homes \u2014 the files slices at EP-28 and the scheduling slices at EP-32 \u2014 and names no home for the whole-system information calls. This row's activation EP is therefore UNASSIGNED and is raised rather than guessed; assigning it is a plan decision, not this instrument's.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.getrusage",
+   "syscall": "getrusage",
+   "variants": [],
+   "what_it_does": "Report resource usage of self / children.",
+   "subsystems": [
+    "info"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Derived from recorded decisions plus STREAM-sampled counters \u2014 CPU-time and fault fields are observability (honest boundary, 03 \u00a71.5), not audit. Struct/RUSAGE_* semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "UNASSIGNED",
+   "probe": null,
+   "probe_absent_reason": "design/36 \u00a76 gives the /proc slices two homes \u2014 the files slices at EP-28 and the scheduling slices at EP-32 \u2014 and names no home for the whole-system information calls. This row's activation EP is therefore UNASSIGNED and is raised rather than guessed; assigning it is a plan decision, not this instrument's.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.times",
+   "syscall": "times",
+   "variants": [],
+   "what_it_does": "Report process/children CPU times.",
+   "subsystems": [
+    "info",
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Derived; tick semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.proc_read",
+   "syscall": "getdents",
+   "variants": [
+    "read_on_proc"
+   ],
+   "what_it_does": "Enumerate processes / read /proc/<pid>/*.",
+   "subsystems": [
+    "files"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "CACHE-only read (computed view). The process list and per-process files are computed views over the record (03 \u00a75) \u2014 no record produced by reading them. Schema/field layout identical; dynamic values are gov-os's true state.",
+   "status": "ENCODED",
+   "activates_at": "EP-28",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-28 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.proc_readlink",
+   "syscall": "readlink",
+   "variants": [],
+   "what_it_does": "Resolve process-introspection symlinks (/proc/self/{exe,fd/N,cwd,root}).",
+   "subsystems": [
+    "files"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Computed view; target strings identical in form.",
+   "status": "ENCODED",
+   "activates_at": "EP-28",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-28 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "shape_only": true
+   }
+  },
+  {
+   "row_id": "info.proc_sys",
+   "syscall": "read_on_proc_sys",
+   "variants": [
+    "write_on_proc_sys",
+    "sysctl"
+   ],
+   "what_it_does": "Read / set kernel tunables.",
+   "subsystems": [
+    "files"
+   ],
+   "recording_class": [
+    "CACHE",
+    "LAW"
+   ],
+   "conformance_note": "read = CACHE-only; write = LAW. Tunables ARE law: writing one is a recorded amendment with authority (the legacy sysctl syscall is deprecated; the /proc/sys path is the live surface). Read shape and EPERM on protected keys identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-28",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-28 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "info.getrandom",
+   "syscall": "getrandom",
+   "variants": [],
+   "what_it_does": "Fill a buffer with random bytes.",
+   "subsystems": [
+    "info",
+    "devices"
+   ],
+   "recording_class": [
+    "INPUT"
+   ],
+   "conformance_note": "Clean INPUT case: entropy is external nondeterminism, entering the record as an input event (03 \u00a72). This makes the draw replayable relative to the recorded input stream (03 \u00a71.3) \u2014 determinism conditioned on the entropy being recorded, never 'free'. GRND_NONBLOCK/GRND_RANDOM, EAGAIN before pool init, blocking semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "UNASSIGNED",
+   "probe": null,
+   "probe_absent_reason": "design/36 \u00a76 gives the /proc slices two homes \u2014 the files slices at EP-28 and the scheduling slices at EP-32 \u2014 and names no home for the whole-system information calls. This row's activation EP is therefore UNASSIGNED and is raised rather than guessed; assigning it is a plan decision, not this instrument's."
+  },
+  {
+   "row_id": "info.sysfs_legacy",
+   "syscall": "sysfs",
+   "variants": [
+    "ustat"
+   ],
+   "what_it_does": "Legacy filesystem-info calls.",
+   "subsystems": [
+    "files"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Rarely used; computed view.",
+   "status": "ENCODED",
+   "activates_at": "EP-28",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-28 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "info.syslog",
+   "syscall": "syslog",
+   "variants": [
+    "klogctl"
+   ],
+   "what_it_does": "Read / control the kernel log ring buffer.",
+   "subsystems": [
+    "info",
+    "devices"
+   ],
+   "recording_class": [
+    "CACHE",
+    "DECISION"
+   ],
+   "conformance_note": "read = CACHE-only; control = DECISION. The kernel log is observability; reading it is a view read, control ops (clear, console-level) are recorded decisions. EPERM on privileged actions identical.",
+   "status": "ENCODED",
+   "activates_at": "UNASSIGNED",
+   "probe": null,
+   "probe_absent_reason": "design/36 \u00a76 gives the /proc slices two homes \u2014 the files slices at EP-28 and the scheduling slices at EP-32 \u2014 and names no home for the whole-system information calls. This row's activation EP is therefore UNASSIGNED and is raised rather than guessed; assigning it is a plan decision, not this instrument's."
+  },
+  {
+   "row_id": "info.membarrier",
+   "syscall": "membarrier",
+   "variants": [],
+   "what_it_does": "Issue a process-wide memory barrier.",
+   "subsystems": [
+    "memory",
+    "scheduling"
+   ],
+   "recording_class": [
+    "STREAM"
+   ],
+   "conformance_note": "STREAM (mechanism). Applies already-recorded ordering guarantees across cores; a per-op mechanism, not a governance change. MEMBARRIER_CMD_* registration/expedited semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-32",
+   "probe": null,
+   "probe_absent_reason": "the info/pseudo-fs group is inactive until EP-32 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

@@ -33,8 +33,20 @@ SYSCALL_MAP = {
     "chmod":   ("FILE-PERM",   lambda a: {"path": a["path"], "perm": a["perm"]}),
     "mmap":    ("MEM-GRANT",   lambda a: {"region": a["addr"], "size": a["length"], "holder": a.get("holder", "proc")}),
     "mount":   ("MOUNT",       lambda a: {"mount_point": a["target"], "source": a.get("source"), "fs_type": a.get("fstype")}),
-    "socket":  ("COMMS-OPEN",  lambda a: {"channel": a["channel"]}),
+    # EP-48 (N2): the wire and the channel are TWO names. `socket` now maps to SOCKET-OPEN (was
+    # COMMS-OPEN — the old mapping survives in the founding record's history, never edited), and
+    # the socket-only syscalls map to their wire ops. `close` is deliberately ABSENT: the flat map
+    # cannot discriminate a socket fd's close from a file fd's, so SOCKET-CLOSE is reached by the op
+    # directly on the host (:3266 precision 3); EP-48G maps it in-guest where the fd's kind is known.
+    # These arg->params MAPPERS are code (mechanism); the syscall->op NAME map is the amended
+    # `syscall-ops` pack read through the views fold — this literal is only the labeled boot FALLBACK.
+    "socket":  ("SOCKET-OPEN",   lambda a: {"entity": a["entity"], "socket": a["socket"], "family": a["family"]}),
+    "bind":    ("SOCKET-BIND",   lambda a: {"socket": a["socket"], "address": a["address"]}),
+    "listen":  ("SOCKET-LISTEN", lambda a: {"socket": a["socket"]}),
+    "connect": ("SOCKET-CONNECT", lambda a: {"socket": a["socket"], "target": a["target"]}),
+    "accept":  ("SOCKET-ACCEPT", lambda a: {"socket": a["socket"], "peer": a["peer"]}),
     "sendmsg": ("COMMS-SEND",  lambda a: {"channel": a["channel"], "message": a["message"], "to": a.get("to")}),
+    "recvmsg": ("COMMS-RECV",  lambda a: {"channel": a["channel"]}),
 }
 
 # a governed refusal's cited rule -> the errno userland expects. Law-as-data: seeded at

@@ -109,6 +109,29 @@ CLASS_MAP = {
         "timer-tick": INPUT,
         "arrival-traffic": STREAM,
     },
+    # EP-49B (design/51 §3 N4, §4): a fact an ungoverned PEER asserts across the tunnel is an
+    # external arrival the box did not author -> INPUT (the world's CLAIM), never a DECISION the
+    # record authors. This window has NO "peer-decision" act BY CONSTRUCTION: a peer cannot author
+    # a decision in this box (T-PEER-RECORD-NOT-TRUSTED). What the record truthfully says about an
+    # ungoverned peer is exactly what crossed and no more (design/51 §9 — the C6 cap). The peer's
+    # per-packet flow is STREAM (design/51 §4 NET-INPUT's non-recorded companion; appends nothing).
+    "peer": {
+        "peer-asserted-fact": INPUT,        # a claim the peer makes about itself or the world
+        "peer-state-changed": INPUT,        # connected / reset / closed-by-peer (design/51 §4 NET-INPUT)
+        "peer-traffic": STREAM,             # bytes on the wire from the peer — never a record
+    },
+    # EP-49D (design/51 §3 N9): the RECEIPT — one row, one receipt, two bodies. A row sent from body
+    # A is received at body B; B's RECEIPT is a state-changing act B AUTHORED (the receiver's OWN row
+    # of a crossing) -> DECISION. The row it receives from A is an external arrival B did not author
+    # -> INPUT (never a DECISION the record authors; N4's cap — identity is what crossed). B writes
+    # only its OWN record (one pen per record, D08.30); the per-row wire flow between bodies is STREAM
+    # (appends nothing). This window has NO act mapping A's claim to a DECISION — B never authors A's
+    # decision (T-PEER-RECORD-NOT-TRUSTED, the border's neighbour discipline).
+    "receipt": {
+        "receipt-recorded": DECISION,       # B's own record of a crossing (the receiver's row, N9)
+        "row-received": INPUT,              # a row sent from body A, received at B as INPUT
+        "receipt-traffic": STREAM,          # per-row flow between two bodies — never a record
+    },
 }
 
 #: The acts that reach the record, per window — the closed vocabulary the write path enforces.

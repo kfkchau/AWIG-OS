@@ -1,0 +1,39 @@
+{
+  "name": "ep25-fuse-mount",
+  "kind": "governed",
+  "description": "EP-25's M2 custody mount: a real directory tree served from the append-only record through FUSE. The probe's scratch is a directory INSIDE the mountpoint, so every call it drives crosses the real kernel VFS and lands on the record machine — and the mountpoint itself is left holding only what the record says is there. The subject block is what makes the claim checkable: verify establishes that /tmp/govos-m2/mnt is served by fuse and ABORTS otherwise, because a pass against an unraised mount is indistinguishable from success (design/10 §11.2b). Paths are ABSOLUTE and under /tmp, and a `~` anywhere in a descriptor is expanded by the harness now — one became a directory literally named `~`, and the harness reported ABI 40 of 40 against it while the record file held one name. Raise the mount first: PYTHONPATH=src python3 -m bridge.mount /tmp/govos-m2/rec.jsonl /tmp/govos-m2/blobs /tmp/govos-m2/mnt",
+  "capabilities": [],
+  "coalescing_policies": [
+    "FS-WRITE-COALESCING",
+    "FS-READ-AGGREGATION"
+  ],
+  "subject": {
+    "path": "/tmp/govos-m2/mnt",
+    "fstype": "fuse"
+  },
+  "transport": {
+    "type": "local",
+    "scratch": "/tmp/govos-m2/mnt/conformance-scratch",
+    "python": "python3"
+  },
+  "record": {
+    "jsonl": "/tmp/govos-m2/rec.jsonl"
+  },
+  "class_map": {
+    "python": "bridge.custody:CUSTODY_CLASS_MAP"
+  },
+  "covers_map": {
+    "json": "ep25-custody-covers.json",
+    "note": "The record vocabulary's covered acts (design/10 §11.4a), shared by both M2 worlds because both run the same mount. Each entry is DERIVED from which handler in the mount appends the record and from which syscalls the kernel routes to that handler; the entries for FILE-WRITE and FILE-READ-AGGREGATE include fallocate/copy_file_range/sendfile/splice because a filesystem with no allocation or copy operation of its own sees those calls arrive as reads and writes at the port, which the no-coalescing world confirms by landing each record inside the step that caused it. An empty list says the kind is about no act a caller made; \"*\" says the kind names its own act in its payload, which is the shape of a gate refusal."
+  },
+  "replay": {
+    "command": [
+      "python3",
+      "-m",
+      "bridge.replay_snapshot",
+      "/tmp/govos-m2/rec.jsonl",
+      "/tmp/govos-m2/blobs",
+      "{row_id}"
+    ]
+  }
+}

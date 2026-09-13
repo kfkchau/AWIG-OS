@@ -44,6 +44,7 @@ claim about the code.
 
 import errno
 import os
+import socket
 import stat as statmod
 import sys
 import threading
@@ -430,16 +431,28 @@ class KernelPort:
 
     # ---- the two request classes ----------------------------------------------------
     def handle(self, fields, payload):
-        """Returns (status, reply_fields, reply_payload)."""
+        """Returns (status, reply_fields, reply_payload).
+
+        R4 (EP-MAINT-OUTSIDE-4): CONTAINMENT AT THE PORT. A malformed identity or time field is a
+        PROTOCOL failure and is mapped to EPROTO HERE, at the handler, for BOTH request classes —
+        not only DECISION, whose own inner catches (`_decide`) had it while FILL let a malformed field
+        escape as an uncaught exception to the serve loop's EIO backstop. A well-formed handle naming
+        nothing is ESTALE (a handle into a world that moved), never EPROTO. The loop's catch stays a
+        backstop; the contract is that a malformed field never reaches it."""
         op = fields.get("op") or ""
         cls = fields.get("class") or ""
-        if cls == "FILL":
-            self.counters["fills"] += 1
-            return self._fill(op, fields)
-        if cls == "DECISION":
-            self.counters["decisions"] += 1
-            return self._decide(op, fields, payload)
-        return -errno.EPROTO, {}, b""
+        try:
+            if cls == "FILL":
+                self.counters["fills"] += 1
+                return self._fill(op, fields)
+            if cls == "DECISION":
+                self.counters["decisions"] += 1
+                return self._decide(op, fields, payload)
+            return -errno.EPROTO, {}, b""
+        except (custody.UnparseableRecordValue, custody.UnrenderableIdentity):
+            return -errno.EPROTO, {}, b""
+        except custody.IdentityNotInFold:
+            return -errno.ESTALE, {}, b""
 
     # ---- FILLS: data, never a verdict. Nothing below touches the gate. --------------
     def _fill(self, op, f):
@@ -801,6 +814,69 @@ class KernelPort:
                     out[k] = custody._num(f[k], "the read aggregate's " + k)
             return out
         return base
+
+
+# ---------------------------------------------------------------------------
+# THE GUEST-REAL SOCKET SEAM (EP-48G, design/51 N1). The RECORD decides a
+# SOCKET-OPEN grant (NET-LAW-GRANT: who may open what, to where); the GUEST
+# kernel opens the real socket. GUEST-ONLY (EP-00 rule 9): a real socket opens
+# ONLY in the pinned guest, and this seam REFUSES on any other surface — so
+# RW-HOST-SOCKET is a CAPABILITY here, not a promise. EP-48's modelled host
+# table stands BESIDE this real arm (the era split), never replaced by it.
+# ---------------------------------------------------------------------------
+
+_GUEST_HOST = "gov-lab"          # the pinned guest's hostname   (kcheck.sh's surface)
+_GUEST_VIRT = "kvm"              # the pinned guest's virtualisation (kcheck.sh's surface)
+_SOCKET_FAMILY = {"inet": socket.AF_INET, "inet6": socket.AF_INET6, "unix": socket.AF_UNIX}
+
+
+class RealSocketOnHostRefused(RuntimeError):
+    """A real socket was asked for outside the pinned guest. The host arm is the
+    MODELLED table (EP-48); the real arm is the guest's alone (EP-00 rule 9). A
+    real socket opens in the guest or nowhere — refused, never opened on the host."""
+
+
+def in_pinned_guest():
+    """THE TWO SURFACES kcheck.sh READS: virt=kvm AND host=gov-lab. A real socket
+    opens only where BOTH hold — the same discrimination the kernel-pin check makes,
+    so a host-side call cannot masquerade as the guest (a right-shaped hostname on
+    the wrong virt, or the reverse, is refused). systemd-detect-virt prints "none"
+    and exits 1 on bare metal, so the value — not the exit — decides."""
+    try:
+        import subprocess
+        virt = subprocess.run(["systemd-detect-virt"], capture_output=True,
+                              text=True, timeout=5).stdout.strip()
+    except Exception:
+        virt = ""
+    return virt == _GUEST_VIRT and socket.gethostname() == _GUEST_HOST
+
+
+def open_real_socket_under_grant(gate, entity, socket_id, family, *, guest_check=in_pinned_guest):
+    """Drive a SOCKET-OPEN act REAL: the RECORD decides first, and ONLY under a
+    recorded grant does a real socket open in THIS (guest) kernel.
+
+      GRANTED -> (decision_record, real_socket): a real fd in the guest kernel,
+                 opened ONLY after the grant is on the record — the grant is
+                 load-bearing, a refused act raises before any socket is reached.
+      REFUSED -> OpError propagates from the gate; NO real socket is opened; the
+                 refusal is on the record and the caller renders the errno the
+                 rule-errno pack maps for the cited rule (NET-LAW-GRANT -> EACCES).
+
+    Refuses to open a real socket outside the pinned guest (RW-HOST-SOCKET as a
+    capability, not a note). The caller owns the returned socket and MUST close it."""
+    # THE RECORD DECIDES FIRST. A refused grant raises here; no real socket is reached.
+    decision = gate.execute("SOCKET-OPEN", entity,
+                            {"entity": entity, "socket": socket_id, "family": family})
+    # GRANTED on the record. The real socket opens ONLY in the guest.
+    if not guest_check():
+        raise RealSocketOnHostRefused(
+            "a real socket may open only in the pinned guest (virt=kvm host=gov-lab, "
+            "EP-00 rule 9); on the host the wire is the modelled table (EP-48)")
+    fam = _SOCKET_FAMILY.get(family)     # a family the grant law does not name never reaches here
+    if fam is None:
+        raise RealSocketOnHostRefused("unknown socket family: %r" % (family,))
+    real = socket.socket(fam, socket.SOCK_STREAM)
+    return decision, real
 
 
 def serve(port, ctl_path=CTL_DEFAULT, once=False):

@@ -36,6 +36,7 @@ matchPattern class) is the later shape. Amending a definition-born op = retire +
 (v1 keeps shadowing impossible rather than clever).
 """
 
+import operator
 import re
 from collections.abc import Mapping
 
@@ -211,9 +212,61 @@ VOCAB_DOOR_LAW = "VOCAB-DOOR-LAW"
 # sweep computes this list for every existing op (`structural_field_classification`).
 STRUCTURAL_PARAMS = "structural_params"
 
+# THE PARAM-KINDS DECLARATION (C-1/C-3; EP-MAINT-OUTSIDE-2, archi :3520). A definition-level map,
+# beside `structural_params`, classifying a param's VALUE KIND so the door can refuse a malformed
+# value AT CALL TIME (before it reaches the group commit, where a malformed value crashes it). It is
+# DATA (a MINOR founding move, attested), driven from the pack's own param semantics, never a
+# hard-coded list. The closed kind set:
+#   quantity    a non-negative INTEGER count (a size, a length, a ceiling). Door refuses a negative or
+#               a non-integer (bool excluded FIRST — a boolean is not a count — and a float refused).
+#   text        a UTF-8 STRING governance field. Door refuses a raw `bytes` value: a non-UTF-8 byte
+#               string is not serialisable and crashes the record write (json.dumps -> TypeError ->
+#               BatchFailed). Empty-required is already the required-params door's refusal.
+#   bytes       a byte PAYLOAD that legitimately carries non-UTF-8 (a content-homed blob, a B8-tagged
+#               xattr value, a read-aggregate byte total). EXEMPT from the guard — its op/adapter homes
+#               or encodes it; the door does not refuse it.
+#   measurement a STRUCTURED measurement field (design/A51 — value+cell+population+basis, never a bare
+#               number). NO scalar guard — the op's own structured-field refusal of a bare int stands
+#               (do not red EP-30 custody). Declared so the classification is explicit, not inferred.
+# The CODE half is the door's per-kind guard (kernel.gate._decide). No new check kind is minted: the
+# guard reads the definition's own declaration and refuses under the existing shape rule AR-2, exactly
+# as the vocabulary door does; `_require_wellformed_param_kinds` refuses a declaration naming an
+# undeclared param or an unknown kind at DEFINITION time.
+PARAM_KINDS = "param_kinds"
+#: The closed kind set. A declaration naming a kind outside this refuses at the definition door.
+PARAM_KIND_SET = ("quantity", "text", "bytes", "measurement")
+
 OP_CHECKS = ("require_prior", "sight", "ceiling", "consistency", "sop", "definition_ref", "entry_ref",
              "space_tree", "fingerprint", "binding", "kind", "contains", "prior_value",
-             "value_domain", "live_slot", "bound_field", "every_member")
+             "value_domain", "live_slot", "bound_field", "every_member",
+             "live_present", "fold_threshold")
+#            live_present / fold_threshold: EP-49C — the two kinds the owner ruled by explicit act
+#            (board :3354/:3355, "go yes"), the FIRST growth of the closed check vocabulary since
+#            design/40, and CODE-BORN (opdefs.py; the pack lists no check vocabulary, :3355). They
+#            are what the comms laws (COMM-LAW-CONTRACT / COMM-LAW-QUEUE) needed and the sixteen
+#            question-kinds could not ask — send-liveness, whose-close, non-empty receive and
+#            sending authority (design/51 N5).
+#            live_present: THE POLARITY COMPLEMENT OF `live_slot`. `live_slot` refuses a member that
+#            IS present past its slot (at most one live occupant); `live_present` refuses a member
+#            that is ABSENT from a live set the record derives. The live set is folded generically
+#            from the row's declared `open_action` / `close_action` and keyed by `key_params` — the
+#            SAME record `live_channels` (comms.py) folds, computed here the way `_live_slots`
+#            computes live_slot's, never by importing a subsystem (a check kind is generic
+#            vocabulary, available to N1/N8; opdefs never reaches a subsystem view). `present` names
+#            which key fields the CALL must match (a param, or `$actor` — the engine's fact, never
+#            the caller's claim) and which it leaves wildcard, so ONE kind asks channel-liveness
+#            (channel present, any holder), whose-close and authority ((actor, channel) present).
+#            `close_actor_key` sources a key field of the CLOSE from the record's actor, which is
+#            what makes the close whose-keyed rather than name-keyed (comms.py's raised cap cured).
+#            The refusal NAMES THE SET AND THE MISSING MEMBER. Its own red world and positive control.
+#            fold_threshold: A NAMED DERIVED COUNT COMPARED TO A THRESHOLD BY A NAMED OPERATOR. The
+#            count is `add_action` records minus `sub_action` records, scoped by `key_param` against
+#            `key_field` — `queue_depth` (sent minus received on a channel) is exactly this. The
+#            refusal NAMES THE FOLD, THE VALUE AND THE THRESHOLD. Its own red world and positive
+#            control. Neither kind is derivable from the other seventeen: `live_slot` inverts the
+#            polarity and asks about occupancy not presence; no kind counted a fold against a
+#            threshold at all. Both stay migratable under the rebuildability rider — declarations
+#            name them BY NAME and the evaluators name no other kind.
 #            every_member: EP-30-K2 — APPLY A DECLARED QUESTION TO EVERY MEMBER OF A MANY-VALUED
 #            PARAMETER. The SEVENTEENTH kind, and THE FIRST THAT IS NOT A QUESTION — it is a
 #            QUANTIFIER OVER THE OTHER SIXTEEN. The sixteen above have sixteen ways to ask about a
@@ -1456,10 +1509,37 @@ def validate_definition_shape(gate, doorname, actor, name, d, peers=None, classi
     _require_derivable_mints(gate, doorname, actor, d)
     _require_wellformed_key_of(gate, doorname, actor, d)
     _require_wellformed_check_rows(gate, doorname, actor, d, peers)
+    _require_wellformed_param_kinds(gate, doorname, actor, d)       # C-1/C-3: a declared kind is a declared param, a known kind
     if classify_law_live:
         _require_field_classification(gate, doorname, actor, d)     # EP-41A member 2, when lawed
     if d.get("executor") is not None:
         crossing.validate_station(gate, actor, doorname, name, d)   # T-CONTEXT-PINNED
+
+
+def _require_wellformed_param_kinds(gate, doorname, actor, d):
+    """THE PARAM-KINDS DECLARATION'S DEFINITION-TIME LEASH (C-1/C-3; EP-MAINT-OUTSIDE-2). A definition's
+    `param_kinds` maps a param name to a value kind, and every entry must be well-formed: a dict, each
+    key a param the op DECLARES (a name the op never takes could never be guarded — the door reads its
+    value at call time), and each value a kind in the closed set (`PARAM_KIND_SET`) — an unknown kind is
+    a malformed definition (AR-2, the shape rule its sibling clauses cite). Inert for a definition that
+    declares none (the pre-C-1 shape), so a world with no param_kinds founds exactly as before."""
+    pk = d.get(PARAM_KINDS)
+    if pk is None:
+        return
+    if not isinstance(pk, dict):
+        gate.refuse(actor, doorname, "AR-2",
+                    f"a {PARAM_KINDS!r} declaration must be a map of param name -> kind, got {type(pk).__name__}")
+    params = set(d.get("params") or {})
+    for name, kind in pk.items():
+        if name not in params:
+            gate.refuse(actor, doorname, "AR-2",
+                        f"a {PARAM_KINDS!r} entry {name!r} names no declared param of this operation — a "
+                        "param the door guards must be a param the op takes (the call-time guard reads "
+                        "its value)")
+        if kind not in PARAM_KIND_SET:
+            gate.refuse(actor, doorname, "AR-2",
+                        f"a {PARAM_KINDS!r} kind {kind!r} for {name!r} is not one of the closed set "
+                        f"{PARAM_KIND_SET} — the door validates only these kinds")
 
 
 def _content_home_params(d):
@@ -1544,6 +1624,8 @@ def _require_wellformed_check_rows(gate, doorname, actor, d, peers=None):
     _require_wellformed_bound_field(gate, doorname, actor, d)
     _require_wellformed_value_domain(gate, doorname, actor, d)
     _require_wellformed_live_slot(gate, doorname, actor, d)
+    _require_wellformed_live_present(gate, doorname, actor, d)
+    _require_wellformed_fold_threshold(gate, doorname, actor, d)
     _require_wellformed_every_member(gate, doorname, actor, d, peers)
     _require_wellformed_ceiling(gate, doorname, actor, d)
 
@@ -1729,6 +1811,98 @@ def _require_wellformed_live_slot(gate, opname, actor, d):
                         "one slot, admitting exactly one opening in the whole estate")
 
 
+def _require_wellformed_live_present(gate, opname, actor, d):
+    """A PRESENCE LAW THAT CANNOT NAME ITS SET, ITS KEY OR ITS MEMBER IS UNENFORCEABLE (EP-49C).
+    Definition time, all three doors — `live_slot`'s leash carried to its complement.
+
+    No `open_action`/`close_action` and the live set cannot be folded. No `key_params` and a live
+    member has no identity. No `present` and nothing says which member the act requires. AND — the
+    op-amend lesson made a door check (my own, [[feedback-op-amend-needs-meta-param-declaration]]):
+    a `present` field sourced from a call PARAM the operation does not declare would read an absent
+    value on every act or be refused by the door as nonconforming, so a param source that is not a
+    declared parameter refuses HERE, and `$actor` (the engine's fact, not a param) is always
+    admitted. A `close_actor_key` that is not one of the key fields keys the close by nothing."""
+    known = set(d.get("params") or {}) | set(d.get("param_defaults") or {})
+    for c in (d.get("checks") or []):
+        if c.get("check") != "live_present":
+            continue
+        for field in ("open_action", "close_action"):
+            if not isinstance(c.get(field), str) or not c.get(field):
+                gate.refuse(actor, opname, "AR-2",
+                            'a "live_present" check declares no %s — the live set it reads cannot '
+                            "be folded without one" % field)
+        kp = c.get("key_params")
+        if (not isinstance(kp, (list, tuple)) or not kp
+                or not all(isinstance(k, str) and k for k in kp)):
+            gate.refuse(actor, opname, "AR-2",
+                        'a "live_present" check declares no key_params — a live member with no key '
+                        "cannot be identified in the set")
+        present = c.get("present")
+        if not isinstance(present, Mapping) or not present:
+            gate.refuse(actor, opname, "AR-2",
+                        'a "live_present" check declares no present mapping — nothing names the '
+                        "member this act requires, so the check would require the whole set or none")
+        for k, src in (present if isinstance(present, Mapping) else {}).items():
+            if k not in (kp or ()):
+                gate.refuse(actor, opname, "AR-2",
+                            'a "live_present" present names %r, which is not one of its key_params '
+                            "— it would pin a field the live set is not keyed by" % (k,))
+            if src != "$actor" and src not in known:
+                gate.refuse(actor, opname, "AR-2",
+                            'a "live_present" present sources %r from %r, a parameter this '
+                            "operation does not declare — the door would refuse a conforming call "
+                            "or the check would read an absent value on every act (the op-amend "
+                            "param rule; $actor is the engine's fact and needs no declaration)"
+                            % (k, src))
+        cak = c.get("close_actor_key")
+        if cak is not None and cak not in (kp or ()):
+            gate.refuse(actor, opname, "AR-2",
+                        'a "live_present" close_actor_key %r is not one of its key_params — the '
+                        "close would remove a member keyed by nothing" % (cak,))
+
+
+def _require_wellformed_fold_threshold(gate, opname, actor, d):
+    """A FOLD-THRESHOLD LAW THAT CANNOT NAME ITS FOLD, ITS OPERATOR OR ITS THRESHOLD IS UNENFORCEABLE
+    (EP-49C). Definition time, all three doors.
+
+    No `add_action` and nothing is counted. No `key_param`/`key_field` and the count is unscoped. An
+    `operator` outside the closed set (or a `threshold` that is not an integer) is a comparison that
+    admits every value while reading as one — `value_domain`'s absent-domain danger, at this kind. A
+    `key_param` the operation does not declare reads an absent scope on every act (the op-amend
+    lesson again)."""
+    known = set(d.get("params") or {}) | set(d.get("param_defaults") or {})
+    for c in (d.get("checks") or []):
+        if c.get("check") != "fold_threshold":
+            continue
+        if not isinstance(c.get("add_action"), str) or not c.get("add_action"):
+            gate.refuse(actor, opname, "AR-2",
+                        'a "fold_threshold" check declares no add_action — a count over no records '
+                        "counts nothing")
+        sub = c.get("sub_action")
+        if sub is not None and (not isinstance(sub, str) or not sub):
+            gate.refuse(actor, opname, "AR-2",
+                        'a "fold_threshold" sub_action, when declared, names the records subtracted '
+                        "from the count")
+        for field in ("key_param", "key_field", "fold_name"):
+            if not isinstance(c.get(field), str) or not c.get(field):
+                gate.refuse(actor, opname, "AR-2",
+                            'a "fold_threshold" check declares no %s — the fold is unscoped or '
+                            "unnamed" % field)
+        if c.get("key_param") not in known:
+            gate.refuse(actor, opname, "AR-2",
+                        'a "fold_threshold" key_param %r is a parameter this operation does not '
+                        "declare — the fold would read an absent scope on every act" % (c.get("key_param"),))
+        if c.get("operator") not in _FOLD_OPERATORS:
+            gate.refuse(actor, opname, "AR-2",
+                        'a "fold_threshold" operator %r is not one of the closed set %s — an '
+                        "unknown operator is a comparison that reads as a restriction and admits "
+                        "everything" % (c.get("operator"), ", ".join(_FOLD_OPERATORS)))
+        if not isinstance(c.get("threshold"), int) or isinstance(c.get("threshold"), bool):
+            gate.refuse(actor, opname, "AR-2",
+                        'a "fold_threshold" threshold must be an integer — a count compares against '
+                        "a number")
+
+
 def _peer_definitions(views):
     """The live definitions a runtime door compares an arriving one against (EP-28K). The
     LIVE REGISTRY rather than the pack, because that is what the arriving definition will
@@ -1804,9 +1978,19 @@ def _ceiling_check(gate, store, views, actor, opname, c, params):
             agg.pop(pp.get(c["key_param"]), None)
     used = sum(agg.values())
     requested = params.get(c["amount_param"], 0)
-    if used + requested > ceiling:
+    # B5 (a): a NEGATIVE amount is a malformed request and refuses at the door. Without this a
+    # negative amount slips past (used + a negative never exceeds the ceiling) and could even free
+    # budget it never held.
+    if isinstance(requested, (int, float)) and requested < 0:
         gate.refuse(actor, opname, c.get("cite") or "ROOT-NEG-1",
-                    f"{opname}: {requested} exceeds budget for {holder} (used {used}, ceiling {ceiling})")
+                    f"{opname}: a negative amount {requested} is malformed (a request adds, never subtracts)")
+    # B5 (b): a RE-GRANT of an existing key REPLACES that key's contribution — the aggregate already
+    # holds its prior value, so the check subtracts that prior value before comparing (the delta),
+    # rather than adding the full request on top and double-counting a re-grant at a higher value.
+    prior = agg.get(params.get(c["key_param"]), 0)
+    if used - prior + requested > ceiling:
+        gate.refuse(actor, opname, c.get("cite") or "ROOT-NEG-1",
+                    f"{opname}: {requested} exceeds budget for {holder} (used {used - prior}, ceiling {ceiling})")
 
 
 def _declared_keys(d):
@@ -2116,6 +2300,100 @@ def _live_slot_check(gate, store, views, actor, opname, c, params):
                     c.get("message") or
                     "%s: a live occupant already holds %s — this slot admits one at a time"
                     % (opname, dict(zip(c["slot_params"], slot))))
+
+
+def _live_present_set(store, c, as_of=None):
+    """THE COMPUTED LIVE SET a `live_present` check reads: {tuple(key_params): opening_payload}
+    for every LIVE opening (EP-49C).
+
+    RECORD THE ACT, COMPUTE THE VIEW, applied to the presence question — `_live_slots`' twin, from
+    the other polarity. Nothing here stores a count: the live set is folded from the declared
+    `open_action` (adds a member keyed by `key_params`, read from the opening's own payload) and
+    `close_action` (removes one), in seq order, so a closed opening leaves the set. This is the same
+    fold `live_channels` (comms.py) runs over the same COMMS-OPEN / COMMS-CLOSE record — computed
+    here rather than imported, because a check kind is GENERIC vocabulary and the kernel never
+    reaches a subsystem view, exactly as `live_slot` folds the record it reads.
+
+    THE CLOSE IS WHOSE-KEYED WHEN THE ROW SAYS SO, and that is the whose-close cure: `close_actor_key`
+    names the key field whose value on a CLOSE comes from the record's ACTOR (the closer), not the
+    payload — so a close drops (closer, channel) and not every opening of the name. A row that omits
+    it keeps a name-keyed close (the value comes from the close's own payload), which is what
+    channel-liveness wants (a close of the name frees the name)."""
+    kp = c["key_params"]
+    cak = c.get("close_actor_key")
+    merged = []
+    for action in (c["open_action"], c["close_action"]):
+        merged.extend(store.by_action(action, as_of))
+    merged.sort(key=lambda e: e["seq"])
+    live = {}
+    for e in merged:
+        p = e.get("payload") or {}
+        if e["action"] == c["open_action"]:
+            live[tuple(p.get(k) for k in kp)] = p
+        else:
+            live.pop(tuple(e.get("actor") if k == cak else p.get(k) for k in kp), None)
+    return live
+
+
+def _live_present_required(c, actor, params):
+    """The member the CALL names, as {key_param: value} over the fields `present` specifies. A key
+    field `present` omits is a WILDCARD (matched by any live member), which is how ONE kind asks
+    channel-liveness (channel present, any holder) and (actor, channel) presence (whose-close /
+    authority) — the difference is which fields the row pins. `$actor` is the ENGINE'S FACT and
+    never the caller's claim (the identity-is-the-engine's-fact precedent, EP-30-C4W)."""
+    return {k: (actor if src == "$actor" else params.get(src)) for k, src in c["present"].items()}
+
+
+def _live_present_check(gate, store, views, actor, opname, c, params):
+    """A MEMBER THE ROW NAMES MUST BE PRESENT IN A LIVE SET THE RECORD DERIVES (EP-49C).
+
+    THE POLARITY COMPLEMENT OF `live_slot`, answered inside the decide region for its five
+    neighbours' reason (the check loop is inside a handler invoked from one site, so check-then-act
+    is atomic). ONE REFUSAL, NAMING THE SET AND THE MISSING MEMBER — a presence check that only said
+    "absent" would answer two worlds with one string. A live member matches when every field the
+    row PINNED equals; the fields it left wildcard match anything, so channel-liveness passes on any
+    holder's opening while authority/whose-close require the actor's own."""
+    live = _live_present_set(store, c)
+    want = _live_present_required(c, actor, params)
+    kp = c["key_params"]
+    pinned = [(i, k) for i, k in enumerate(kp) if k in want]
+    if not any(all(key[i] == want[k] for i, k in pinned) for key in live):
+        gate.refuse(actor, opname, c.get("cite") or "AR-2",
+                    c.get("message") or
+                    "%s: %s is not present in the live set folded from %s / %s — the member this "
+                    "act requires is absent"
+                    % (opname, {k: want[k] for _i, k in pinned},
+                       c["open_action"], c["close_action"]))
+
+
+#: The operators a `fold_threshold` row may name — a closed set, so a typo refuses at the door
+#: rather than admitting every value while reading as a comparison.
+_FOLD_OPERATORS = {">": operator.gt, ">=": operator.ge, "<": operator.lt,
+                   "<=": operator.le, "==": operator.eq, "!=": operator.ne}
+
+
+def _fold_threshold_check(gate, store, views, actor, opname, c, params):
+    """A NAMED DERIVED COUNT COMPARED TO A THRESHOLD BY A NAMED OPERATOR (EP-49C).
+
+    The count is `add_action` records minus `sub_action` records, each scoped to the value the call
+    carries in `key_param` (matched against the records' `key_field`) — `queue_depth` (a channel's
+    sends minus its receives) IS this fold, computed here over the same COMMS-SEND / COMMS-RECV
+    record `comms.py` reads. The comparison is read at the act, BEFORE this act appends, so a receive
+    on an empty queue sees depth 0 and refuses. ONE REFUSAL, NAMING THE FOLD, THE VALUE AND THE
+    THRESHOLD."""
+    scope = params.get(c["key_param"])
+    add = sum(1 for e in store.by_action(c["add_action"])
+              if (e.get("payload") or {}).get(c["key_field"]) == scope)
+    sub = (sum(1 for e in store.by_action(c["sub_action"])
+               if (e.get("payload") or {}).get(c["key_field"]) == scope)
+           if c.get("sub_action") else 0)
+    value = add - sub
+    if not _FOLD_OPERATORS[c["operator"]](value, c["threshold"]):
+        gate.refuse(actor, opname, c.get("cite") or "AR-2",
+                    c.get("message") or
+                    "%s: %s = %d for %r, which is not %s %d — the fold this act requires does not "
+                    "pass its threshold"
+                    % (opname, c["fold_name"], value, scope, c["operator"], c["threshold"]))
 
 
 def _kind_check(gate, store, views, actor, opname, c, params):
@@ -2641,6 +2919,20 @@ def _interpreter(gate, store, views, opname, d):
                     # theorem, same literal spelling, same zero lines in `gate.py`.
                     _every_member_check(gate, store, views, actor, opname, c, p_in,
                                         _dispatch_check)
+                elif c["check"] == "live_present":
+                    # A MEMBER MUST BE PRESENT IN A LIVE SET THE RECORD DERIVES (EP-49C, owner-ruled
+                    # :3354). The polarity complement of `live_slot`. Ninth arrival, same structural
+                    # theorem (every declared kind dispatched from this loop, inside the region), same
+                    # literal spelling, same zero lines in `gate.py`. The spelling is a LITERAL and
+                    # matches its neighbours' for their reason: `tests/test_ep28g_w2.py` enumerates
+                    # this loop's dispatch sites by walking for `c["check"] == <constant>`, so a named
+                    # constant would make the new kind invisible to the guard that proves it runs in
+                    # the region.
+                    _live_present_check(gate, store, views, actor, opname, c, p_in)
+                elif c["check"] == "fold_threshold":
+                    # A NAMED DERIVED COUNT VS A THRESHOLD (EP-49C, owner-ruled :3354). Tenth arrival,
+                    # same structural theorem, same literal spelling, same zero lines in `gate.py`.
+                    _fold_threshold_check(gate, store, views, actor, opname, c, p_in)
                 # RETIRED (EP-19 R-C2): the `attenuation` check branch. GRANT's whole-containment leash lives
                 # at the gate chokepoint now (gate._grant_containment, EP-18 R-A) — one law, one home; no pack
                 # op cites `attenuation`. `authority.within_makers_reach` is still called, from the gate.
@@ -2834,7 +3126,8 @@ def _register_from_definition(gate, store, views, name, d):
     if (d.get("secret_params") or d.get("secret_verify")) and gate.vault is None:
         return  # a secret op needs the vault; without it, honestly pending (secret_ops_pending_vault)
     gate.register(name, {"description": d.get("description", "definition-born operation"),
-                         "rules": [d["law_cited"]], "params": d.get("params") or {}},
+                         "rules": [d["law_cited"]], "params": d.get("params") or {},
+                         PARAM_KINDS: dict(d.get(PARAM_KINDS) or {})},   # C-1/C-3: the door's call-time kind guard reads this
                   _interpreter(gate, store, views, name, d))
 
 

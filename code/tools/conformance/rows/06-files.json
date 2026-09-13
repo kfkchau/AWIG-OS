@@ -1,0 +1,4035 @@
+{
+  "group": "06-files",
+  "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a76",
+  "title": "Files & VFS",
+  "subsystem_derivation": "03 \u00a74.3 (files \u2014 governing custody of information). LAW = namespace, mount, and permission rules; DECISIONS = create / write / link / unlink / permission-change (and `open` itself \u2014 the custody grant); CACHE = the directory tree and inode state; STREAM = read-traffic aggregates. Content is never STREAM \u2014 every write's payload is full-fidelity to content-addressed blobs, the event records the hash (03 \u00a74.3 [AUDIT-FIX 4]).",
+  "active": true,
+  "activates_at": "EP-25",
+  "activation_note": "The files group is the population EP-25 needs; it is implemented and calibrated first (EP-24 \u00a7derivation). EP-28 moves the same rows below the syscall line with no row change.",
+  "rows": [
+    {
+      "row_id": "files.open",
+      "syscall": "open",
+      "variants": [
+        "openat",
+        "openat2"
+      ],
+      "what_it_does": "Open (optionally create) a file; return an fd.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "The explicit custody grant of \u00a74.3: permission checked, recorded, rule-cited. O_CREAT also records a create decision. The fd-table entry is CACHE. O_EXCL, O_TRUNC, O_APPEND, O_NONBLOCK, and the full errno set (EACCES/EEXIST/ENOENT/EISDIR) identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "seed.txt",
+              {
+                "bytes": "hello"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "new.txt",
+              "O_CREAT|O_WRONLY|O_EXCL",
+              "0o644"
+            ],
+            "as": "f1"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f1"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "new.txt",
+              "O_RDONLY"
+            ],
+            "as": "f1b"
+          },
+          {
+            "call": "fd_exact",
+            "args": [
+              "$f1b",
+              "$f1"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f1b"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "new.txt",
+              "O_CREAT|O_WRONLY|O_EXCL",
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "missing.txt",
+              "O_RDONLY"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "adir",
+              "0o755"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "adir",
+              "O_WRONLY"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "seed.txt/x",
+              "O_RDONLY"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "seed.txt",
+              "0o000"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "seed.txt",
+              "O_RDONLY"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "seed.txt",
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "seed.txt",
+              "O_WRONLY|O_TRUNC"
+            ],
+            "as": "f2"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f2"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "seed.txt"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "app.txt",
+              "O_CREAT|O_WRONLY|O_APPEND",
+              "0o644"
+            ],
+            "as": "f3"
+          },
+          {
+            "call": "write",
+            "args": [
+              "$f3",
+              {
+                "bytes": "one"
+              }
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f3",
+              0,
+              "SEEK_SET"
+            ]
+          },
+          {
+            "call": "write",
+            "args": [
+              "$f3",
+              {
+                "bytes": "two"
+              }
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f3"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "app.txt"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "openat",
+            "args": [
+              "seed.txt",
+              "O_RDONLY",
+              "0o777"
+            ],
+            "kwargs": {
+              "dir_fd": "$d"
+            },
+            "as": "f4"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f4"
+            ]
+          },
+          {
+            "call": "openat",
+            "args": [
+              "nope.txt",
+              "O_RDONLY",
+              "0o777"
+            ],
+            "kwargs": {
+              "dir_fd": "$d"
+            }
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          }
+        ]
+      },
+      "variant_probes_note": "openat is driven in the same step list via dir_fd, so \u00a712's ride-the-primary rule is tested rather than assumed for it. openat2 has no stdlib binding and is declared below.",
+      "probe_limits": [
+        "openat2 (and its open_how struct, including RESOLVE_* flags) has no stdlib binding; it rides `open` unproven.",
+        "O_NONBLOCK on a FIFO is exercised by files.mknod, not here."
+      ],
+      "driven_in_primary": [
+        "openat"
+      ]
+    },
+    {
+      "row_id": "files.creat",
+      "syscall": "creat",
+      "variants": [],
+      "what_it_does": "Create-and-open (legacy open + O_CREAT|O_WRONLY|O_TRUNC).",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Create + custody grant recorded. Identical to the open equivalent.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "c.txt",
+              "O_CREAT|O_WRONLY|O_TRUNC",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "write",
+            "args": [
+              "$f",
+              {
+                "bytes": "abc"
+              }
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "c.txt",
+              "O_CREAT|O_WRONLY|O_TRUNC",
+              "0o644"
+            ],
+            "as": "g"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$g"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "creat(2) is driven through its documented equivalent open(2) flag set, which is what the map's own note says it is; the legacy entry point itself is not separately bound."
+      ],
+      "subject_calls": [
+        "open"
+      ]
+    },
+    {
+      "row_id": "files.close",
+      "syscall": "close",
+      "variants": [],
+      "what_it_does": "Release an fd.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Symmetric release of the open custody \u2014 recorded (low-ceremony). The fd-table slot (CACHE) is dropped. Flush-on-close errors surfaced identically; EBADF matches.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "x.txt",
+              "O_CREAT|O_WRONLY",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              4095
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              -1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.read",
+      "syscall": "read",
+      "variants": [
+        "pread64",
+        "readv",
+        "preadv",
+        "preadv2"
+      ],
+      "what_it_does": "Read bytes from an fd.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "STREAM",
+        "CACHE"
+      ],
+      "conformance_note": "Read-traffic is sampled for the audit aggregate (\u00a74.3), but the caller receives exact bytes \u2014 payload is full-fidelity. The offset advance is a CACHE mutation. Short reads, EAGAIN, EINTR semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "d.txt",
+              {
+                "repeat": {
+                  "unit": "0123456789",
+                  "times": 10
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "d.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              10
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              10
+            ]
+          },
+          {
+            "call": "pread",
+            "args": [
+              "$f",
+              10,
+              50
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              1000
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              10
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "d.txt",
+              "O_WRONLY"
+            ],
+            "as": "g"
+          },
+          {
+            "call": "read",
+            "args": [
+              "$g",
+              5
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$g"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+        "readv/preadv are not separately bound; they ride `read` unproven."
+      ],
+      "driven_in_primary": [
+        "pread64"
+      ]
+    },
+    {
+      "row_id": "files.write",
+      "syscall": "write",
+      "variants": [
+        "pwrite64",
+        "writev",
+        "pwritev",
+        "pwritev2"
+      ],
+      "what_it_does": "Write bytes to an fd.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Content is DECISION-class, never sampled (\u00a74.3 [AUDIT-FIX 4]): payload goes full-fidelity to a content-addressed blob, the write event records the hash. Event granularity may be coalesced under a recorded policy (many small writes \u2192 one recorded event citing that policy) \u2014 a named calibration, never a silent loss. Short writes, ENOSPC, EDQUOT, O_APPEND atomicity identical.",
+      "status": "ENCODED",
+      "rules": {
+        "coalescible": true,
+        "ordering": "append-atomicity"
+      },
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "w.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "write",
+            "args": [
+              "$f",
+              {
+                "bytes": "abcdef"
+              }
+            ]
+          },
+          {
+            "call": "pwrite",
+            "args": [
+              "$f",
+              {
+                "bytes": "XY"
+              },
+              2
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "writev",
+            "args": [
+              "$f",
+              [
+                "aa",
+                "bb"
+              ]
+            ]
+          },
+          {
+            "call": "fsync",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_SET"
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              100
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "w.txt",
+              "O_RDONLY"
+            ],
+            "as": "g"
+          },
+          {
+            "call": "write",
+            "args": [
+              "$g",
+              {
+                "bytes": "z"
+              }
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$g"
+            ]
+          },
+          {
+            "call": "append_atomicity",
+            "args": [
+              "app.bin",
+              4,
+              20,
+              64
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+        "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+      ],
+      "driven_in_primary": [
+        "pwrite64",
+        "writev"
+      ]
+    },
+    {
+      "row_id": "files.lseek",
+      "syscall": "lseek",
+      "variants": [
+        "llseek"
+      ],
+      "what_it_does": "Reposition the fd offset.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Canonical CACHE mutation: the offset is derived per-fd state, reconstructible, no governance decision. SEEK_SET/CUR/END/DATA/HOLE, ESPIPE on pipes identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "s.txt",
+              {
+                "repeat": {
+                  "unit": "0123456789",
+                  "times": 10
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "s.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              10,
+              "SEEK_SET"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              5,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_END"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              -1,
+              "SEEK_SET"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_DATA"
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$f",
+              0,
+              "SEEK_HOLE"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "pipe_read_fd",
+            "args": [],
+            "as": "p"
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$p",
+              0,
+              "SEEK_SET"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$p"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.stat",
+      "syscall": "stat",
+      "variants": [
+        "lstat",
+        "fstat",
+        "fstatat",
+        "statx"
+      ],
+      "what_it_does": "Read file metadata.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Reads derived inode/dentry state; no record. statx mask/attribute semantics identical; /proc metadata reflects gov-os's true derived state (03 \u00a75 note).",
+      "status": "ENCODED",
+      "rules": {
+        "shape_only": true
+      },
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "f.txt",
+              {
+                "bytes": "content"
+              },
+              "0o640"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "f.txt"
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "f.txt"
+            ]
+          },
+          {
+            "call": "symlink",
+            "args": [
+              "f.txt",
+              "l.lnk"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "l.lnk"
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "l.lnk"
+            ]
+          },
+          {
+            "call": "symlink",
+            "args": [
+              "nowhere",
+              "dang.lnk"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "dang.lnk"
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "dang.lnk"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "missing"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "f.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "dd"
+          },
+          {
+            "call": "fstatat",
+            "args": [
+              "f.txt",
+              "$dd"
+            ]
+          },
+          {
+            "call": "fstatat",
+            "args": [
+              "l.lnk",
+              "$dd",
+              false
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dd"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+      ],
+      "driven_in_primary": [
+        "lstat",
+        "fstat",
+        "fstatat"
+      ]
+    },
+    {
+      "row_id": "files.statfs",
+      "syscall": "statfs",
+      "variants": [
+        "fstatfs"
+      ],
+      "what_it_does": "Read filesystem-level statistics.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Derived aggregate; values reflect gov-os's true store.",
+      "status": "ENCODED",
+      "rules": {
+        "shape_only": true
+      },
+      "probe": {
+        "steps": [
+          {
+            "call": "statvfs",
+            "args": [
+              "."
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "fstatvfs",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "statvfs",
+            "args": [
+              "missing"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The binding is statvfs(3), the libc wrapper over statfs(2); the raw struct statfs field layout is not observed. Every field of both is a live figure of the target, so \u00a711.3 makes this shape-only either way."
+      ],
+      "driven_in_primary": [
+        "fstatfs"
+      ]
+    },
+    {
+      "row_id": "files.access",
+      "syscall": "access",
+      "variants": [
+        "faccessat",
+        "faccessat2"
+      ],
+      "what_it_does": "Check permission on a path.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Evaluates the permission rule (LAW) against current state \u2014 a pure query, no state change, no record. R_OK/W_OK/X_OK, AT_EACCESS semantics and errno identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "a.txt",
+              {
+                "bytes": "x"
+              },
+              "0o600"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "a.txt",
+              "R_OK"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "a.txt",
+              "W_OK"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "a.txt",
+              "X_OK"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "a.txt",
+              "F_OK"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "a.txt",
+              "0o400"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "a.txt",
+              "W_OK"
+            ]
+          },
+          {
+            "call": "access",
+            "args": [
+              "missing",
+              "F_OK"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "a.txt",
+              "0o600"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "faccessat",
+            "args": [
+              "a.txt",
+              "R_OK",
+              "$d"
+            ]
+          },
+          {
+            "call": "faccessat",
+            "args": [
+              "missing",
+              "F_OK",
+              "$d"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "access(2) reports through its boolean return, not errno, so \u00a711.1 has nothing to compare on this row; the boolean IS the ABI answer.",
+        "Running as root makes every access() answer true; the row is meaningful only on an unprivileged pass and is skipped on a root pass."
+      ],
+      "driven_in_primary": [
+        "faccessat"
+      ]
+    },
+    {
+      "row_id": "files.link",
+      "syscall": "link",
+      "variants": [
+        "linkat"
+      ],
+      "what_it_does": "Create a hard link (new name for existing inode).",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Namespace change \u2014 recorded. EEXIST/EMLINK/EXDEV identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "src.txt",
+              {
+                "bytes": "data"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "link",
+            "args": [
+              "src.txt",
+              "hard.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "src.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "hard.txt"
+            ]
+          },
+          {
+            "call": "link",
+            "args": [
+              "src.txt",
+              "hard.txt"
+            ]
+          },
+          {
+            "call": "link",
+            "args": [
+              "missing",
+              "x.txt"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "link",
+            "args": [
+              "d",
+              "dl"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "dd"
+          },
+          {
+            "call": "linkat",
+            "args": [
+              "src.txt",
+              "hard2.txt",
+              "$dd",
+              "$dd"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dd"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "src.txt"
+            ]
+          },
+          {
+            "call": "unlink",
+            "args": [
+              "hard.txt"
+            ]
+          },
+          {
+            "call": "unlink",
+            "args": [
+              "hard2.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "src.txt"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EXDEV needs two filesystems in one scratch tree and EMLINK needs the link-count ceiling; neither is driven."
+      ],
+      "driven_in_primary": [
+        "linkat"
+      ]
+    },
+    {
+      "row_id": "files.symlink",
+      "syscall": "symlink",
+      "variants": [
+        "symlinkat"
+      ],
+      "what_it_does": "Create a symbolic link.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Namespace change \u2014 recorded (the link is content of a new inode).",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "symlink",
+            "args": [
+              "target.txt",
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "readlink",
+            "args": [
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "symlink",
+            "args": [
+              "other.txt",
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "symlinkat",
+            "args": [
+              "target.txt",
+              "s2.lnk",
+              "$d"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "readlink",
+            "args": [
+              "s2.lnk"
+            ]
+          }
+        ]
+      },
+      "driven_in_primary": [
+        "symlinkat"
+      ]
+    },
+    {
+      "row_id": "files.unlink",
+      "syscall": "unlink",
+      "variants": [
+        "unlinkat"
+      ],
+      "what_it_does": "Remove a name from the namespace.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Records the name removal. Subtlety: content is content-addressed, so the blob's history persists in the ledger even when the last link drops \u2014 but the POSIX contract is exact (link count decremented; space reclaimed when last link gone AND no open fd holds it). AT_REMOVEDIR, EISDIR, ENOTEMPTY identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "u.txt",
+              {
+                "bytes": "bye"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "u.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "unlink",
+            "args": [
+              "u.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "u.txt"
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              3
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "unlink",
+            "args": [
+              "u.txt"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "unlink",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "dd"
+          },
+          {
+            "call": "unlinkat_dir",
+            "args": [
+              "d",
+              "$dd"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "e",
+              "0o755"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "e/inner",
+              {
+                "bytes": "z"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "unlinkat_dir",
+            "args": [
+              "e",
+              "$dd"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dd"
+            ]
+          }
+        ]
+      },
+      "driven_in_primary": [
+        "unlinkat"
+      ]
+    },
+    {
+      "row_id": "files.rename",
+      "syscall": "rename",
+      "variants": [
+        "renameat",
+        "renameat2"
+      ],
+      "what_it_does": "Atomically rename / move.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Namespace change \u2014 recorded, atomic. RENAME_NOREPLACE/RENAME_EXCHANGE semantics and EEXIST/ENOTEMPTY/EXDEV identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "a.txt",
+              {
+                "bytes": "A"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "b.txt",
+              {
+                "bytes": "B"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "rename",
+            "args": [
+              "a.txt",
+              "c.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "a.txt"
+            ]
+          },
+          {
+            "call": "replace",
+            "args": [
+              "c.txt",
+              "b.txt"
+            ]
+          },
+          {
+            "call": "rename",
+            "args": [
+              "missing",
+              "x.txt"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d1",
+              "0o755"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d2",
+              "0o755"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "d2/inner",
+              {
+                "bytes": "z"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "rename",
+            "args": [
+              "d1",
+              "d2"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "dd"
+          },
+          {
+            "call": "renameat",
+            "args": [
+              "b.txt",
+              "e.txt",
+              "$dd",
+              "$dd"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dd"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "renameat2's RENAME_NOREPLACE and RENAME_EXCHANGE have no stdlib binding; they ride `rename` unproven.",
+        "EXDEV needs two filesystems in one scratch tree and is not driven."
+      ],
+      "driven_in_primary": [
+        "renameat"
+      ]
+    },
+    {
+      "row_id": "files.mkdir",
+      "syscall": "mkdir",
+      "variants": [
+        "mkdirat"
+      ],
+      "what_it_does": "Create a directory.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Namespace create \u2014 recorded. EEXIST identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "no/parent",
+              "0o755"
+            ]
+          },
+          {
+            "call": "umask",
+            "args": [
+              "0o022"
+            ],
+            "as": "prev"
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d2",
+              "0o777"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "d2"
+            ]
+          },
+          {
+            "call": "umask",
+            "args": [
+              "$prev"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "dd"
+          },
+          {
+            "call": "mkdirat",
+            "args": [
+              "d3",
+              "0o750",
+              "$dd"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dd"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "d3"
+            ]
+          }
+        ]
+      },
+      "driven_in_primary": [
+        "mkdirat"
+      ]
+    },
+    {
+      "row_id": "files.rmdir",
+      "syscall": "rmdir",
+      "variants": [],
+      "what_it_does": "Remove an empty directory.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Namespace removal \u2014 recorded. ENOTEMPTY identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "rmdir",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "rmdir",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "e",
+              "0o755"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "e/f",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "rmdir",
+            "args": [
+              "e"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "g.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "rmdir",
+            "args": [
+              "g.txt"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.mknod",
+      "syscall": "mknod",
+      "variants": [
+        "mknodat"
+      ],
+      "what_it_does": "Create a special (device/FIFO) file.",
+      "subsystems": [
+        "files",
+        "devices"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Create + (for device nodes) a capability reference \u2014 recorded. EPERM on unprivileged device-node creation identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkfifo",
+            "args": [
+              "p.fifo",
+              "0o644"
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "p.fifo"
+            ]
+          },
+          {
+            "call": "mkfifo",
+            "args": [
+              "p.fifo",
+              "0o644"
+            ]
+          },
+          {
+            "call": "mknod",
+            "args": [
+              "dev.node",
+              "S_IFCHR|0o600",
+              0
+            ]
+          },
+          {
+            "call": "mknod",
+            "args": [
+              "fifo2",
+              "S_IFIFO|0o644",
+              0
+            ]
+          },
+          {
+            "call": "lstat",
+            "args": [
+              "fifo2"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "p.fifo",
+              "O_RDONLY|O_NONBLOCK"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "mknodat has no stdlib binding; it rides `mknod` unproven.",
+        "The successful device-node path needs root; the unprivileged EPERM path is what the map's note names and is what is driven."
+      ]
+    },
+    {
+      "row_id": "files.truncate",
+      "syscall": "truncate",
+      "variants": [
+        "ftruncate"
+      ],
+      "what_it_does": "Set a file's length.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Changes content (grow = zero-fill, shrink = drop) \u2014 recorded against the content-addressed state. EINVAL/EFBIG identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "t.txt",
+              {
+                "repeat": {
+                  "unit": "x",
+                  "times": 10
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "truncate",
+            "args": [
+              "t.txt",
+              4
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "t.txt"
+            ]
+          },
+          {
+            "call": "truncate",
+            "args": [
+              "t.txt",
+              20
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "t.txt"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "t.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              20
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "truncate",
+            "args": [
+              "t.txt",
+              -1
+            ]
+          },
+          {
+            "call": "truncate",
+            "args": [
+              "missing",
+              0
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "t.txt",
+              "O_RDWR"
+            ],
+            "as": "g"
+          },
+          {
+            "call": "ftruncate",
+            "args": [
+              "$g",
+              2
+            ]
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$g"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$g"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EFBIG needs the filesystem's maximum file size and is not driven."
+      ],
+      "driven_in_primary": [
+        "ftruncate"
+      ]
+    },
+    {
+      "row_id": "files.fallocate",
+      "syscall": "fallocate",
+      "variants": [],
+      "what_it_does": "Preallocate / punch / zero file space.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Space reservation/hole against the storage budget \u2014 recorded. FALLOC_FL_* modes and ENOSPC identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "fa.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "posix_fallocate",
+            "args": [
+              "$f",
+              0,
+              4096
+            ]
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "posix_fallocate",
+            "args": [
+              "$f",
+              4096,
+              4096
+            ]
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "posix_fallocate",
+            "args": [
+              "$f",
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The binding is posix_fallocate(3), which is mode-0 allocation only; FALLOC_FL_PUNCH_HOLE, _ZERO_RANGE and _COLLAPSE_RANGE have no stdlib binding and are not driven.",
+        "ENOSPC needs a full filesystem and is not driven."
+      ]
+    },
+    {
+      "row_id": "files.chmod",
+      "syscall": "chmod",
+      "variants": [
+        "fchmod",
+        "fchmodat"
+      ],
+      "what_it_does": "Change file mode bits.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "The file's permission rule is amended \u2014 recorded, cites authority. EPERM on non-owner identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "c.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "c.txt",
+              "0o600"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "c.txt",
+              "0o444"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "c.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "fchmod",
+            "args": [
+              "$f",
+              "0o640"
+            ]
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "fchmodat",
+            "args": [
+              "c.txt",
+              "0o600",
+              "$d"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "c.txt"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "missing",
+              "0o600"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EPERM on a non-owned file needs a file owned by another user inside the scratch tree; the harness creates none and does not reach outside its scratch tree to find one, so that errno is not driven."
+      ],
+      "driven_in_primary": [
+        "fchmod",
+        "fchmodat"
+      ]
+    },
+    {
+      "row_id": "files.chown",
+      "syscall": "chown",
+      "variants": [
+        "fchown",
+        "lchown",
+        "fchownat"
+      ],
+      "what_it_does": "Change file ownership.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Ownership/permission amendment \u2014 recorded. Set-uid-bit-clear side effect and EPERM identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "o.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "chown",
+            "args": [
+              "o.txt",
+              -1,
+              4
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "o.txt"
+            ]
+          },
+          {
+            "call": "chown",
+            "args": [
+              "o.txt",
+              0,
+              -1
+            ]
+          },
+          {
+            "call": "symlink",
+            "args": [
+              "o.txt",
+              "o.lnk"
+            ]
+          },
+          {
+            "call": "lchown",
+            "args": [
+              "o.lnk",
+              -1,
+              4
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "o.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "fchown",
+            "args": [
+              "$f",
+              -1,
+              4
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "chown",
+            "args": [
+              "missing",
+              -1,
+              -1
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The set-uid-bit-clear side effect needs a successful change of the USER, which needs root; it is not driven on the unprivileged pass.",
+        "fchownat has no separate stdlib binding beyond the dir_fd form and is not separately driven.",
+        "These steps set the group to gid 4 (adm), which the caller must be a MEMBER of for an unprivileged ownership change to be lawful \u2014 a property of the environment a capture runs in, not of the filesystem. A target whose user is not in that group answers EPERM where these captures answer 0, and \u00a711.2a makes that a finding about this ROW rather than about the target. Named here because the row previously drove chown(-1,-1), which changes nothing: the kernel sends no SETATTR, the filesystem is never called, and the row's recording assertion was untestable (design/10 \u00a711.1d; EP-25 ADDENDUM 9 C3)."
+      ],
+      "driven_in_primary": [
+        "fchown",
+        "lchown"
+      ]
+    },
+    {
+      "row_id": "files.utimensat",
+      "syscall": "utimensat",
+      "variants": [
+        "futimesat",
+        "utime"
+      ],
+      "what_it_does": "Set file timestamps.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Metadata mutation recorded; UTIME_NOW/UTIME_OMIT semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "u.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "utime_set",
+            "args": [
+              "u.txt",
+              1000000000000000000,
+              2000000000000000000
+            ]
+          },
+          {
+            "call": "utime_read_ns",
+            "args": [
+              "u.txt"
+            ]
+          },
+          {
+            "call": "utime_set",
+            "args": [
+              "missing",
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "UTIME_NOW and UTIME_OMIT are not expressible through the stdlib binding (which takes an explicit pair or None-for-now); the OMIT half is not driven."
+      ]
+    },
+    {
+      "row_id": "files.xattr",
+      "syscall": "setxattr",
+      "variants": [
+        "getxattr",
+        "listxattr",
+        "removexattr",
+        "fsetxattr",
+        "lsetxattr",
+        "fgetxattr",
+        "lgetxattr",
+        "flistxattr",
+        "llistxattr",
+        "fremovexattr",
+        "lremovexattr"
+      ],
+      "what_it_does": "Manage extended attributes.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE",
+        "DECISION"
+      ],
+      "conformance_note": "get/list = CACHE-only read; set/remove = DECISION. Attribute writes are recorded metadata decisions (some xattrs are permission-bearing, e.g. security.*, system.posix_acl_* \u2014 those amend permission LAW). ABI and errno identical.",
+      "status": "DISPUTED",
+      "disputed_because": "One design/10 row carries two classes on different operations and the note splits it by operation (get/list vs set/remove) but not the permission-bearing sub-case: it says security.* and system.posix_acl_* xattrs 'amend permission LAW' without saying whether those writes are LAW-class or DECISION-class records. The map's words are encoded as written \u2014 DECISION for set/remove \u2014 and the LAW question is raised rather than decided here.",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "x.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "setxattr",
+            "args": [
+              "x.txt",
+              "user.govos",
+              {
+                "bytes": "v1"
+              }
+            ]
+          },
+          {
+            "call": "getxattr",
+            "args": [
+              "x.txt",
+              "user.govos"
+            ]
+          },
+          {
+            "call": "listxattr",
+            "args": [
+              "x.txt"
+            ]
+          },
+          {
+            "call": "getxattr",
+            "args": [
+              "x.txt",
+              "user.absent"
+            ]
+          },
+          {
+            "call": "setxattr",
+            "args": [
+              "x.txt",
+              "user.govos",
+              {
+                "bytes": "v2"
+              }
+            ]
+          },
+          {
+            "call": "getxattr",
+            "args": [
+              "x.txt",
+              "user.govos"
+            ]
+          },
+          {
+            "call": "removexattr",
+            "args": [
+              "x.txt",
+              "user.govos"
+            ]
+          },
+          {
+            "call": "listxattr",
+            "args": [
+              "x.txt"
+            ]
+          },
+          {
+            "call": "removexattr",
+            "args": [
+              "x.txt",
+              "user.govos"
+            ]
+          },
+          {
+            "call": "setxattr",
+            "args": [
+              "missing",
+              "user.govos",
+              {
+                "bytes": "v"
+              }
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+      ],
+      "driven_in_primary": [
+        "getxattr",
+        "listxattr",
+        "removexattr"
+      ]
+    },
+    {
+      "row_id": "files.fsync",
+      "syscall": "fsync",
+      "variants": [
+        "fdatasync"
+      ],
+      "what_it_does": "Force prior writes durable.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Not a governance decision: the writes it commits were already DECISIONS. It is a barrier making the recorded+derived state durable on media. In gov-os the record IS the durability substrate; fsync returns after the covering write-decisions are durable. EIO on flush failure surfaced identically.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "f.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "write",
+            "args": [
+              "$f",
+              {
+                "bytes": "durable"
+              }
+            ]
+          },
+          {
+            "call": "fsync",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "fdatasync",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "fsync",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "pipe_read_fd",
+            "args": [],
+            "as": "p"
+          },
+          {
+            "call": "fsync",
+            "args": [
+              "$p"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$p"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EIO on flush failure needs a failing device and is not driven."
+      ],
+      "driven_in_primary": [
+        "fdatasync"
+      ]
+    },
+    {
+      "row_id": "files.sync",
+      "syscall": "sync",
+      "variants": [
+        "syncfs"
+      ],
+      "what_it_does": "Flush all / filesystem buffers.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "As fsync, system-/fs-wide.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "s.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "sync",
+            "args": []
+          }
+        ]
+      },
+      "probe_limits": [
+        "syncfs has no stdlib binding; it rides `sync` unproven."
+      ]
+    },
+    {
+      "row_id": "files.fcntl.fdstate",
+      "syscall": "fcntl",
+      "variants": [],
+      "what_it_does": "Per-fd control: descriptor flags, status flags, and duplication (F_DUPFD, F_GETFD, F_SETFD, F_GETFL, F_SETFL).",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "F_DUPFD/F_GETFD/F_SETFD/F_GETFL/F_SETFL = CACHE (fd-table state). All errno identical. [Sub-row of design/10 \u00a76's mixed `fcntl` row, split exactly where that row's own note splits it.]",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "a.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "fcntl_flags",
+            "args": [
+              "$f",
+              "F_GETFL"
+            ]
+          },
+          {
+            "call": "fcntl",
+            "args": [
+              "$f",
+              "F_SETFL",
+              "O_APPEND"
+            ]
+          },
+          {
+            "call": "fcntl_flags",
+            "args": [
+              "$f",
+              "F_GETFL"
+            ]
+          },
+          {
+            "call": "fcntl_flags",
+            "args": [
+              "$f",
+              "F_GETFD"
+            ]
+          },
+          {
+            "call": "fcntl",
+            "args": [
+              "$f",
+              "F_SETFD",
+              "FD_CLOEXEC"
+            ]
+          },
+          {
+            "call": "fcntl_flags",
+            "args": [
+              "$f",
+              "F_GETFD"
+            ]
+          },
+          {
+            "call": "fcntl",
+            "args": [
+              "$f",
+              "F_DUPFD",
+              100
+            ],
+            "as": "dup"
+          },
+          {
+            "call": "fcntl_flags",
+            "args": [
+              "$dup",
+              "F_GETFD"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$dup"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "fcntl",
+            "args": [
+              "$f",
+              "F_GETFD"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.fcntl.getlk",
+      "syscall": "fcntl",
+      "variants": [],
+      "what_it_does": "Per-fd control: query a record lock (F_GETLK).",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "F_GETLK = CACHE read. [Sub-row of design/10 \u00a76's mixed `fcntl` row, split exactly where that row's own note splits it.]",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "l.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "getlk",
+            "args": [
+              "$f",
+              "F_WRLCK"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.fcntl.setlk",
+      "syscall": "fcntl",
+      "variants": [],
+      "what_it_does": "Per-fd control: take or release a record lock (F_SETLK, F_SETLKW, F_OFD_SETLK).",
+      "subsystems": [
+        "files",
+        "comms"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "F_SETLK/F_SETLKW/F_OFD_SETLK = DECISION (a lock grant \u2014 recorded, cites rule; a comms coordination event). Blocking-lock wait is a scheduling block/wake. All errno (EAGAIN/EDEADLK) identical. [Sub-row of design/10 \u00a76's mixed `fcntl` row, split exactly where that row's own note splits it.]",
+      "status": "ENCODED",
+      "rules": {
+        "ordering": "lock-exclusion"
+      },
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "l.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "setlk",
+            "args": [
+              "$f",
+              "F_WRLCK"
+            ]
+          },
+          {
+            "call": "getlk",
+            "args": [
+              "$f",
+              "F_WRLCK"
+            ]
+          },
+          {
+            "call": "setlk",
+            "args": [
+              "$f",
+              "F_UNLCK"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "lock_conflict",
+            "args": [
+              "l2.txt",
+              "F_WRLCK"
+            ]
+          },
+          {
+            "call": "lock_conflict",
+            "args": [
+              "l3.txt",
+              "F_RDLCK"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "EDEADLK needs a deadlock cycle across processes and is not driven.",
+        "F_SETLKW's blocking path is a wait, and \u00a711.6 puts timing out of contract; only the non-blocking refusal is driven."
+      ]
+    },
+    {
+      "row_id": "files.fcntl.lease",
+      "syscall": "fcntl",
+      "variants": [],
+      "what_it_does": "Per-fd control: leases and directory change notification (F_SETLEASE, F_NOTIFY).",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "F_SETLEASE/F_NOTIFY = DECISION. [Sub-row of design/10 \u00a76's mixed `fcntl` row, split exactly where that row's own note splits it.]",
+      "status": "ENCODED",
+      "probe": null,
+      "probe_absent_reason": "A write lease requires the descriptor to be the file's only opener, which the harness cannot guarantee in a shared scratch tree, and F_NOTIFY is the superseded predecessor of inotify whose delivery is a signal rather than a return value. Neither is driven this EP; the row's assertion exists and its ABI leg is unproven, declared."
+    },
+    {
+      "row_id": "files.flock",
+      "syscall": "flock",
+      "variants": [],
+      "what_it_does": "Advisory whole-file lock.",
+      "subsystems": [
+        "files",
+        "comms"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Lock grant recorded. LOCK_SH/LOCK_EX/LOCK_NB, EWOULDBLOCK identical.",
+      "status": "ENCODED",
+      "rules": {
+        "ordering": "lock-exclusion"
+      },
+      "probe": {
+        "steps": [
+          {
+            "call": "open",
+            "args": [
+              "fl.txt",
+              "O_CREAT|O_RDWR",
+              "0o644"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "flock",
+            "args": [
+              "$f",
+              "LOCK_EX"
+            ]
+          },
+          {
+            "call": "flock",
+            "args": [
+              "$f",
+              "LOCK_SH"
+            ]
+          },
+          {
+            "call": "flock",
+            "args": [
+              "$f",
+              "LOCK_UN"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "flock_conflict",
+            "args": [
+              "fl2.txt",
+              "LOCK_EX|LOCK_NB"
+            ]
+          },
+          {
+            "call": "flock_conflict",
+            "args": [
+              "fl3.txt",
+              "LOCK_SH|LOCK_NB"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.dup",
+      "syscall": "dup",
+      "variants": [
+        "dup2",
+        "dup3"
+      ],
+      "what_it_does": "Duplicate an fd.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Adds an fd-table entry to the same open file description \u2014 pure cache, no new custody grant. dup2 close-of-target and dup3(O_CLOEXEC) semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "d.txt",
+              {
+                "bytes": "shared"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "d.txt",
+              "O_RDONLY"
+            ],
+            "as": "f"
+          },
+          {
+            "call": "dup",
+            "args": [
+              "$f"
+            ],
+            "as": "g"
+          },
+          {
+            "call": "fstat",
+            "args": [
+              "$g"
+            ]
+          },
+          {
+            "call": "read",
+            "args": [
+              "$f",
+              3
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$g",
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "dup2",
+            "args": [
+              "$f",
+              200
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              200,
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              200
+            ]
+          },
+          {
+            "call": "dup2",
+            "args": [
+              "$f",
+              "$f"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$g"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$f"
+            ]
+          },
+          {
+            "call": "dup",
+            "args": [
+              4095
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "dup3's O_CLOEXEC form has no stdlib binding; it rides `dup2` unproven."
+      ],
+      "driven_in_primary": [
+        "dup2"
+      ]
+    },
+    {
+      "row_id": "files.getdents",
+      "syscall": "getdents",
+      "variants": [
+        "getdents64"
+      ],
+      "what_it_does": "Read directory entries.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Reads the dentry-cache-derived listing; no record. On /proc it reads a computed view (\u00a710). Entry order and d_type semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "d",
+              "0o755"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "d/a",
+              {
+                "bytes": "1"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "d/b",
+              {
+                "bytes": "2"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "d/sub",
+              "0o755"
+            ]
+          },
+          {
+            "call": "symlink",
+            "args": [
+              "a",
+              "d/l"
+            ]
+          },
+          {
+            "call": "mkfifo",
+            "args": [
+              "d/p",
+              "0o644"
+            ]
+          },
+          {
+            "call": "listdir",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "scandir",
+            "args": [
+              "d"
+            ]
+          },
+          {
+            "call": "listdir",
+            "args": [
+              "missing"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "f.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "listdir",
+            "args": [
+              "f.txt"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "Entry ORDER is not asserted: the map promises the d_type semantics and the entry set, and no filesystem promises a directory's on-disk order. The observation is sorted before comparison, which is the guarantee's level (\u00a711.2)."
+      ],
+      "driven_in_primary": [
+        "getdents64"
+      ]
+    },
+    {
+      "row_id": "files.readlink",
+      "syscall": "readlink",
+      "variants": [
+        "readlinkat"
+      ],
+      "what_it_does": "Read a symlink target.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Query.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "symlink",
+            "args": [
+              "tgt",
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "readlink",
+            "args": [
+              "s.lnk"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "r.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "readlink",
+            "args": [
+              "r.txt"
+            ]
+          },
+          {
+            "call": "readlink",
+            "args": [
+              "missing"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              ".",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "readlinkat",
+            "args": [
+              "s.lnk",
+              "$d"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          }
+        ]
+      },
+      "driven_in_primary": [
+        "readlinkat"
+      ]
+    },
+    {
+      "row_id": "files.chdir",
+      "syscall": "chdir",
+      "variants": [
+        "fchdir"
+      ],
+      "what_it_does": "Change the working directory.",
+      "subsystems": [
+        "files",
+        "process"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Per-process cwd is derived state \u2014 a cache field mutation; no governance decision. ENOTDIR/EACCES identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "sub",
+              "0o755"
+            ]
+          },
+          {
+            "call": "chdir",
+            "args": [
+              "sub"
+            ]
+          },
+          {
+            "call": "getcwd_tail",
+            "args": []
+          },
+          {
+            "call": "chdir",
+            "args": [
+              ".."
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "f.txt",
+              {
+                "bytes": "x"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "chdir",
+            "args": [
+              "f.txt"
+            ]
+          },
+          {
+            "call": "chdir",
+            "args": [
+              "missing"
+            ]
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "noperm",
+              "0o000"
+            ]
+          },
+          {
+            "call": "chdir",
+            "args": [
+              "noperm"
+            ]
+          },
+          {
+            "call": "chmod",
+            "args": [
+              "noperm",
+              "0o755"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "sub",
+              "O_RDONLY"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "fchdir",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "getcwd_tail",
+            "args": []
+          },
+          {
+            "call": "chdir",
+            "args": [
+              ".."
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          }
+        ]
+      },
+      "driven_in_primary": [
+        "fchdir"
+      ]
+    },
+    {
+      "row_id": "files.getcwd",
+      "syscall": "getcwd",
+      "variants": [],
+      "what_it_does": "Read the working directory.",
+      "subsystems": [
+        "files",
+        "process"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Query.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "getcwd_tail",
+            "args": []
+          },
+          {
+            "call": "mkdir",
+            "args": [
+              "inner",
+              "0o755"
+            ]
+          },
+          {
+            "call": "chdir",
+            "args": [
+              "inner"
+            ]
+          },
+          {
+            "call": "getcwd_tail",
+            "args": []
+          },
+          {
+            "call": "chdir",
+            "args": [
+              ".."
+            ]
+          },
+          {
+            "call": "getcwd_tail",
+            "args": []
+          }
+        ]
+      },
+      "probe_limits": [
+        "Only the final path component is observed: the absolute path contains the scratch root, which differs per target and per run and is therefore a dynamic byte (\u00a711.3)."
+      ]
+    },
+    {
+      "row_id": "files.chroot",
+      "syscall": "chroot",
+      "variants": [],
+      "what_it_does": "Change the process root directory.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "The files-group involvement in chroot is the path LOOKUP, which is CACHE-only. EPERM on unprivileged identical. [design/10 §11.1f amends §6's table row, which still reads DECISION: chroot(2) changes a PROCESS attribute, a filesystem is consulted for the lookup and never for the root change, and no FUSE filesystem is offered the operation at all. The governance of a process's root re-enters the map with the subsystem that governs process attributes. The §6 sentence this replaces read: 'Recorded confinement decision, cites rule.']",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "newroot",
+              "0o755"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "newroot/marker",
+              {
+                "bytes": "in"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "chroot_in_child",
+            "args": [
+              "newroot"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The successful confinement path needs root; on an unprivileged pass the observation is the EPERM the map's own note names. The row's root pass is not built this EP because a successful chroot inside a shared probe process is a confinement the harness would then have to escape.",
+        "The row carries no outcome_class and must not gain one. Under design/10 §11.1f it stops expecting a record at all rather than expecting a differently-classed one: declaring NOT-GOVERNED would turn the row green and break the synthetic control fixture, because the fixture produces what the row declares. Reclassifying the row is the amendment; declaring an outcome on an unamended row would have been a way of hiding it (design/10 §11.1f; EP-25 ADDENDUM 10 D1).",
+        "What would refute this amendment, stated so a later round can check it cheaply (design/10 §11.1f): if any filesystem interface does receive a root-change notification, the row belongs back in the files group as DECISION and this class is wrong."
+      ]
+    },
+    {
+      "row_id": "files.umask",
+      "syscall": "umask",
+      "variants": [],
+      "what_it_does": "Set the file-creation mode mask.",
+      "subsystems": [
+        "files",
+        "process"
+      ],
+      "recording_class": [
+        "CACHE"
+      ],
+      "conformance_note": "Per-process attribute affecting future create decisions; itself derived state. Returns previous mask identically.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "umask",
+            "args": [
+              "0o022"
+            ],
+            "as": "prev"
+          },
+          {
+            "call": "umask",
+            "args": [
+              "0o077"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "u.txt",
+              {
+                "bytes": "x"
+              },
+              "0o666"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "u.txt"
+            ]
+          },
+          {
+            "call": "umask",
+            "args": [
+              "0o000"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "u2.txt",
+              {
+                "bytes": "x"
+              },
+              "0o666"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "u2.txt"
+            ]
+          },
+          {
+            "call": "umask",
+            "args": [
+              "$prev"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.mount",
+      "syscall": "mount",
+      "variants": [
+        "move_mount",
+        "fsopen",
+        "fsconfig",
+        "fsmount"
+      ],
+      "what_it_does": "Attach a filesystem / configure a new mount.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "LAW"
+      ],
+      "conformance_note": "Mount rules are LAW (\u00a74.3/\u00a74.4) \u2014 a recorded, authorized amendment to the namespace. MS_* flags, EBUSY/EPERM identical.",
+      "status": "ENCODED",
+      "probe": {
+        "outcome_class": "NOT-GOVERNED",
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "mp",
+              "0o755"
+            ]
+          },
+          {
+            "call": "mount",
+            "args": [
+              "tmpfs",
+              "mp",
+              "tmpfs",
+              0
+            ]
+          },
+          {
+            "call": "mount_present",
+            "args": [
+              "mp"
+            ]
+          }
+        ]
+      },
+      "root_probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "mp",
+              "0o755"
+            ]
+          },
+          {
+            "call": "mount_present",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "mount",
+            "args": [
+              "tmpfs",
+              "mp",
+              "tmpfs",
+              0
+            ]
+          },
+          {
+            "call": "mount_present",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "mp/inside",
+              {
+                "bytes": "ephemeral"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "listdir",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "mp",
+              0
+            ]
+          },
+          {
+            "call": "mount_present",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "listdir",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "mount",
+            "args": [
+              "tmpfs",
+              "missing",
+              "tmpfs",
+              0
+            ]
+          },
+          {
+            "call": "mount",
+            "args": [
+              "tmpfs",
+              "mp",
+              "nosuchfs",
+              0
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+        "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+      ]
+    },
+    {
+      "row_id": "files.umount",
+      "syscall": "umount",
+      "variants": [
+        "umount2"
+      ],
+      "what_it_does": "Detach a filesystem.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "LAW"
+      ],
+      "conformance_note": "Recorded amendment. MNT_FORCE/MNT_DETACH, EBUSY identical.",
+      "status": "ENCODED",
+      "probe": {
+        "outcome_class": "NOT-GOVERNED",
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "mp",
+              "0o755"
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "mp",
+              0
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "missing",
+              0
+            ]
+          }
+        ]
+      },
+      "root_probe": {
+        "steps": [
+          {
+            "call": "mkdir",
+            "args": [
+              "mp",
+              "0o755"
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "mp",
+              0
+            ]
+          },
+          {
+            "call": "mount",
+            "args": [
+              "tmpfs",
+              "mp",
+              "tmpfs",
+              0
+            ]
+          },
+          {
+            "call": "write_file",
+            "args": [
+              "mp/held",
+              {
+                "bytes": "busy"
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "mp/held",
+              "O_RDONLY"
+            ],
+            "as": "h"
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "mp",
+              0
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$h"
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "mp",
+              0
+            ]
+          },
+          {
+            "call": "mount_present",
+            "args": [
+              "mp"
+            ]
+          },
+          {
+            "call": "umount2",
+            "args": [
+              "missing",
+              0
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "MNT_FORCE and MNT_DETACH are not driven; the row drives the plain detach, the not-a-mountpoint errno, and the busy case."
+      ],
+      "driven_in_primary": [
+        "umount2"
+      ]
+    },
+    {
+      "row_id": "files.pivot_root",
+      "syscall": "pivot_root",
+      "variants": [],
+      "what_it_does": "Swap the root mount.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "LAW"
+      ],
+      "conformance_note": "Recorded namespace amendment.",
+      "status": "ENCODED",
+      "probe": null,
+      "probe_absent_reason": "pivot_root needs a prepared new root filesystem and its own mount namespace, and it changes the root of the process that calls it. Driving it means building a second root inside the guest, which is the kernel-entry arc's lab work rather than this instrument's. The row's assertion exists; its ABI leg is unproven, declared."
+    },
+    {
+      "row_id": "files.copy_file_range",
+      "syscall": "copy_file_range",
+      "variants": [],
+      "what_it_does": "Copy a range between two files in-kernel.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "DECISION"
+      ],
+      "conformance_note": "Destination content recorded (content-addressed; may be a cheap blob-reference clone). Source read is STREAM. Short-copy semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "src.bin",
+              {
+                "repeat": {
+                  "unit": "abcdefgh",
+                  "times": 16
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "src.bin",
+              "O_RDONLY"
+            ],
+            "as": "s"
+          },
+          {
+            "call": "open",
+            "args": [
+              "dst.bin",
+              "O_CREAT|O_WRONLY",
+              "0o644"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "copy_file_range",
+            "args": [
+              "$s",
+              "$d",
+              64
+            ]
+          },
+          {
+            "call": "copy_file_range",
+            "args": [
+              "$s",
+              "$d",
+              4096
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$s"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "dst.bin"
+            ]
+          },
+          {
+            "call": "copy_file_range",
+            "args": [
+              4095,
+              4094,
+              16
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row_id": "files.sendfile",
+      "syscall": "sendfile",
+      "variants": [],
+      "what_it_does": "Copy from a file fd to another fd.",
+      "subsystems": [
+        "files",
+        "comms"
+      ],
+      "recording_class": [
+        "DECISION",
+        "STREAM"
+      ],
+      "conformance_note": "If destination is a file: a recorded write decision. If a socket: a comms send (DECISION event + STREAM payload). Offset advance and short-transfer semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "src2.bin",
+              {
+                "repeat": {
+                  "unit": "xyz",
+                  "times": 20
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "open",
+            "args": [
+              "src2.bin",
+              "O_RDONLY"
+            ],
+            "as": "s"
+          },
+          {
+            "call": "open",
+            "args": [
+              "out.bin",
+              "O_CREAT|O_WRONLY",
+              "0o644"
+            ],
+            "as": "d"
+          },
+          {
+            "call": "sendfile",
+            "args": [
+              "$d",
+              "$s",
+              0,
+              30
+            ]
+          },
+          {
+            "call": "lseek",
+            "args": [
+              "$s",
+              0,
+              "SEEK_CUR"
+            ]
+          },
+          {
+            "call": "sendfile",
+            "args": [
+              "$d",
+              "$s",
+              30,
+              4096
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$s"
+            ]
+          },
+          {
+            "call": "close",
+            "args": [
+              "$d"
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "out.bin"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "The socket destination is the comms group's population and is driven there, not here."
+      ]
+    },
+    {
+      "row_id": "files.splice",
+      "syscall": "splice",
+      "variants": [
+        "tee",
+        "vmsplice"
+      ],
+      "what_it_does": "Move data between fds / pipe buffers with zero copy.",
+      "subsystems": [
+        "files",
+        "comms"
+      ],
+      "recording_class": [
+        "STREAM",
+        "DECISION"
+      ],
+      "conformance_note": "Bulk movement is STREAM traffic; where an endpoint is a durable write or a socket send, that endpoint records its decision. SPLICE_F_* and short-move semantics identical.",
+      "status": "ENCODED",
+      "probe": {
+        "steps": [
+          {
+            "call": "write_file",
+            "args": [
+              "sp.bin",
+              {
+                "repeat": {
+                  "unit": "q",
+                  "times": 100
+                }
+              },
+              "0o644"
+            ]
+          },
+          {
+            "call": "splice_through_pipe",
+            "args": [
+              "sp.bin",
+              "sp.out",
+              100
+            ]
+          },
+          {
+            "call": "stat",
+            "args": [
+              "sp.out"
+            ]
+          }
+        ]
+      },
+      "probe_limits": [
+        "tee and vmsplice have no stdlib binding; they ride `splice` unproven.",
+        "The SPLICE_F_* flag set is not driven."
+      ]
+    },
+    {
+      "row_id": "files.mount_setattr",
+      "syscall": "mount_setattr",
+      "variants": [
+        "open_tree"
+      ],
+      "what_it_does": "Adjust mount attributes / clone a mount tree.",
+      "subsystems": [
+        "files"
+      ],
+      "recording_class": [
+        "LAW"
+      ],
+      "conformance_note": "Mount-rule amendments \u2014 recorded.",
+      "status": "ENCODED",
+      "probe": null,
+      "probe_absent_reason": "Neither call has a stdlib or libc-wrapper binding, and both take structured arguments (struct mount_attr, OPEN_TREE_CLONE) that a raw binding would have to lay out by hand. Not built this EP; the row's assertion exists and its ABI leg is unproven, declared."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "mode": "deferred",
+  "record": "/tmp/govos-conformance/fixture-deferred/record.jsonl",
+  "records_calls": [
+    "write",
+    "pwrite",
+    "writev",
+    "write_file",
+    "append_atomicity"
+  ],
+  "flush_calls": [
+    "fsync",
+    "fdatasync",
+    "close",
+    "append_atomicity"
+  ]
+}

@@ -271,6 +271,25 @@ class WorldStore:
     def by_seq(self, seq):
         return self._by_seq.get(seq)
 
+    # THE LIVE-ROWS PREDICATE over a counterfactual world (EP-MAINT-OUTSIDE-4 R1). WorldStore
+    # presents the store's read surface so every fold runs unchanged (its standing law); the R1
+    # predicate is part of that surface. An overturn visible in THIS world (it precedes the act)
+    # overturns the grant in this world; one arriving after the act is not in the world and does not
+    # — the world's own selection decides visibility, `overturned_targets` reads it over `self.all`.
+    def overturned_seqs(self, as_of_seq=None):
+        # SUBSET read via the indexed by_action("OVERTURN"), never all() — the per-act path must not
+        # read the whole record (EP-24C). Same result as overturned_targets over this world's rows.
+        out = set()
+        for e in self.by_action("OVERTURN", as_of_seq):
+            p = _payload(e)
+            if p.get("kind") == OVERTURN_KIND and isinstance(p.get("target_seq"), int):
+                out.add(p["target_seq"])
+        return out
+
+    def live(self, as_of_seq=None):
+        overturned = self.overturned_seqs(as_of_seq)
+        return [e for e in self.all(as_of_seq) if e["seq"] not in overturned]
+
     def find(self, pred, as_of_seq=None):
         return [e for e in self.all(as_of_seq) if pred(e)]
 

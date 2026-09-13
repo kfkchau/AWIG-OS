@@ -1,0 +1,35 @@
+{
+  "name": "fixture-deferred",
+  "kind": "governed",
+  "description": "THE DEFERRED-EMISSION fixture (EP-24D W8). It performs the acts and records them like the control, with one difference that is the whole point: a write's covering decision is BUFFERED at the act and appended at the flush boundary — the fsync or the close — which is exactly where a governed filesystem emits a folded write's record. So the act's own step brackets nothing and a later step brackets a DECISION it did not make. Judged by landing point that is two failures from one act; judged by the act each record COVERS (design/10 §11.4a) it is one record about the write, and both rows read correctly. Its records name the act they cover, which is what lets them be read at all once they are no longer where they happened.",
+  "capabilities": [],
+  "coalescing_policies": [
+    "FIXTURE-COALESCE-1"
+  ],
+  "transport": {
+    "type": "local",
+    "scratch": "/tmp/govos-conformance/fixture-deferred/scratch",
+    "python": "python3 <HOME>/Documents/Claude/apps/gov-os/tools/conformance/fixtures/fixture_shim.py <HOME>/Documents/Claude/apps/gov-os/tools/conformance/fixtures/config-deferred.json"
+  },
+  "record": {
+    "jsonl": "/tmp/govos-conformance/fixture-deferred/record.jsonl"
+  },
+  "class_map": {
+    "python": "tools.conformance.fixtures.fixture_shim:CLASS_MAP"
+  },
+  "covers_map": {
+    "python": "tools.conformance.fixtures.fixture_shim:COVERS_MAP",
+    "note": "design/10 §11.4a, declared by the target: what each record kind is ABOUT. The class-named kinds declare \"*\" — they are appended by the wrapper around the subject call itself, so the act they cover is the act under test and is named in their own payload. The deferred kinds name their act, because their whole point is to land in a later step than the one that caused them."
+  },
+  "replay": {
+    "python": "tools.conformance.fixtures.fixture_shim:replay_from_record",
+    "config": {
+      "mode": "deferred",
+      "record": "/tmp/govos-conformance/fixture-deferred/record.jsonl"
+    }
+  },
+  "subject": {
+    "path": "/tmp/govos-conformance/fixture-deferred",
+    "fstype": "directory"
+  }
+}

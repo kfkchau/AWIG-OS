@@ -65,7 +65,12 @@ def _register_bootstrap(gate, store, views):
                              "object": params["content"], "rule_cited": "ROOT-NEG-5"}
     gate.register("CREATE-INFO",
                   {"description": "mint an information object", "rules": ["ROOT-NEG-5"],
-                   "params": {"content": "required"}}, create_info)
+                   "params": {"content": "required"},
+                   # C-3 (EP-MAINT-OUTSIDE-2): CREATE-INFO is the one CODE-registered op in the crash
+                   # class — its `content` becomes the record object, so a raw `bytes` value crashes the
+                   # record write (json.dumps -> BatchFailed). Declared `text` so the door refuses it,
+                   # exactly as `param_kinds` on a definition-born op does (opdefs.PARAM_KINDS).
+                   "param_kinds": {"content": "text"}}, create_info)
 
     def create_actor(actor, params):
         return {"actor": actor, "action": "CREATE-ACTOR",
@@ -167,3 +172,144 @@ def genesis(store):
 def unregistered_bootstrap_ops(gate):
     """Bootstrap ops not yet wired — named-pending for the subsystems that need them."""
     return [op for op in BOOTSTRAP_OPS if not gate.has(op)]
+
+
+# ---- EP-47B: THE SYSTEM SIGNER SEED STEP — the Option A ceremony's collection half ---------------
+# The boot-time half of the system-signer ceremony (Option A — the recorded ceremony at boot; archi
+# :3302, refined by two architect precisions folded in via coord on 2026-09-08). This module holds
+# the PURE mechanism (collect + measure the entropy, mix it, create + seal the signer, derive the
+# public half) with NO append: the BIND and the CEREMONY ROW (the records) ride the COMPOSE layer
+# (compose.seal_system_signer), because build_kernel above is pack-exact (the founding roundtrip
+# asserts a rebuild adds nothing) and must never grow a boot record. The seed is held IN MEMORY only
+# (signer.py) — a restart drops it and this step must re-run, which is the whole point EP-47B proves
+# (a restart needs the ceremony before the record can grow).
+#
+# THE CEREMONY INPUT (architect precision 2, 2026-09-08). Human randomness (mouse timing/path, key
+# timing) MIXED BY HASH WITH THE OS CRYPTOGRAPHIC SOURCE — never instead of it. os.urandom is ALWAYS
+# in the mix; the human events ADD to it. The ceremony MEASURES the human contribution and REFUSES
+# below a minimum-entropy floor (this generalises the earlier fixed/low-entropy refusal). A HEADLESS
+# boot (no human events) runs the OS-source-only path and the ceremony row SAYS SO. Test/demo worlds
+# run the SCRIPTED TEST ceremony (the headless path invoked by the test), binding a MARKED-TEST value.
+
+# A marked-TEST system key value, W4's :3140 form (TEST-<name> <date> <hash>): the recorded public
+# half a TEST/DEMO world binds under the MODELLED (library-absent) era. It marks the record as TEST
+# exactly as W4's master key was, so the record self-describes "not the owner's real key". The SEED
+# behind it is drawn from os.urandom — the value is marked, the material is random.
+_MARKED_TEST_SYSTEM_KEY_PREFIX = "TEST-SYSTEM-KEY 2026-09-08 "
+
+_SEED_BYTES = 32
+# The minimum-entropy floor (bits) the collected human contribution must clear (architect precision 2).
+# os.urandom material carries ~8 bits/byte (≈256 bits over 32); a human contribution below this floor
+# — all-zeros, a repeated byte, a too-short blob — is REFUSED. os.urandom itself always clears it, so
+# the OS-only headless path never trips the floor. The floor is on the COLLECTED input, not on the
+# final seed (which is always full-entropy because os.urandom is always mixed in).
+_MIN_ENTROPY_BITS = 128
+
+
+def measure_entropy_bits(material):
+    """A Shannon-entropy estimate of collected ceremony material, in bits (H(bytes) × length). The
+    ceremony MEASURES what it collected with this and refuses below `_MIN_ENTROPY_BITS` (architect
+    precision 2). all-zeros / a repeated byte → 0 bits; os.urandom(32) → ≈256 bits."""
+    from math import log2
+    b = bytes(material)
+    n = len(b)
+    if n == 0:
+        return 0.0
+    counts = {}
+    for x in b:
+        counts[x] = counts.get(x, 0) + 1
+    per_byte = -sum((c / n) * log2(c / n) for c in counts.values())
+    return per_byte * n
+
+
+def _floor(material, *, ascii_belt, min_len):
+    """Enforce the minimum-entropy floor over collected `material` and return its measured bits.
+    Refuses a too-short blob, a below-floor measurement (all-zeros / repeated / low-entropy), and —
+    for a RAW-BYTES contribution — an all-printable-ASCII value (a human-typed / hardcoded constant,
+    which can measure just above the Shannon floor). HONEST CAP: byte inspection cannot distinguish a
+    diverse-but-predictable value from a random one, so the PRIMARY guarantee stays structural — the
+    OS cryptographic source is ALWAYS mixed in — and this floor is the belt on the human contribution,
+    proven able to fire (the planted low-entropy case reds)."""
+    b = bytes(material)
+    if len(b) < min_len:
+        raise ValueError(
+            "ceremony contribution is %d bytes — below the minimum length %d; too little collected "
+            "to clear the entropy floor — refused" % (len(b), min_len))
+    bits = measure_entropy_bits(b)
+    if bits < _MIN_ENTROPY_BITS:
+        raise ValueError(
+            "ceremony contribution is BELOW the minimum-entropy floor (%.1f bits < %d) — a fixed / "
+            "low-entropy / predictable value; the collected randomness must clear the floor — refused"
+            % (bits, _MIN_ENTROPY_BITS))
+    if ascii_belt and all(0x20 <= x < 0x7f for x in b):
+        raise ValueError(
+            "ceremony contribution is all printable ASCII — it looks like a FIXED / hardcoded "
+            "constant; the collected randomness must not be a typed constant — refused")
+    return bits
+
+
+def new_os_material():
+    """A fresh 32 bytes from the OS cryptographic random source (os.urandom, via crypto.new_signing_
+    seed). ALWAYS drawn and ALWAYS mixed into the seed — the human events add to it, never replace it
+    (architect precision 2)."""
+    from . import crypto
+    return crypto.new_signing_seed()
+
+
+def _events_to_bytes(events):
+    """Serialise a list of human event samples to bytes for MEASUREMENT and mixing, preserving the
+    samples' own entropy (so a stuck/low-entropy stream measures low and is refused). The raw samples
+    are never recorded — only the count and a hash commitment reach the ceremony row."""
+    return b"".join(repr(e).encode("utf-8") for e in events)
+
+
+def collect_system_seed(contributed=None):
+    """Collect the system signing seed for the ceremony and return (seed_bytes, descriptor).
+
+    The OS cryptographic source is ALWAYS drawn and ALWAYS mixed by hash (architect precision 2):
+    `seed = sha256(os_material || collected)`. `contributed` is the HUMAN contribution — a list of
+    event samples, or a raw-bytes blob (a scripted test / the owner's own material); None/empty runs
+    the HEADLESS OS-only path. A non-None human contribution is MEASURED and REFUSED below the
+    minimum-entropy floor. The descriptor carries {source, event_count, entropy_bits} for the
+    ceremony row; it never carries the raw samples."""
+    import hashlib
+    os_material = new_os_material()                       # ALWAYS in the mix
+    if not contributed:
+        source = "headless-os-only"                       # a headless boot: OS-only, recorded as such
+        collected = b""
+        event_count = 0
+        bits = measure_entropy_bits(os_material)          # the OS material's own entropy (always clears the floor)
+    elif isinstance(contributed, (bytes, bytearray)):
+        source = "human-mixed"
+        collected = bytes(contributed)
+        event_count = len(collected)
+        bits = _floor(collected, ascii_belt=True, min_len=_SEED_BYTES)
+    else:                                                 # a list/tuple of event samples
+        source = "human-mixed"
+        collected = _events_to_bytes(contributed)
+        event_count = len(contributed)
+        bits = _floor(collected, ascii_belt=False, min_len=1)
+    seed = hashlib.sha256(os_material + collected).digest()
+    return seed, {"source": source, "event_count": event_count, "entropy_bits": round(bits, 1)}
+
+
+def seed_system_signer(contributed=None):
+    """Run the seed-collection ceremony, create a SigningKeyStore, seal the mixed seed into it (in
+    memory only), and derive the PUBLIC half — returning (signer, custody_hash, public_half,
+    descriptor). No record is appended here (the bind and the ceremony row ride the compose layer).
+    The public half is ERA-SPLIT (KEY-MATERIAL-REAL §3): a REAL Ed25519 public key when the vetted
+    library is present, and a self-describing MARKED-TEST modelled commitment (W4 :3140 form) when
+    absent — so a fresh checkout with nothing installed records a marked-TEST key exactly as W4 did,
+    and installing the one package turns the real public half on. The custody hash (sha256 of the
+    seed) is a public commitment — the ONLY thing the seal returns; the seed itself never leaves the
+    signer and is never written to disk (signer.py's no-read discipline, USED here, never changed)."""
+    from .signer import SigningKeyStore
+    from . import crypto, keys
+    seed, descriptor = collect_system_seed(contributed)
+    signer = SigningKeyStore()
+    custody = signer.seal(seed)                 # sha256:<hex> — the public commitment; the seed stays in-memory
+    if crypto.real_available():
+        public = crypto.public_from_seed(seed)  # a REAL ed25519:<hex> public half (the library present)
+    else:
+        public = _MARKED_TEST_SYSTEM_KEY_PREFIX + keys.canonical_hash({"test-system-sign-of": custody})
+    return signer, custody, public, descriptor

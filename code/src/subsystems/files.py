@@ -130,10 +130,17 @@ class FilesView:
         still answers the departure (design/23 Option C — replay reproduces the DEPARTED state).
         Inert until a ceremony fires: with no departure record the departed set is empty and this
         returns exactly what it always did."""
+        # R8 (EP-MAINT-OUTSIDE-4): a PROJECTION OF custody.fold for content. Custody derives a node's
+        # content_hash from the LATEST FILE-WRITE *or* FILE-TRUNCATE it applied (custody.py — both set
+        # content_hash); reading FILE-WRITE ALONE disagreed with the custody fold after a truncate (it
+        # kept serving the pre-truncate write's hash). Reading the same content-setting family,
+        # latest-wins, is that projection — and it stays K12 family-scoped (design/36 ADDENDUM S)
+        # rather than folding the whole record, so agreement costs no more than the write-only fold did.
         h = None
-        for e in self.store.by_action("FILE-WRITE", as_of):
-            if (e.get("payload") or {}).get("path") == path:
-                h = e["payload"]["content_hash"]
+        for e in self.store.action_set_projection({"FILE-WRITE", "FILE-TRUNCATE"}).all(as_of):
+            p = e.get("payload") or {}
+            if p.get("path") == path and e["action"] in ("FILE-WRITE", "FILE-TRUNCATE"):
+                h = p.get("content_hash")
         if h is None:
             return None
         # The departed set is read through the K12 action-scoped projection (design/36 ADDENDUM S),

@@ -40,6 +40,7 @@ THREE LAWS THIS FILE EXISTS TO HOLD, each one mechanical rather than intended:
   decoration; here the store is the definitive and the tree is a view.
 """
 
+import base64
 import ctypes
 import errno
 import fcntl
@@ -48,6 +49,7 @@ import re
 import stat as statmod
 import threading
 import time
+from collections.abc import Mapping
 
 from fuse import FuseOSError, Operations  # fusepy — an ADAPTER dependency, outside the core
 
@@ -100,6 +102,40 @@ _F_GETLK, _F_SETLK, _F_SETLKW = fcntl.F_GETLK, fcntl.F_SETLK, fcntl.F_SETLKW
 _LTYPE = {fcntl.F_RDLCK: "read", fcntl.F_WRLCK: "write", fcntl.F_UNLCK: "unlock"}
 
 
+XATTR_CREATE = 0x1          # Linux XATTR_CREATE: refuse (EEXIST) if the name already exists
+XATTR_REPLACE = 0x2         # Linux XATTR_REPLACE: refuse (ENODATA) if the name does not exist
+_XATTR_BYTES_TAG = "__xattr_bytes_b64__"   # a non-UTF-8 xattr value, carried as tagged base64 (B8)
+
+
+def _xattr_store_value(value):
+    """A byte-faithful, canonical-safe, JSON-serialisable form for an xattr value (B8). A valid-
+    UTF-8 value stays a plain string — byte-identical to the pre-B8 behaviour for text. A non-UTF-8
+    byte value becomes a TAGGED base64 form: the canonical str encoder rejects the lone surrogates a
+    `surrogateescape` decode would produce, so a binary value is carried as bytes-in-a-string and
+    read back byte-identical by getxattr, rather than crashing the record's own hashing."""
+    if not isinstance(value, bytes):
+        return value
+    try:
+        return value.decode("utf-8")
+    except UnicodeDecodeError:
+        return {_XATTR_BYTES_TAG: base64.b64encode(value).decode("ascii")}
+
+
+def _lock_remainders(ls, ll, us, ul):
+    """The parts of a held lock [ls, ll) NOT covered by an unlock [us, ul) — the POSIX split (B7).
+    A length of 0 is an OPEN interval to EOF, exactly as `custody._overlaps` reads it. Returns the
+    (start, length) pairs of the non-overlapping remainder(s) — empty when the unlock covers the
+    whole lock (a whole-range unlock releases whole, unchanged)."""
+    l_end = None if not ll else ls + ll
+    u_end = None if not ul else us + ul
+    out = []
+    if us > ls:                                   # the held bytes BEFORE the unlock's start
+        out.append((ls, us - ls))
+    if u_end is not None and (l_end is None or u_end < l_end):   # the held bytes AFTER its end
+        out.append((u_end, 0 if l_end is None else l_end - u_end))
+    return out
+
+
 class Halted(RuntimeError):
     """The assume has been halted (FS-LAW-DIVERGENCE-HALT). The mount serves reads and
     refuses every state-changing call with EROFS until a human resolves it."""
@@ -149,6 +185,18 @@ class RecordsFS(Operations):
         self.state = custody.fold(self.store.all())
 
     def _on_append(self, record):
+        from kernel import erasure                 # lazy: kernel is an import-leaf here, no cycle
+        # Read the record's OWN kind (the record is store-frozen to a read-only mapping, not a `dict`,
+        # so `is_recover`'s isinstance test would miss it — the fold's own `.get` is the robust read).
+        if (record.get("payload") or {}).get("kind") == erasure.RECOVER_RECORD:
+            # A RECOVER SPLICE LANDING ON A LIVE MOUNT RE-ADJUDICATES THE TAIL (A-3; EP-MAINT-OUTSIDE-2).
+            # The broken-tail records were already applied incrementally, and `apply` cannot UNDO them —
+            # so the served state must be RE-FOLDED from the record (custody.fold consumes the splice,
+            # skipping the adjudicated-broken tail). Served WITHOUT a remount: before this, a recover
+            # splice was not consumed until the next mount re-ran the full fold. The lock fold advances
+            # on lock records only, so a recover record leaves it unchanged.
+            self._rebuild_from_record()
+            return
         self.state.apply(record)
         self.state.applied += 1
         # The lock fold advances on the SAME listener, for the same reason: a lock that the
@@ -269,13 +317,20 @@ class RecordsFS(Operations):
             raise FuseOSError(errno.ENOENT)
         return node
 
-    def _content(self, ino):
-        """A file's exact bytes: the OPEN BURST if one is in flight (that is the page cache,
-        and POSIX has never promised an un-fsynced write is durable), else the blob the
-        record named. Never the host filesystem answering for a path."""
-        for b in self._burst.values():
-            if b["ino"] == ino:
-                return bytes(b["bytes"])
+    def _content(self, ino, fh=None):
+        """A file's exact bytes for the handle asking. THE OPEN BURST IS READ-YOUR-OWN-WRITE
+        (POSIX): it is the page cache of the descriptor that wrote it and it is visible ONLY
+        through that descriptor's own `fh` — never folded for a fresh reader. A handle that
+        did not write the burst (a fresh reader, another descriptor) sees the blob the record
+        named, so a byte the gate has not committed is served to no one but its own writer.
+        This is B2: a refused write's burst is KEPT (POSIX has never promised an un-fsynced
+        write is durable, test_ep25 pins it), but keeping it must not make it visible to a
+        reader who never wrote it — an un-committed byte served to a fresh handle would be a
+        served byte with no record behind it. With `fh` None (a derived read that is nobody's
+        open descriptor) only the committed blob answers. Never the host filesystem for a path."""
+        b = self._burst.get(fh)
+        if b is not None and b["ino"] == ino:
+            return bytes(b["bytes"])
         node = self.state.inodes.get(ino)
         if node is None or not node.content_hash:
             return b""
@@ -370,6 +425,8 @@ class RecordsFS(Operations):
         v = node.xattrs.get(name)
         if v is None:
             raise FuseOSError(ENOATTR)
+        if isinstance(v, Mapping) and _XATTR_BYTES_TAG in v:      # a binary value (B8): decode to bytes
+            return base64.b64decode(v[_XATTR_BYTES_TAG])
         return v.encode("utf-8") if isinstance(v, str) else v
 
     def listxattr(self, path):
@@ -529,9 +586,15 @@ class RecordsFS(Operations):
         return 0
 
     def rename(self, old, new):
-        self._node(old)
+        old_node = self._node(old)
         self._parent_must_be_a_directory(new)
         existing = self.state.lookup(new)
+        # R11 (EP-MAINT-OUTSIDE-4): POSIX rename(2) — when `old` and `new` are existing hard links to
+        # the SAME inode, rename does NOTHING and returns success. Recording a FILE-RENAME here would
+        # unbind `old` in the custody fold and the inode would LOSE that name; the no-op keeps BOTH
+        # names. (This is a distinct case from the port rename-aside below, which unlinks an open file.)
+        if existing is not None and existing.identity == old_node.identity:
+            return 0
         if existing is not None and existing.kind == KIND_DIR and self.state.children(new):
             raise FuseOSError(errno.ENOTEMPTY)
         self._flush_paths((old,))
@@ -577,14 +640,25 @@ class RecordsFS(Operations):
 
     def setxattr(self, path, name, value, options, position=0):
         node = self._node(path)
-        text = value.decode("utf-8", "surrogateescape") if isinstance(value, bytes) else value
+        # THE CREATE / REPLACE FLAGS ARE HONOURED (B8): they were ignored, so an XATTR_CREATE over
+        # an existing name silently overwrote and an XATTR_REPLACE of a missing name silently
+        # created. XATTR_CREATE refuses (EEXIST) on an existing name; XATTR_REPLACE refuses
+        # (ENODATA) on a missing one.
+        exists = name in node.xattrs
+        if options & XATTR_CREATE and exists:
+            raise FuseOSError(errno.EEXIST)
+        if options & XATTR_REPLACE and not exists:
+            raise FuseOSError(ENOATTR)
         # THE SYSCALL IS TRANSPORT; THE CONTENT DECIDES THE CLASS (design/10 §11.1b, ruled at
         # EP-25 ADDENDUM 3). A permission-bearing attribute is a rule with a one-file scope,
         # so setting one is law-making and records as LAW — with everything that follows for a
         # law-family record. Every other attribute write is an ordinary DECISION. One syscall,
-        # two classes, decided by the attribute NAMESPACE.
+        # two classes, decided by the attribute NAMESPACE. The VALUE is carried as bytes through the
+        # canonical form (B8): a non-UTF-8 value would fail the record's own hashing as a
+        # surrogateescape string, so it is preserved byte-faithfully instead.
+        stored = _xattr_store_value(value)
         op = "FILE-XATTR-LAW" if custody.is_law_xattr(name) else "FILE-XATTR-SET"
-        self._act(op, path=path, inode=node.ino, name=name, value=text)
+        self._act(op, path=path, inode=node.ino, name=name, value=stored)
         return 0
 
     def removexattr(self, path, name):
@@ -629,7 +703,7 @@ class RecordsFS(Operations):
         sampling is of the OBSERVABILITY VIEW, which is the aggregate appended at the window's
         close, and never of what is handed back."""
         ino = self._open.get(fh, {}).get("ino") or self._node(path).ino
-        data = self._content(ino)[offset:offset + size]
+        data = self._content(ino, fh)[offset:offset + size]
         agg = self._reads.setdefault(ino, {"reads": 0, "bytes": 0, "path": path})
         agg["reads"] += 1
         agg["bytes"] += len(data)
@@ -645,10 +719,16 @@ class RecordsFS(Operations):
             b = self._burst[fh] = {"bytes": bytearray(self._content(node.ino)),
                                    "events": 0, "ino": node.ino, "path": path}
         buf = b["bytes"]
+        # B3: record the RANGE this handle actually wrote, so the burst commits by MERGING its own
+        # bytes onto the committed base rather than committing its whole-file buffer (which let a
+        # second handle's later flush clobber this one's writes). A write past EOF zero-fills the
+        # gap from the old end, so the written range spans [old_end .. offset+len) in that case.
+        dirty_start = min(offset, len(buf))
         if offset > len(buf):
             buf.extend(b"\x00" * (offset - len(buf)))
         buf[offset:offset + len(data)] = data
         b["events"] += 1
+        b.setdefault("dirty", []).append((dirty_start, offset + len(data) - dirty_start))
         self.counters["coalesced_writes"] += 1
         self._maybe_close_burst(fh)
         return len(data)
@@ -733,6 +813,14 @@ class RecordsFS(Operations):
             raise FuseOSError(errno.EINVAL)
         ino, owner = self._lock_target(path, fh)
         start, length = int(fl.l_start), int(fl.l_len)
+        if length < 0:
+            # POSIX l_len NORMALISATION (C-2; EP-MAINT-OUTSIDE-2). A negative l_len is LAWFUL: it names
+            # the range ENDING at the offset — bytes [l_start+l_len, l_start). Normalise it to the
+            # canonical (start, non-negative length) form BEFORE recording, so the fold's `_overlaps`
+            # (custody.py) reads a well-formed range and a whole-file / overlap check is correct. The
+            # op's `length` param is a non-negative quantity (the door refuses a negative one, C-1); the
+            # adapter never hands it a negative — it hands the normalised range every path below uses.
+            start, length = start + length, -length
         want = _LTYPE.get(fl.l_type)
         if want is None:
             raise FuseOSError(errno.EINVAL)
@@ -793,8 +881,15 @@ class RecordsFS(Operations):
         for lk in self.locks.held_by(ino, owner):
             if not custody._overlaps(lk.start, lk.length, start, length):
                 continue
+            # release the overlapping lock (the fold drops any lock the unlock range overlaps),
+            # then RE-LOCK the non-overlapping remainder(s): a partial unlock SPLITS the lock,
+            # leaving the remainder held (B7). A whole-range unlock yields no remainder, so a
+            # close-releases-all and a whole-file fcntl unlock behave exactly as before.
             self._act("FILE-UNLOCK", path=lk.path, inode=ino, start=lk.start,
                       length=lk.length, owner=owner, mechanism=mechanism)
+            for rem_start, rem_len in _lock_remainders(lk.start, lk.length, start, length):
+                self._act("FILE-LOCK", path=lk.path, inode=ino, ltype=lk.ltype,
+                          start=rem_start, length=rem_len, owner=owner)
 
     # =================================================================================
     # the recorded granularity policies (W5)
@@ -832,7 +927,21 @@ class RecordsFS(Operations):
         if b is None:
             return
         pol = self._coalescing()
-        content = bytes(b["bytes"])
+        # B3: MERGE this burst's written ranges onto the CURRENT committed content (re-read from the
+        # record, NOT from _content which would include another handle's open burst), rather than
+        # committing this handle's whole-file buffer. Two handles on one file each initialise a
+        # full-file buffer at first write; committing the whole buffer let whichever flushed LAST
+        # clobber the other's bytes. Overlaying only the ranges THIS burst wrote preserves both,
+        # and re-reading the base per flush means a handle sees the other's already-committed bytes.
+        node = self.state.inodes.get(b["ino"])
+        base = bytearray(self.blobs.get(node.content_hash) if node and node.content_hash else b"")
+        buf = b["bytes"]
+        for start, dlen in b.get("dirty", [(0, len(buf))]):
+            end = start + dlen
+            if len(base) < end:
+                base.extend(b"\x00" * (end - len(base)))
+            base[start:end] = buf[start:end]
+        content = bytes(base)
         try:
             self._act("FILE-WRITE", path=b["path"], inode=b["ino"], content=content,
                       coalesced_events=b["events"],

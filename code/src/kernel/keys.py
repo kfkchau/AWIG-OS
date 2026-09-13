@@ -52,6 +52,7 @@ primitives, the shape of `canonical_hash` and `countersign`, and NO secret ever 
 """
 
 from .canonical import canonical_hash
+from . import crypto  # the ONE vetted-library boundary — real material when present, modelled when absent
 
 # ---- the ONE stream, class-tagged (design/37 §4) --------------------------------------------
 # The three key-lifecycle record kinds carried as the payload's class tag, all in the one stream.
@@ -192,25 +193,50 @@ def seal_system_key(vault, value):
     return vault.seal(value)
 
 
-def countersign(record, system_key_hash):
+def _countersign_message(record, system_key_hash):
+    """The stable message a real countersignature signs over — the record's minted recording fact
+    (seq, record_time) bound under the system key's PUBLIC custody hash, through the estate's ONE
+    hash form. The real signature and its verifier recompute EXACTLY this, so signer and verifier
+    cannot drift (the make/verify_invoker_sig discipline, applied to the store's countersignature)."""
+    return canonical_hash({"custody": system_key_hash,
+                           "seq": record.get("seq"),
+                           "record_time": record.get("record_time")})
+
+
+def countersign(record, system_key_hash, signer=None):
     """The store's countersignature over an appended record (design/37 Q2: the store's signature
     binds the RECORDING fact). It is STORE MINTING — the seq/record_time class, below the gate, at
-    I9 rate (ADDENDUM-1 item 2; NOT an audit-pack action — a per-append mirror would double the
-    stream the pack exists to avoid). Derived from the record's OWN minted envelope (seq,
-    record_time) bound under the system key's PUBLIC custody hash; it reads NO sealed value back. A
-    key held in closure cannot be read to sign with — so the countersignature is possession-in-
-    custody plus minted provenance, never a decrypt-and-sign. `verify_countersign` is its derived
-    check."""
+    I9 rate.
+
+    ERA-SPLIT (KEY-MATERIAL-REAL §3; archi :3249). With NO signer supplied — the standing call — it
+    is the MODELLED mark exactly as before: possession-in-custody plus minted provenance (custody hash
+    + seq + record_time), a value with no algorithm tag that verifies under the modelled path. Supplying
+    a SIGNER (the SigningKeyStore that holds the system signing key BESIDE the vault) is an explicit
+    request for a REAL signature: it is signed BY THE SIGNER over `_countersign_message` (the signer
+    signs with the sealed system key and returns the signature — a use, never a read; the modelled
+    'never a decrypt-and-sign' made real; the vault stays byte-frozen and the signing key lives beside
+    it, never inside it) — and with the library ABSENT the signer REFUSES citing it, NEVER a modelled
+    fall-back (RW-DOWNGRADE: a real request is refused, not silently downgraded to a mark that looks
+    signed but is not). `verify_countersign` is its derived check, dispatching on the mark's own era."""
+    if signer is not None:
+        return signer.sign(system_key_hash, _countersign_message(record, system_key_hash))
     return {"custody": system_key_hash,
             "seq": record.get("seq"),
             "record_time": record.get("record_time")}
 
 
-def verify_countersign(mark, record, system_key_hash):
-    """Verify a countersignature — a DERIVED CHECK, never a mirrored record. The mark must bind
-    THIS record's minted recording fact (seq, record_time) under the system key currently in
-    custody (its public hash). Recomputed on demand from PUBLIC data only; it reads no sealed value
-    and touches no vault storage. A False here is an honest NO-MATCH, never a read path."""
+def verify_countersign(mark, record, system_key_hash, public_key=None):
+    """Verify a countersignature — a DERIVED CHECK, never a mirrored record, dispatching on the
+    mark's ERA (KEY-MATERIAL-REAL §3). A MODELLED mark (a dict, no algorithm tag) verifies as before:
+    it must bind THIS record's minted recording fact (seq, record_time) under the system key's public
+    custody hash — recomputed from PUBLIC data only, no sealed value, no vault storage. A REAL mark (a
+    tagged Ed25519 signature) verifies under `public_key` (the system key's published public half)
+    via the vetted library; with the library absent that verification REFUSES citing the absent
+    library (a tagged value cannot be verified without it, never a modelled substitute). A False on
+    either path is an honest NO-MATCH — the check that can fail (RW-FORGE)."""
+    if crypto.is_real_value(mark):
+        return public_key is not None and crypto.verify(
+            public_key, mark, _countersign_message(record, system_key_hash))
     return (isinstance(mark, dict)
             and mark.get("custody") == system_key_hash
             and mark.get("seq") == record.get("seq")
@@ -252,12 +278,19 @@ OPEN_PRIVATE = "openpriv"    # the holder's open capability: derived from their 
 
 
 def sign_public_from_secret(secret):
-    """The PUBLIC SIGN key an id card records for a holder whose own secret is `secret` — a one-way
-    commitment (`canonical_hash`) to that secret, the recorded half of the keypair whose private
-    half is the secret. `bound_key` returns exactly this after a KEY-BIND. The secret itself is
-    NEVER recorded; only this commitment is. Test worlds bind this so the read direction's two open
-    keys correspond (open_public from the card, open_private from the secret); the estate's live key
-    material is the owner's own act (F6/§8-i), unchanged by this addition."""
+    """The PUBLIC SIGN key an id card records for a holder whose own secret is `secret` — the
+    recorded half of the keypair whose private half derives from the secret. `bound_key` returns
+    exactly this after a KEY-BIND. The secret itself is NEVER recorded; only this public commitment
+    is.
+
+    ERA-SPLIT (KEY-MATERIAL-REAL §3). With the vetted library PRESENT this is a REAL Ed25519 public
+    key (tagged 'ed25519:...'), derived from the secret by HKDF (crypto.sign_public_from_secret).
+    With it ABSENT it is the MODELLED one-way commitment, byte-identical to before — so a fresh
+    checkout with nothing installed records and reads exactly as today, and installing the one
+    package turns real keys on. Test worlds bind this so the read direction's two open keys
+    correspond; the estate's live key material is the owner's own act (F6/§8-i)."""
+    if crypto.real_available():
+        return crypto.sign_public_from_secret(secret)
     return "signpub:" + canonical_hash({"sign-of-secret": secret})
 
 
@@ -265,10 +298,17 @@ def open_public_key(sign_public_key):
     """The PUBLIC open key — the id card's SECOND derived key, DERIVED FROM THE RECORDED PUBLIC SIGN
     KEY. Content is WRAPPED TO this key; anyone holding the record derives it, so anyone may wrap to
     a reader (design/43 points 2/3). Derived live from the record every call, never a stored value.
-    None for an account holding no bound sign key — a keyless account has no open key, exactly as it
-    has no live signing binding."""
+    None for an account holding no bound sign key.
+
+    ERA-SPLIT dispatches on the RECORDED KEY'S OWN era (§3), never on a global mode: a REAL (tagged)
+    sign key yields a REAL X25519 open key — the birational image of that Ed25519 key (anyone may
+    wrap TO it), and if the library is absent that derivation REFUSES (a tagged value cannot be read
+    without it); a MODELLED sign key yields the modelled open key, byte-identical to before. So a
+    real record and a pre-real record each derive the open key of their own era."""
     if sign_public_key is None:
         return None
+    if crypto.is_real_value(sign_public_key):
+        return crypto.open_public_from_sign_public(sign_public_key)
     return OPEN_PUBLIC + ":" + canonical_hash({"open-of-sign": sign_public_key})
 
 
@@ -277,8 +317,14 @@ def open_private_key(secret):
     capability to open what was wrapped to their public open key, and it NEVER enters the record or
     reaches a seat. A non-holder cannot derive it (the secret is one-way behind the recorded card),
     so only the holder opens (design/43 point 5). Distinct from `open_public_key` — two derived
-    keys, each one job: this one is never a wrap address and never signs, and the sign/public-open
-    keys never open (RW3, the one-key-doing-both red)."""
+    keys, each one job: this one is never a wrap address and never signs (RW3).
+
+    ERA-SPLIT (§3). Library PRESENT: a REAL X25519 private key (tagged 'x25519-priv:...'), the
+    birational image of the holder's Ed25519 private key, corresponding to
+    `open_public_key(sign_public_from_secret(secret))`. Library ABSENT: the modelled value,
+    byte-identical to before."""
+    if crypto.real_available():
+        return crypto.open_private_from_secret(secret)
     return OPEN_PRIVATE + ":" + canonical_hash({"open-of-secret": secret})
 
 

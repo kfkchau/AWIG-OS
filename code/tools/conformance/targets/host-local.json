@@ -1,0 +1,11 @@
+{
+  "name": "host-local",
+  "kind": "stock",
+  "description": "The build host itself, unprivileged and local. It exists because the self-test's fixture targets run here, and a fixture judged against a baseline captured on a DIFFERENT kernel would be a two-variable experiment: a failure could be the fixture or the kernel difference. This baseline holds the kernel difference still. It declares no root capability \u2014 nothing here starts services or raises privilege on the owner's machine \u2014 so every root-pass row is skipped with that reason recorded in the manifest.",
+  "capabilities": [],
+  "transport": {
+    "type": "local",
+    "scratch": "/tmp/govos-conformance/host-local",
+    "python": "python3"
+  }
+}

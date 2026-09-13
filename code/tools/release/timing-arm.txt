@@ -1,0 +1,24 @@
+# TIMING ARM — modules quarantined from the concurrent ledger, run STANDALONE instead.
+#
+# WHY (owner order :3486): the whole ledger, run under concurrent load, produces a red for
+# a handful of TIMING-SENSITIVE modules that pass cleanly when run standalone. A load-induced
+# flip is not a defect in the shipped code — it is the ledger's own concurrency colliding with
+# a test that measures timing or races a shared /tmp path. Reading such a flip as a real red is
+# the failure this list exists to end. Nothing is deleted: every module below STAYS in the
+# ledger and is run, just STANDALONE (one process, no concurrent load), where it is green.
+#
+# HOW: certify / the ledger runs every module NOT listed here in the concurrent host ledger,
+# and runs each module listed here as its own standalone timing arm. A red in the timing arm is
+# investigated (re-run standalone up to 3x); a red that survives 3 standalone runs is a REAL
+# red and is reported, never absorbed. A module reaches this list only via loadflake-scan.sh
+# (the ledger under load, three times, the flippers listed) — never by a seat's guess.
+#
+# FORMAT: one module per line: <module>\t<reason>\t<evidence coordinate>
+# Populated / re-verified by: tools/release/loadflake-scan.sh (S2 detector).
+# Three known at first writing (owner: "three known"):
+
+test_ep47b	ceremony flake: a random 4-digit ceremony hash sometimes contains the literal '9000' a pin greps for; passes on re-run	MAINT-EP47B-CEREMONY-FLAKE / board :3442
+test_ep28c_w8	batch-timing test: the arrival rate closes the batch, so under concurrent load the observed widest-batch reads below the standalone value; 3/3 green standalone	board :3442 / EP-48G close :3456
+test_ep24b	NO-RESULT under concurrent sweep load (the per-module runner returns no verdict under contention); passes standalone (Ran 40, OK)	EP-48G builder sweep, board :3454
+test_ep35	NO-RESULT under concurrent sweep load; passes standalone (Ran 22, OK)	EP-48G builder sweep, board :3454
+test_ep42_review	NO-RESULT under concurrent sweep load; passes standalone (Ran 5, OK)	EP-48G builder sweep, board :3454

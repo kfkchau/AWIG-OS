@@ -47,7 +47,7 @@ Contributors from Indonesia, and corrections to how this heritage is described, 
 3. **No fight over the name, and no surrender on demand.** The name is not worth a lawsuit, and this project will not spend its life in one. Any demand, and the project's answer to it, is published here in full and unedited, on arrival.
 4. **Permanent record.** The meaning of the name, this acknowledgment, and, if it ever occurs, the full record of any demand to erase it will be preserved permanently in this project's history.
 
-*Amended 8 September 2026: clause 3 previously promised to rename within 30 days of any formal demand. A demand is a letter, and a letter is not a right; the clause handed the name to whoever wrote first. The project now answers demands in public and does not surrender on demand. Nothing else changed.*
+*Clause 3 amended 8 September 2026.*
 
 ## 5. How this project governs itself
 
@@ -59,11 +59,11 @@ Until a contributor community forms, the project runs as a single maintainer wit
 
 The technical design is in [`ARCHITECTURE.md`](./ARCHITECTURE.md): what AWIG OS is as software, how it is built, its rule engine, its AI organisation.
 
-The code you can run is in the [`code`](./code/) folder. Download it and run it with Python 3 and nothing else (`cd code && python3 check.py`). The folder carries its own [`code/README.md`](./code/README.md), a fingerprint of every file in `code/RENDER-STAMP.json`, and eight checks. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, what is only designed, and the one warning.
+The code you can run is in the [`code`](./code/) folder. Download it and run it with Python 3 and nothing else (`cd code && python3 check.py`). The folder carries its own [`code/README.md`](./code/README.md), a fingerprint of every file in `code/RENDER-STAMP.json`, sixteen checks, and the program's own test suite. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, what is only designed, and the one warning.
 
 The theory it runs on is the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard), and under it the [Open Meta-Governance Standard](https://github.com/kfkchau/Open-Meta-Governance-Standard/): a kernel for governing rules themselves, rules about rules. Read them if that interests you. AWIG OS is that theory, running.
 
-**Where this stands, 8 September 2026.** The smallest piece runs, and you can check it in two commands: `cd code && python3 seed_demo.py && python3 check.py` (Linux, stock Python; on Windows, WSL). What runs is the governing layer: one record as the only truth, every act a row citing its rule, refusals recorded the same way, the whole world rebuilt from the record alone, hash for hash. The record is chained and sealed, keys are rows, the engine attests itself at boot, and there is no delete: the constitution says so, thirty-nine amendments in. Every key in this release is a stand-in of the right shape, not real cryptography, and the tree says that on its own front page. `STATUS.md` holds what is built, what is designed and every cap, dated. The first milestone, the seed, is kept in history at the tag `milestone-0-seed`.
+**Where this stands, 13 September 2026.** The engine after campaign 5 runs, and you can check it in three commands: `cd code && python3 seed_demo.py && python3 check.py && python3 run_public_suite.py` (Linux, stock Python; on Windows, WSL). What runs is the governing layer: one record as the only truth, every act a row citing its rule, refusals recorded the same way, the whole world rebuilt from the record alone, hash for hash. The record is chained and sealed, keys are rows, the engine attests itself at boot, there is no delete, and now the border is governed too: a socket act is a recorded decision, something arriving from outside is a draft the rulebook decides, and one machine's row becomes another's receipt. The constitution says so, fifty amendments in. Real cryptography is in this code and off until you install one library; the tree says that on its own front page, and says what an administrator can still read. The test suite ships for the first time. `STATUS.md` holds what is built, what is designed and every cap, dated. The earlier milestones are kept in history at the tags `milestone-0-seed` and `c4-close`.
 
 ## 7. Contributing
 
@@ -82,4 +82,4 @@ The farmers of the subak never asked whether ordinary people could govern someth
 © Kelvin Chau, 2026
 Named in homage to the *awig-awig* and *subak* traditions of Bali and Lombok, Indonesia.
 Documentation licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); code under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html). See [`LICENSING.md`](./LICENSING.md).
-For attribution, citation, or inquiries: [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau)
+For attribution, citation, or inquiries: kelvin@rootrebuilder.org · [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau) · or open an issue here.

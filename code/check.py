@@ -216,6 +216,80 @@ class WholeDescription(unittest.TextTestResult):
         return " ".join(doc.split()) if doc else str(test)
 
 
+
+# --- EP-RELEASE-TESTS: the eight private-literal refusal rows (injected at render) --------------
+import re as _re
+import tempfile as _tempfile
+
+_REFUSE = [
+    ("home_laptop_path", _re.compile(rb"/home/[A-Za-z0-9_.-]+"), (b"/home/", b"exampleuser")),
+    ("ssh_invocation", _re.compile(rb'(?:"ssh",\s*"-p",\s*"\d+"|\bssh\s+-p\s+\d+)'), (b"ssh -p ", b"2200 example@dest")),
+    ("key_path", _re.compile(rb"~?/?\.ssh/[A-Za-z0-9_.-]+"), (b"~/.ssh/", b"example_key")),
+    ("loopback_port", _re.compile(rb"127\.0\.0\.1:\d+"), (b"127.0.0.1:", b"8080")),
+    ("guest_user", _re.compile(rb"[a-z][a-z0-9_-]*@127\.0\.0\.1"), (b"exampleuser@", b"127.0.0.1")),
+    ("repository_url", _re.compile(rb"(?:git@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+|github\.com/kfkchau/gov-os)"), (b"git@", b"github.com:example/private.git")),
+    ("claude_projects_path", _re.compile(rb"\.claude/" rb"projects[A-Za-z0-9_./-]*"), (b".claude/", b"projects/example")),
+    ("private_email", _re.compile(rb"[A-Za-z0-9._%+-]+@gmail\.com"), (b"someone@", b"gmail.com")),
+]
+
+
+def _refuse_scan_bytes(data):
+    return {name for name, rx, _ in _REFUSE if rx.search(data)}
+
+
+def _refuse_scan_trees():
+    hits = {}
+    for sub in ("src", "tests", "tools"):
+        base = os.path.join(HERE, sub)
+        if not os.path.isdir(base):
+            continue
+        for r, ds, ns in os.walk(base):
+            ds[:] = [d for d in ds if d != "__pycache__"]
+            for n in ns:
+                if n.endswith((".pyc", ".pyo")):
+                    continue
+                for name in _refuse_scan_bytes(open(os.path.join(r, n), "rb").read()):
+                    hits.setdefault(name, []).append(os.path.relpath(os.path.join(r, n), HERE))
+    return hits
+
+
+class ReleaseRefusalRows(unittest.TestCase):
+    """One planted-refusal row per private-literal class (EP-RELEASE-TESTS A3)."""
+
+    def _row(self, idx):
+        name, rx, frags = _REFUSE[idx]
+        leaked = _refuse_scan_trees().get(name)
+        self.assertIsNone(leaked, "%s leaked into the shipped tree: %s" % (name, leaked))
+        with _tempfile.NamedTemporaryFile() as fh:
+            fh.write(b"harmless line\n" + frags[0] + frags[1] + b"\nharmless line\n")
+            fh.flush()
+            found = _refuse_scan_bytes(open(fh.name, "rb").read())
+        self.assertIn(name, found, "the %s scanner cannot refuse a planted synthetic string" % name)
+
+    def test_refuses_home_laptop_path(self):
+        self._row(0)
+
+    def test_refuses_ssh_invocation(self):
+        self._row(1)
+
+    def test_refuses_key_path(self):
+        self._row(2)
+
+    def test_refuses_loopback_port(self):
+        self._row(3)
+
+    def test_refuses_guest_user(self):
+        self._row(4)
+
+    def test_refuses_repository_url(self):
+        self._row(5)
+
+    def test_refuses_claude_projects_path(self):
+        self._row(6)
+
+    def test_refuses_private_email(self):
+        self._row(7)
+
 if __name__ == "__main__":
     print()
     print("AWIG OS seed check battery. Eight readings of the machinery in this folder,")
@@ -226,11 +300,13 @@ if __name__ == "__main__":
     print()
     sys.stdout.flush()
 
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(SeedCheck)
+    suite = unittest.TestSuite()
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(SeedCheck))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(ReleaseRefusalRows))
     result = unittest.TextTestRunner(stream=sys.stdout, verbosity=2,
                                      resultclass=WholeDescription).run(suite)
     code = 0 if result.wasSuccessful() else 1
     print()
-    print("Exit code %d. Zero means all eight passed; anything else means one did not."
+    print("Exit code %d. Zero means all checks passed (eight machinery + eight release-refusal rows); anything else means one did not."
           % code)
     sys.exit(code)

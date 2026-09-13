@@ -211,15 +211,20 @@ def install(store):
     """Execute the founding pack against `store`. Idempotent; validated whole before any
     append; the founding designation gains the pack's version. Returns None (matches the
     old genesis signature; compose re-exports boot.genesis which delegates here)."""
-    # idempotency: the same SYSTEM-actor guard the old genesis used — a reload or an
-    # explicit second call founds nothing twice.
-    already = any((e.get("payload") or {}).get("actor_id") == "SYSTEM"
-                  for e in store.by_action("CREATE-ACTOR"))
-    if already:
-        return
-
     pack = load_pack()
     recs = records(pack)
+    # IDEMPOTENCY READS THE PACK'S OWN LAST RECORD (EP-MAINT-OUTSIDE-1 B9). The old guard keyed on
+    # "a SYSTEM actor exists", which is the SECOND record of the pack — so a founding that stopped
+    # after CREATE-ACTOR SYSTEM (or any early record) was taken as already founded, and the genesis-
+    # pack clean-stop-and-re-land case (:2901) could never re-land. Instead the guard asks whether
+    # the pack's LAST record — by the pack's OWN order (records(pack)[-1]) — is present: a complete
+    # founding has it and founds nothing twice, while a partial PREFIX (its last record absent) re-
+    # lands cleanly. Keyed on the last record's action+object, not on the FOUND-STORE designation,
+    # which is FIRST in the pack (views.py:442) and can never be the completion marker.
+    last = recs[-1]
+    if any(e.get("object") == last.get("object") for e in store.by_action(last.get("action"))):
+        return
+
     _validate(recs)                      # refuse the WHOLE founding before any append
     version = pack.get("founding_version")
 

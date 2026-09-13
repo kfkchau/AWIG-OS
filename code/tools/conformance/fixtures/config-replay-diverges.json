@@ -1,0 +1,4 @@
+{
+  "mode": "replay-diverges",
+  "record": "/tmp/govos-conformance/fixture-replay-diverges/record.jsonl"
+}

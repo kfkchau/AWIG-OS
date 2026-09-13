@@ -1,5 +1,5 @@
 {
-  "founding_version": "1.39.0",
+  "founding_version": "1.50.0",
   "description": "v1.25.0 (EP-30-W1b, THE DECLARED STREAM KEY'S FIRST USE: op:UNBIND's declaration names the stream its records are written under; a MINOR because ONE shipped operation's declaration gains a key the engine already honours, no check kind is added and none removed, no operation is added or removed, and every other declaration is byte-unchanged): THE DOOR AN ACT ENTERS DECIDED THE STREAM ITS DECLARATION LANDED IN, and which stream a law writes into is LAW CONTENT rather than a property of the door — the conflation EP-30-W1a removed from the engine and that this pass is the first law to use. op:UNBIND now declares `record_stream: BIND-DEVICE`, so AN UNBIND RECORD LANDS IN THE GRANTING ACT'S STREAM WHILE STILL RECORDING THAT UNBIND WROTE IT: `action` is untouched and goes on carrying the door where every existing reader already looks, `record_stream` names only where the declaration lands, and a record shape that could not carry BOTH facts would have been a STOP AND RAISE rather than an overwrite — an amending record that hid its own author would be a record holding an act nobody performed. WHAT IT BUYS: `prior_value`'s latest-seq-wins now MEETS the revoking act. EP-30-E1 established that the thirteenth kind ALREADY expresses revocation, on condition that the revoking record is reachable from the granting act's stream — it separated ADMIT/REFUSE where grant and revoke were one operation and gave ADMIT/ADMIT against this estate's SEPARATE op:UNBIND, and that blindness is exactly what this pass removes. NOTHING NEW IS REFUSED AND THAT IS THE DESIGN: no consuming operation gains a check here, so every act admitted before this pass is admitted after it; making revocation BITE is EP-30-W2, and the fact becomes VISIBLE here before it becomes BINDING there. THE DECLARED-LAW CENSUS DOES NOT MOVE: 76 ops and 43 laws unchanged, ONE declaration amended, no record removed.",
   "mother_space": "space:root",
   "steps": [
@@ -341,6 +341,27 @@
             ],
             "enforcement": "deferred",
             "enforced_by": "tunnel-processor (unbuilt — the tunnel path is founded, no consumer op exists yet)",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "EXTERNAL-TUNNEL",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "EXTERNAL-TUNNEL",
+            "root": true,
+            "polarity": "+",
+            "text": "an established external entity's tunnel binds sender, target, permitted class and proof method; identity is verified at the tunnel; a peer's own claim is admitted as INPUT, never as a decision the record authors",
+            "when": [],
+            "then": [
+              {
+                "append_op": "external-tunnel-consumer"
+              }
+            ],
+            "enforcement": "deferred",
+            "enforced_by": "tunnel-processor (the general multi-entity consumer is unbuilt — EP-49B founds the law and builds the basic identity-at-tunnel verification in border.py; the general enforcement beyond a single attestor is C6's, design/51 §9)",
             "scope": "space:root"
           }
         },
@@ -1031,6 +1052,42 @@
       ]
     },
     {
+      "step": "05o-net-laws",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "NET-LAW-GRANT",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "NET-LAW-GRANT",
+            "text": "THE SOCKET GRANT LAW (EP-48, design/51 §5). Who may open what, to where — the six wire acts are AUTHORITY against the record, never a re-statement of the POSIX call (the wrong reference this unit names). A socket is OPENED BY an established entity (WHO — SOCKET-OPEN's require_prior over the opener's establishment); the socket's family is one this law declares (WHAT — SOCKET-OPEN's value_domain over the address family: inet, inet6, unix; a family this law does not name is REFUSED, recorded, citing this rule, never a type error); a bind/listen/connect/accept/close acts on a socket THE RECORD OPENED (a wire act names a socket somebody's record established, never a string the caller supplies — each carries a require_prior over SOCKET-OPEN). The live socket table is DERIVED, never stored: a fold over these six wire decisions (src/subsystems/sockets.py), so killing every derived structure and replaying the record alone returns the same table. THE GOVERNED CONNECTION VIEW IS THIS FOLD: the observe-plane connection shadow (observe/shadow.py m1-connection-state) retires INTO it once the fold reproduces the shadow's mature diff-empty under the churn battery, both directions (:2646 paid). WHAT THIS RULE DOES NOT YET REACH, STATED IN THE LAW ITSELF SO NO READER INFERS COVER IT DOES NOT HAVE: the WHERE a connect/accept names (the target/peer) is RECORDED but not gated to a declared reach today — no value_domain nor grant over the target is carried, so a connect to any target by an entity that may open the family is recorded, not refused; and on the HOST no real socket is opened by the kernel port — the wire is a MODELLED table (the guest-real half is EP-48G, where a refused grant is a real socket refused + errno). A LAW THAT CLAIMED THE COVER IT DOES NOT HAVE WOULD BE WORSE THAN A DANGLING CITATION.",
+            "scope": "space:root",
+            "enforcement": "live",
+            "enforced_by": "SOCKET-OPEN's own check rows THAT CITE THIS LAW — the require_prior over the opener's establishment (WHO) and the value_domain over the address family (WHAT) — AND the require_prior over SOCKET-OPEN that SOCKET-BIND / SOCKET-LISTEN / SOCKET-CONNECT / SOCKET-ACCEPT / SOCKET-CLOSE each carry (a wire act names a socket the record opened). The WHERE (a connect/accept target) is recorded and UNGATED today — no reach check over the target is carried; that enforcement is scheduled to EP-48G / EP-52 (the firewall), the create preceding it. The socket-table fold in src/subsystems/sockets.py reads the six wire decisions alone and holds no stored socket table."
+          }
+        }
+      ]
+    },
+    {
+      "step": "05p-filter-law",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "NET-LAW-FILTER",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "NET-LAW-FILTER",
+            "text": "THE FIREWALL LAW (EP-52, design/51 N8 / §4-5-9). The firewall is RULES IN THE RECORD, not a table beside it — the wrong reference this unit names is iptables as the law: a cache with no record of WHY a connection was refused, so the census of 'which rule decided' is impossible. A FILTER-RULE is a CREATE-RULE of this law class (NET-LAW-FILTER, the NET-LAW-GRANT precedent); a FILTER-DECISION act CITES one and decides over the socket table (EP-48, src/subsystems/sockets.py) — a connection ADMITTED or REFUSED, WITH the deciding rule recorded, so 'which rule dropped this' is a FOLD over the FILTER-DECISION acts (src/subsystems/filter.py) and never an inference. A FILTER-DECISION that cites NO rule the record holds is REFUSED, recorded, citing this law: the firewall is law in the record, and a decision that cites nothing is not a decision. The decision is over a connection SOMEBODY'S RECORD ESTABLISHED (a require_prior over SOCKET-OPEN — the filter READS and decides OVER the socket table, it never rewrites a socket act). ROUTING AND NAME RESOLUTION SPLIT POLICY FROM INPUT (design/44 §2): where the system DECIDES (admit or refuse a name or route by policy) it is a FILTER-DECISION citing this law; where the world HANDS US A FACT (a resolver answer, a route) it is INPUT — the clock-as-sensor law generalized to every oracle (ANSWER-RETURNED), never a decision the record authors. THE ENFORCEMENT SEAM IS NAMED, GUEST-ONLY: the record DECIDES; the guest kernel's netfilter DROPS the real packet; a FILTER-DECISION NAMES its seam (guest-netfilter) and the host record NEVER claims the drop — the same honesty as the disk lock under the modelled-key cap (DIGEST-C4 §6). WHAT THIS LAW DOES NOT REACH, STATED SO NO READER INFERS COVER IT DOES NOT HAVE: per-packet traffic is NEVER a record — STREAM appends nothing, the firewall decides connections and names the seam; and on the HOST no real packet is dropped by the record — the drop is the GUEST kernel's netfilter, proven guest-only under the pinned kernel (EP-00 rule 9). A LAW THAT CLAIMED THE COVER IT DOES NOT HAVE WOULD BE WORSE THAN A DANGLING CITATION.",
+            "scope": "space:root",
+            "enforcement": "live",
+            "enforced_by": "FILTER-DECISION's own check rows THAT CITE THIS LAW — the require_prior over CREATE-RULE (the cited FILTER-RULE must exist in the record; a decision citing no rule is refused), the require_prior over SOCKET-OPEN (the decision is over a connection the record established, not a string the caller supplies), the value_domain over the decision (admit | refuse) and the value_domain over the seam (guest-netfilter — the record names the enforcement seam and never lets the host claim the drop). The which-rule-decided census is a FOLD in src/subsystems/filter.py reading the FILTER-DECISION acts alone (never a socket act, never a channel act — the wire/channel/filter folds are disjoint by construction, N2). The guest kernel's netfilter is the enforcement layer the seam names, exercised guest-only under the pinned kernel; the host record decides and names the seam and drops no real packet."
+          }
+        }
+      ]
+    },
+    {
       "step": "06-vocabulary-packs",
       "records": [
         {
@@ -1257,6 +1314,126 @@
       ]
     },
     {
+      "step": "07b-syscall-ops-amendment",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-INFO",
+          "object": "pack:syscall-ops",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "kind": "category_pack",
+            "name": "syscall-ops",
+            "amends": "the genesis pack:syscall-ops (step 06-vocabulary-packs): socket->SOCKET-OPEN replaces socket->COMMS-OPEN, recvmsg->COMMS-RECV added, bind/listen/connect/accept->their socket ops added; the wire and the channel are TWO names in law (N2). The old socket->COMMS-OPEN mapping survives in history and is never edited (append-only founding data, design/51 §6 item 3). `close` is deliberately NOT mapped: the flat map cannot discriminate a socket fd's close from a file fd's, so SOCKET-CLOSE is reached by the op directly on the host (:3266 precision 3); EP-48G maps it in-guest.",
+            "levels": [
+              {
+                "syscall": "open",
+                "op": "FILE-CREATE"
+              },
+              {
+                "syscall": "write",
+                "op": "FILE-WRITE"
+              },
+              {
+                "syscall": "unlink",
+                "op": "FILE-UNLINK"
+              },
+              {
+                "syscall": "chmod",
+                "op": "FILE-PERM"
+              },
+              {
+                "syscall": "mmap",
+                "op": "MEM-GRANT"
+              },
+              {
+                "syscall": "mount",
+                "op": "MOUNT"
+              },
+              {
+                "syscall": "socket",
+                "op": "SOCKET-OPEN"
+              },
+              {
+                "syscall": "bind",
+                "op": "SOCKET-BIND"
+              },
+              {
+                "syscall": "listen",
+                "op": "SOCKET-LISTEN"
+              },
+              {
+                "syscall": "connect",
+                "op": "SOCKET-CONNECT"
+              },
+              {
+                "syscall": "accept",
+                "op": "SOCKET-ACCEPT"
+              },
+              {
+                "syscall": "sendmsg",
+                "op": "COMMS-SEND"
+              },
+              {
+                "syscall": "recvmsg",
+                "op": "COMMS-RECV"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "step": "07c-rule-errno-amendment",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-INFO",
+          "object": "pack:rule-errno",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "kind": "category_pack",
+            "name": "rule-errno",
+            "amends": "the genesis pack:rule-errno (step 07-policy-vocabularies): adds NET-LAW-GRANT -> EACCES (EP-48G, design/51 N1). A refused socket grant (NET-LAW-GRANT: who may open what, to where, EP-48) is a permission denial the record decides; before this row a refused grant fell back to EINVAL, a true refusal wearing the wrong ABI answer. EACCES is the errno POSIX gives socket(2) when permission to create the socket is denied — the literal SOCKET-OPEN refusal — and it groups with this estate's other permission laws (FS-LAW-PERM, SIGHT-IS-LAW -> EACCES), distinct from EPERM (the capability class, CAP-IS-LAW). The guest-real half: a refused grant is a real socket refused + this errno + the refusal row. The genesis 7-row pack survives in history and is never edited (append-only founding data, design/51 §6 item 3); latest-wins by sequence serves this 8-row amendment. This adds a data row only — no op, no law, no check kind (op-population and OP_CHECKS unchanged); a data-born MINOR bump, attested.",
+            "levels": [
+              {
+                "rule": "MEM-LAW-BUDGET",
+                "errno": "ENOMEM"
+              },
+              {
+                "rule": "FS-LAW-PERM",
+                "errno": "EACCES"
+              },
+              {
+                "rule": "FS-LAW-NAMESPACE",
+                "errno": "EACCES"
+              },
+              {
+                "rule": "CAP-IS-LAW",
+                "errno": "EPERM"
+              },
+              {
+                "rule": "SIGHT-IS-LAW",
+                "errno": "EACCES"
+              },
+              {
+                "rule": "P3-CLOSURE",
+                "errno": "ENOSYS"
+              },
+              {
+                "rule": "ROOT-NEG-6",
+                "errno": "EEXIST"
+              },
+              {
+                "rule": "NET-LAW-GRANT",
+                "errno": "EACCES"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "step": "08-op-definitions",
       "records": [
         {
@@ -1395,6 +1572,7 @@
                 "occurrence_time": "optional"
               },
               "law_cited": "MEM-LAW-BUDGET",
+              "param_kinds": {"ceiling": "quantity"},
               "object_param": "holder",
               "payload_from": [
                 "holder",
@@ -1443,6 +1621,7 @@
                 "size": "required"
               },
               "law_cited": "MEM-LAW-ALLOC",
+              "param_kinds": {"size": "quantity"},
               "object_param": "region",
               "param_defaults": {
                 "holder": "$actor",
@@ -1827,7 +2006,28 @@
               "content_params": {
                 "message": "message_hash"
               },
-              "checks": [],
+              "checks": [
+                {
+                  "check": "live_present",
+                  "open_action": "COMMS-OPEN",
+                  "close_action": "COMMS-CLOSE",
+                  "key_params": ["entity", "channel"],
+                  "close_actor_key": "entity",
+                  "present": {"channel": "channel"},
+                  "cite": "COMM-LAW-QUEUE",
+                  "message": "COMMS-SEND: no live channel by this name — a message crosses a channel that is OPEN, and a send on a closed or never-opened channel is refused, not recorded (COMM-LAW-QUEUE's scheduled liveness, EP-49C)"
+                },
+                {
+                  "check": "live_present",
+                  "open_action": "COMMS-OPEN",
+                  "close_action": "COMMS-CLOSE",
+                  "key_params": ["entity", "channel"],
+                  "close_actor_key": "entity",
+                  "present": {"entity": "$actor", "channel": "channel"},
+                  "cite": "COMM-LAW-CONTRACT",
+                  "message": "COMMS-SEND: the sender holds no live opening of this channel — a channel is an opening of somebody's and only its holder may send on it (COMM-LAW-CONTRACT's scheduled sender authority, EP-49C)"
+                }
+              ],
               "structural_params": [
                 "channel"
               ]
@@ -1857,7 +2057,30 @@
                 "channel",
                 "message_hash"
               ],
-              "checks": [],
+              "checks": [
+                {
+                  "check": "live_present",
+                  "open_action": "COMMS-OPEN",
+                  "close_action": "COMMS-CLOSE",
+                  "key_params": ["entity", "channel"],
+                  "close_actor_key": "entity",
+                  "present": {"channel": "channel"},
+                  "cite": "COMM-LAW-QUEUE",
+                  "message": "COMMS-RECV: no live channel by this name — a receive on a closed or never-opened channel is refused, not recorded (COMM-LAW-QUEUE's scheduled liveness, EP-49C)"
+                },
+                {
+                  "check": "fold_threshold",
+                  "add_action": "COMMS-SEND",
+                  "sub_action": "COMMS-RECV",
+                  "key_param": "channel",
+                  "key_field": "channel",
+                  "operator": ">",
+                  "threshold": 0,
+                  "fold_name": "queue_depth",
+                  "cite": "COMM-LAW-QUEUE",
+                  "message": "COMMS-RECV: the queue is empty — a receive takes a pending message, and a receive where sends minus receives is not above zero is refused, not recorded (COMM-LAW-QUEUE's scheduled non-empty guard, EP-49C)"
+                }
+              ],
               "structural_params": [
                 "channel"
               ]
@@ -1886,7 +2109,18 @@
               "payload_from": [
                 "channel"
               ],
-              "checks": [],
+              "checks": [
+                {
+                  "check": "live_present",
+                  "open_action": "COMMS-OPEN",
+                  "close_action": "COMMS-CLOSE",
+                  "key_params": ["entity", "channel"],
+                  "close_actor_key": "entity",
+                  "present": {"entity": "$actor", "channel": "channel"},
+                  "cite": "COMM-LAW-CONTRACT",
+                  "message": "COMMS-CLOSE: the closer holds no live opening of this channel — a close tears down the closer's own opening; a close of a channel this entity does not hold is refused, not recorded, and under two entities holding one name a close drops exactly the closer's (COMM-LAW-CONTRACT's scheduled whose-close, EP-49C)"
+                }
+              ],
               "structural_params": [
                 "channel"
               ]
@@ -1933,6 +2167,15 @@
                   "param": "region",
                   "cite": "COMM-LAW-SHARE-GRANT",
                   "message": "SHM-GRANT: no MEM-GRANT founds this region — a share is granted OVER something a prior record established, and a region that is merely a string the caller supplied names nothing to share. The grant inherits the region's establishment and never mints it, so a share over an unfounded region would append an act nobody could have performed, and this rule refuses it"
+                },
+                {
+                  "check": "live_present",
+                  "open_action": "MEM-GRANT",
+                  "close_action": "MEM-EVICT",
+                  "key_params": ["region"],
+                  "present": {"region": "region"},
+                  "cite": "COMM-LAW-SHARE-GRANT",
+                  "message": "SHM-GRANT: no LIVE MEM-GRANT holds this region — a share is granted over a region that is CURRENTLY mapped, not merely one a prior MEM-GRANT once founded; a region granted and then evicted (MEM-EVICT) is no longer live, and a share over it would append an act over a region nobody holds. The historical prerequisite the require_prior row checks is not the live one (COMM-LAW-SHARE-GRANT's scheduled liveness — the EP-49C live_present kind reused, no new check kind; EP-MAINT-OUTSIDE-4 R10)"
                 }
               ],
               "structural_params": [
@@ -2363,6 +2606,7 @@
                 "key_space": "optional"
               },
               "law_cited": "ROOT-NEG-6",
+              "param_kinds": {"value": "text", "text": "text"},
               "object_param": "rule_id",
               "param_defaults": {
                 "exclusive": false
@@ -2576,6 +2820,7 @@
                 "entity_kind": "required"
               },
               "law_cited": "DICT-LAW",
+              "param_kinds": {"term": "text"},
               "object_param": "term",
               "param_defaults": {
                 "tags": null,
@@ -3686,6 +3931,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-LAW-PERM",
+              "param_kinds": {"length": "quantity"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4060,6 +4306,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-LAW-PERM",
+              "param_kinds": {"value": "bytes"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4140,6 +4387,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-LAW-PERM",
+              "param_kinds": {"value": "text"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4192,6 +4440,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-LAW-LOCK",
+              "param_kinds": {"length": "quantity"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4240,6 +4489,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-LAW-LOCK",
+              "param_kinds": {"length": "quantity"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4285,6 +4535,7 @@
                 "provenance": "optional"
               },
               "law_cited": "FS-READ-AGGREGATION",
+              "param_kinds": {"bytes": "quantity"},
               "checks": [],
               "object_param": "path",
               "payload_from": [
@@ -4854,6 +5105,7 @@
                 "established": "required"
               },
               "law_cited": "DEV-LAW-INTAKE",
+              "param_kinds": {"max_arrivals": "measurement", "arrivals_per_admitted_act": "measurement"},
               "object_derive": {
                 "tpl": "intake:{intake}"
               },
@@ -4920,6 +5172,7 @@
                 "byte_total": "required"
               },
               "law_cited": "DEV-LAW-INTAKE",
+              "param_kinds": {"arrival_count": "measurement", "byte_total": "measurement"},
               "object_param": "device",
               "payload_from": [
                 "intake",
@@ -5168,6 +5421,602 @@
             },
             "tier": "owner",
             "text": "operation OPEN-CONTENT: when invoked and its checks pass -> append a OPEN-CONTENT decision citing CAP-IS-LAW"
+          }
+        }
+      ]
+    },
+    {
+      "step": "08n-socket-ops",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-OPEN",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-OPEN",
+            "polarity": "+",
+            "name": "SOCKET-OPEN",
+            "definition": {
+              "description": "open a socket of a declared family, by an established entity, under the socket grant law (who may open what, to where); the wire act, HOST-MODELLED — no real socket on the host (design/51 §5, N1/N2)",
+              "params": {
+                "entity": "required",
+                "socket": "required",
+                "family": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "entity",
+                "socket",
+                "family"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "CREATE-ACCOUNT",
+                  "field": "account_id",
+                  "param": "entity",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-OPEN: the opener was never established — a socket is opened BY somebody, and the somebody must exist on the record (who may open)"
+                },
+                {
+                  "check": "value_domain",
+                  "param": "family",
+                  "domain": [
+                    "inet",
+                    "inet6",
+                    "unix"
+                  ],
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-OPEN: this family is not one the socket grant law declares — the declared set is inet, inet6, unix (what may be opened); a family the law does not name is refused, recorded, never a type error"
+                }
+              ],
+              "mints": [
+                "socket"
+              ],
+              "structural_params": [
+                "entity",
+                "socket",
+                "family"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-OPEN: when invoked and its checks pass -> append a SOCKET-OPEN decision citing NET-LAW-GRANT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-BIND",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-BIND",
+            "polarity": "+",
+            "name": "SOCKET-BIND",
+            "definition": {
+              "description": "bind a socket the record opened to a local address; the wire act, host-modelled (design/51 §5)",
+              "params": {
+                "socket": "required",
+                "address": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "socket",
+                "address"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "socket",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-BIND: no SOCKET-OPEN established this socket — a wire act names a socket the record opened (who may act on what)"
+                }
+              ],
+              "structural_params": [
+                "socket",
+                "address"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-BIND: when invoked and its checks pass -> append a SOCKET-BIND decision citing NET-LAW-GRANT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-LISTEN",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-LISTEN",
+            "polarity": "+",
+            "name": "SOCKET-LISTEN",
+            "definition": {
+              "description": "mark a socket the record opened as listening; the wire act, host-modelled (design/51 §5)",
+              "params": {
+                "socket": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "socket"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "socket",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-LISTEN: no SOCKET-OPEN established this socket — a wire act names a socket the record opened (who may act on what)"
+                }
+              ],
+              "structural_params": [
+                "socket"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-LISTEN: when invoked and its checks pass -> append a SOCKET-LISTEN decision citing NET-LAW-GRANT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-CONNECT",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-CONNECT",
+            "polarity": "+",
+            "name": "SOCKET-CONNECT",
+            "definition": {
+              "description": "connect a socket the record opened to a target; the wire act — the target is recorded, the reach ungated today (host-modelled, design/51 §5)",
+              "params": {
+                "socket": "required",
+                "target": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "socket",
+                "target"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "socket",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-CONNECT: no SOCKET-OPEN established this socket — a wire act names a socket the record opened (who may act on what)"
+                }
+              ],
+              "structural_params": [
+                "socket",
+                "target"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-CONNECT: when invoked and its checks pass -> append a SOCKET-CONNECT decision citing NET-LAW-GRANT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-ACCEPT",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-ACCEPT",
+            "polarity": "+",
+            "name": "SOCKET-ACCEPT",
+            "definition": {
+              "description": "accept a peer on a socket the record opened; the wire act — the peer is recorded (host-modelled, design/51 §5)",
+              "params": {
+                "socket": "required",
+                "peer": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "socket",
+                "peer"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "socket",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-ACCEPT: no SOCKET-OPEN established this socket — a wire act names a socket the record opened (who may act on what)"
+                }
+              ],
+              "structural_params": [
+                "socket",
+                "peer"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-ACCEPT: when invoked and its checks pass -> append a SOCKET-ACCEPT decision citing NET-LAW-GRANT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:SOCKET-CLOSE",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:SOCKET-CLOSE",
+            "polarity": "+",
+            "name": "SOCKET-CLOSE",
+            "definition": {
+              "description": "tear down a socket the record opened; the wire act, host-modelled (design/51 §5). Reached by the op directly on the host — the flat syscall-ops map cannot discriminate a socket fd's close from a file fd's, so `close` stays unmapped on the host (:3266 precision 3); EP-48G maps it in-guest where the fd's kind is known",
+              "params": {
+                "socket": "required"
+              },
+              "law_cited": "NET-LAW-GRANT",
+              "object_param": "socket",
+              "payload_from": [
+                "socket"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "socket",
+                  "cite": "NET-LAW-GRANT",
+                  "message": "SOCKET-CLOSE: no SOCKET-OPEN established this socket — a wire act names a socket the record opened (who may act on what)"
+                }
+              ],
+              "structural_params": [
+                "socket"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation SOCKET-CLOSE: when invoked and its checks pass -> append a SOCKET-CLOSE decision citing NET-LAW-GRANT"
+          }
+        }
+      ]
+    },
+    {
+      "step": "08o-border-ops",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:BORDER-SUBMIT",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:BORDER-SUBMIT",
+            "polarity": "+",
+            "name": "BORDER-SUBMIT",
+            "tier": "owner",
+            "definition": {
+              "description": "an outside entity submits a DRAFT through its system-facing channel -- a request the gate decides against the record BEFORE any effect, never executed as the act itself (design/51 N3, the door). A crossing is an opening of the entity's system-facing channel (design/39); the entity is prior-established under CAP-IS-LAW, never a peer-minted token (the API-gateway trap refused, design/51 section 9). The submit row's content hash IS the crossing id (archi :3266)",
+              "params": {
+                "entity": "required",
+                "draft": "required"
+              },
+              "law_cited": "COMM-LAW-CONTRACT",
+              "object_param": "entity",
+              "payload_from": [
+                "entity",
+                "draft"
+              ],
+              "payload_derive": {
+                "kind": {
+                  "tpl": "border-submit"
+                },
+                "record_class": {
+                  "tpl": "DECISION"
+                }
+              },
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "CREATE-ACCOUNT",
+                  "field": "account_id",
+                  "param": "entity",
+                  "cite": "CAP-IS-LAW",
+                  "message": "BORDER-SUBMIT: the submitter was never established -- a crossing is an opening of somebody's system-facing channel, and the somebody must exist on the record (an entity is its recorded establishment, design/39; never a peer-minted token, the API-gateway trap refused)"
+                }
+              ],
+              "structural_params": [
+                "entity",
+                "draft"
+              ]
+            },
+            "text": "operation BORDER-SUBMIT: when invoked and its checks pass -> append a border-submit DECISION (a draft the gate decides) citing COMM-LAW-CONTRACT"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:BORDER-REPLY",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:BORDER-REPLY",
+            "polarity": "+",
+            "name": "BORDER-REPLY",
+            "tier": "owner",
+            "definition": {
+              "description": "the border's REPLY to an allowed crossing -- it carries the crossing id (the submit row's content hash) and a SEAL over exactly what was shown (a REAL Ed25519 signature via the signer where the library is present, REFUSED and never faked when absent -- N10, RW-FAKE-SEAL). The reply binds to its submit by the store's recomputation of the submit's content hash at the gate chokepoint, never by the reply's own claim (the crossing.py correlation discipline, the border's direction)",
+              "params": {
+                "crossing_id": "required",
+                "shown": "required",
+                "seal": "required"
+              },
+              "law_cited": "COMM-LAW-CONTRACT",
+              "object_param": "crossing_id",
+              "payload_from": [
+                "crossing_id",
+                "shown",
+                "seal"
+              ],
+              "payload_derive": {
+                "kind": {
+                  "tpl": "border-reply"
+                },
+                "record_class": {
+                  "tpl": "DECISION"
+                }
+              },
+              "checks": [],
+              "structural_params": [
+                "crossing_id",
+                "shown",
+                "seal"
+              ]
+            },
+            "text": "operation BORDER-REPLY: when invoked -> append a border-reply DECISION carrying the crossing id and the seal over exactly what was shown, citing COMM-LAW-CONTRACT (the binding to its submit is the gate chokepoint's, not a handler's)"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:BORDER-REFUSAL",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:BORDER-REFUSAL",
+            "polarity": "+",
+            "name": "BORDER-REFUSAL",
+            "tier": "owner",
+            "definition": {
+              "description": "the border's REFUSAL of a crossing, surfaced through the system's own WINDOW: the record carries the reason (readable by the human through the window) and names the refused ENTITY -- whose own system-facing channel this refusal never writes to (design/51 N3: a refusal reaches the human through the window, never through the refused party; the system is not the courier of the reason)",
+              "params": {
+                "entity": "required",
+                "crossing_id": "required",
+                "reason": "required"
+              },
+              "law_cited": "COMM-LAW-CONTRACT",
+              "object_param": "crossing_id",
+              "payload_from": [
+                "entity",
+                "crossing_id",
+                "reason"
+              ],
+              "payload_derive": {
+                "kind": {
+                  "tpl": "border-refusal"
+                },
+                "record_class": {
+                  "tpl": "DECISION"
+                }
+              },
+              "checks": [],
+              "structural_params": [
+                "entity",
+                "crossing_id",
+                "reason"
+              ]
+            },
+            "text": "operation BORDER-REFUSAL: when invoked -> append a border-refusal DECISION carrying the reason (shown through the window) and the refused entity, citing COMM-LAW-CONTRACT"
+          }
+        }
+      ]
+    },
+    {
+      "step": "08p-receipt-op",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:RECEIPT",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:RECEIPT",
+            "polarity": "+",
+            "name": "RECEIPT",
+            "tier": "owner",
+            "definition": {
+              "description": "the RECEIVER's own record of a crossing (design/51 N9, EP-49D). A row sent from body A is received at body B as INPUT through B's border; B appends THIS receipt to ITS OWN record -- A never writes B's record and B never A's (one pen per record, D08.30 / the single-writer lock, store.py). The receipt cites the received row's CONTENT HASH (content_hash -- border.content_id, the crossing id that excludes record_time so two bodies recording one crossing at different times derive the SAME hash, D08.40); the FROM-BODY (from_body -- the sender's bound SYSTEM PUBLIC KEY together with its genesis hash, a body's NAME, D08.42 -- a copied seed is a FORK the chain exposes, never a clash); the sender's SIGNATURE (from_sig -- verified under from_body's key, real-or-refused N10); the UNDER-RULE (under_rule); and the REVEALED-SET (revealed_set -- the selective-disclosure leaf set when a tree was presented, D08.48, empty otherwise). Identity is what CROSSED, never trust in the peer's own record (N4's cap; the API-gateway trap refused, design/51 section 9). One row, ONE receipt: a second receipt for the same content_hash is refused at the gate chokepoint (idempotent)",
+              "params": {
+                "content_hash": "required",
+                "from_body": "required",
+                "from_sig": "required",
+                "under_rule": "required",
+                "revealed_set": "required"
+              },
+              "law_cited": "COMM-LAW-CONTRACT",
+              "object_param": "content_hash",
+              "payload_from": [
+                "content_hash",
+                "from_body",
+                "from_sig",
+                "under_rule",
+                "revealed_set"
+              ],
+              "payload_derive": {
+                "kind": {
+                  "tpl": "receipt"
+                },
+                "record_class": {
+                  "tpl": "DECISION"
+                }
+              },
+              "checks": [],
+              "structural_params": [
+                "content_hash",
+                "from_body",
+                "from_sig",
+                "under_rule",
+                "revealed_set"
+              ]
+            },
+            "text": "operation RECEIPT: when invoked -> append a receipt DECISION (the receiver's own record of a crossing) carrying the received row's content hash, the from-body (the sender's bound system public key + genesis hash), the sender's signature, the under-rule and the revealed-set, citing COMM-LAW-CONTRACT (the binding of exactly one receipt per received row is the gate chokepoint's, not a handler's)"
+          }
+        }
+      ]
+    },
+    {
+      "step": "08q-view-service-op",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:VIEW-SERVICE",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:VIEW-SERVICE",
+            "polarity": "+",
+            "name": "VIEW-SERVICE",
+            "tier": "owner",
+            "definition": {
+              "description": "the SERVICING of a mandated view is a record (design/51 N6, EP-50). A view DEFINITION is already a record (CREATE-VIEW, kind view_definition -- views.py); what was missing is a SERVICING signal for a MASTER/query view (no move_to), which in v1 had NO recorded per-run signal at all (paper_tigers could clear a mandated view only by a non-empty delivery queue -- delivery was the only witness). A VIEW-SERVICE DECISION is appended each time a mandated view is serviced, carrying WHO (servicer -- STAMPED from the acting actor, the engine's fact never the caller's claim, so a servicing cannot be attributed to another), WHEN (the seq of this record) and OVER-WHICH-HEAD (head_seq -- the store head the servicer serviced over). paper_tigers reads VIEW-SERVICE, so a mandated view NEVER serviced is a FOLD and not an inference (N6); DELIVERY is RETAINED as a SECOND WITNESS (design/51 section 6 item 4). Cites ROOT-NEG-6 -- the SAME founded law CREATE-VIEW cites (a view definition is law, contradiction-gated; no new law is minted, EP-50 architect precision board :3377). The fold FUNCTIONS stay CODE (mechanism, S-plane, air rider 1); this op records the servicing DECISION, never a fold's definition. checks: [] -- servicing is a recorded act, gated by no new check kind (OP_CHECKS unchanged; this mints an OP, not a KIND)",
+              "params": {
+                "view_name": "required",
+                "head_seq": "required"
+              },
+              "law_cited": "ROOT-NEG-6",
+              "object_derive": {
+                "tpl": "view:{view_name}"
+              },
+              "payload_from": [
+                "view_name",
+                "head_seq"
+              ],
+              "payload_derive": {
+                "kind": {
+                  "tpl": "view_service"
+                },
+                "record_class": {
+                  "tpl": "DECISION"
+                }
+              },
+              "stamp_actor": [
+                "servicer"
+              ],
+              "checks": [],
+              "structural_params": [
+                "view_name",
+                "head_seq"
+              ]
+            },
+            "text": "operation VIEW-SERVICE: when invoked -> append a view_service DECISION recording that a mandated view was serviced, carrying the view name, the head seq serviced over, and the servicer (stamped from the acting actor), citing ROOT-NEG-6 (the same founded law CREATE-VIEW cites; a mandated view never serviced becomes a fold, not an inference -- design/51 N6, EP-50)"
+          }
+        }
+      ]
+    },
+    {
+      "step": "08r-filter-op",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
+          "object": "op:FILTER-DECISION",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:FILTER-DECISION",
+            "polarity": "+",
+            "name": "FILTER-DECISION",
+            "definition": {
+              "description": "the firewall's filtering decision as a record (design/51 N8, EP-52). A connection is ADMITTED or REFUSED by an established entity, CITING a FILTER-RULE (a CREATE-RULE of law class NET-LAW-FILTER) over a socket the record OPENED (EP-48) — the deciding rule recorded so 'which rule dropped this' is a fold (src/subsystems/filter.py), never an inference. The record DECIDES; the guest kernel's netfilter DROPS — the seam is NAMED (guest-netfilter) and the host record never claims the drop (DIGEST-C4 §6). HOST-MODELLED: no real packet is dropped by the host; the guest-real drop is proven guest-only under the pinned kernel (EP-00 rule 9). A routing/name FACT the world hands us is INPUT (ANSWER-RETURNED), never this decision (design/44 §2). The filter READS and decides OVER the socket table; it never rewrites a socket act.",
+              "params": {
+                "entity": "required",
+                "connection": "required",
+                "rule": "required",
+                "decision": "required",
+                "seam": "required"
+              },
+              "law_cited": "NET-LAW-FILTER",
+              "object_param": "connection",
+              "payload_from": [
+                "entity",
+                "connection",
+                "rule",
+                "decision",
+                "seam"
+              ],
+              "checks": [
+                {
+                  "check": "require_prior",
+                  "action": "CREATE-ACCOUNT",
+                  "field": "account_id",
+                  "param": "entity",
+                  "cite": "NET-LAW-FILTER",
+                  "message": "FILTER-DECISION: the decider was never established — a filtering decision is made BY somebody, and the somebody must exist on the record (who decides)"
+                },
+                {
+                  "check": "require_prior",
+                  "action": "SOCKET-OPEN",
+                  "field": "socket",
+                  "param": "connection",
+                  "cite": "NET-LAW-FILTER",
+                  "message": "FILTER-DECISION: no SOCKET-OPEN established this connection — the filter decides OVER a socket the record opened (EP-48), never a string the caller supplies, and never by rewriting a socket act"
+                },
+                {
+                  "check": "require_prior",
+                  "action": "CREATE-RULE",
+                  "field": "rule_id",
+                  "param": "rule",
+                  "cite": "NET-LAW-FILTER",
+                  "message": "FILTER-DECISION: the cited FILTER-RULE is not in the record — the firewall is rules IN the record, and a decision citing NO law is refused, recorded, never taken from a table beside the record"
+                },
+                {
+                  "check": "value_domain",
+                  "param": "decision",
+                  "domain": [
+                    "admit",
+                    "refuse"
+                  ],
+                  "cite": "NET-LAW-FILTER",
+                  "message": "FILTER-DECISION: a filtering decision is ADMIT or REFUSE — a value this law does not name is refused, recorded, never a free-text verdict"
+                },
+                {
+                  "check": "value_domain",
+                  "param": "seam",
+                  "domain": [
+                    "guest-netfilter"
+                  ],
+                  "cite": "NET-LAW-FILTER",
+                  "message": "FILTER-DECISION: the enforcement seam is NAMED and is the GUEST kernel's netfilter — the record decides and names the seam; a seam the law does not name (e.g. the host claiming the drop) is refused, recorded"
+                }
+              ],
+              "structural_params": [
+                "entity",
+                "connection",
+                "rule",
+                "decision",
+                "seam"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation FILTER-DECISION: when invoked and its checks pass -> append a FILTER-DECISION decision citing NET-LAW-FILTER — a connection admitted or refused, the deciding FILTER-RULE recorded, the guest-netfilter seam named; the record decides, netfilter drops"
           }
         }
       ]

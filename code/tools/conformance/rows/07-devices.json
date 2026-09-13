@@ -1,0 +1,384 @@
+{
+ "group": "07-devices",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a77",
+ "title": "Devices & I/O multiplexing",
+ "subsystem_derivation": "03 \u00a74.4 (devices \u2014 governing capability). LAW = device registration as amendments (capability is law); DECISIONS = bind / unbind / grant; INPUTS = interrupts and completions as arrival events; CACHE = the live binding table; STREAM = I/O throughput aggregates.",
+ "active": false,
+ "activates_at": "EP-29",
+ "rows": [
+  {
+   "row_id": "dev.ioctl.query",
+   "syscall": "ioctl",
+   "variants": [],
+   "what_it_does": "Device- or fs-specific control: query ops (read state, capabilities).",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query ioctls (read state, capabilities) = CACHE-only read. The op number determines the class. [Sub-row of design/10 \u00a77's mixed ioctl row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.ioctl.command",
+   "syscall": "ioctl",
+   "variants": [],
+   "what_it_does": "Device- or fs-specific control: command ops (configure, bind, reset, submit).",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Command ioctls (configure, bind, reset, submit) = DECISION crossing the typed driver envelope (\u00a74.4) \u2014 recorded, cites the device's capability rule. Terminal TCGET/SET, block BLK*, etc. Per-driver errno (ENOTTY/EINVAL) identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.io_on_device_fd",
+   "syscall": "read",
+   "variants": [
+    "write"
+   ],
+   "what_it_does": "I/O against a device fd.",
+   "subsystems": [
+    "devices"
+   ],
+   "recording_class": [
+    "STREAM"
+   ],
+   "conformance_note": "I/O throughput is STREAM (\u00a74.4); the payload delivered to/from userland is full-fidelity. The device bind (open/ioctl) was the recorded DECISION. Blocking/O_NONBLOCK/EAGAIN semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.epoll_create",
+   "syscall": "epoll_create",
+   "variants": [
+    "epoll_create1"
+   ],
+   "what_it_does": "Create an epoll (readiness-watch) instance.",
+   "subsystems": [
+    "devices",
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Creates a derived readiness/observability structure (the interest set is CACHE); no resource grant. Returns an fd identically; EPOLL_CLOEXEC honoured.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.epoll_ctl",
+   "syscall": "epoll_ctl",
+   "variants": [],
+   "what_it_does": "Add / modify / remove an interest.",
+   "subsystems": [
+    "devices",
+    "scheduling"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Mutates the interest set (derived state). EPOLL_CTL_ADD/MOD/DEL, EEXIST/ENOENT identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.epoll_wait",
+   "syscall": "epoll_wait",
+   "variants": [
+    "epoll_pwait",
+    "epoll_pwait2"
+   ],
+   "what_it_does": "Wait for ready fds.",
+   "subsystems": [
+    "devices",
+    "scheduling"
+   ],
+   "recording_class": [
+    "INPUT",
+    "DECISION"
+   ],
+   "conformance_note": "INPUT (readiness arrivals) + block/wake DECISION. Readiness originates as INPUT arrivals (I/O completions, packet arrivals \u2014 recorded as inputs); blocking is a recorded scheduling decision. The returned ready-set is a derived read. Level/edge-trigger (EPOLLET), timeout, EINTR semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.poll",
+   "syscall": "poll",
+   "variants": [
+    "ppoll"
+   ],
+   "what_it_does": "Wait on a set of fds for events.",
+   "subsystems": [
+    "devices",
+    "scheduling"
+   ],
+   "recording_class": [
+    "INPUT",
+    "DECISION"
+   ],
+   "conformance_note": "As epoll_wait; readiness arrivals are inputs, the wait is a scheduling decision. POLLIN/OUT/ERR/HUP, timeout, ppoll sigmask semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.select",
+   "syscall": "select",
+   "variants": [
+    "pselect6"
+   ],
+   "what_it_does": "Wait on read/write/except fd sets.",
+   "subsystems": [
+    "devices",
+    "scheduling"
+   ],
+   "recording_class": [
+    "INPUT",
+    "DECISION"
+   ],
+   "conformance_note": "As poll. FD_SETSIZE limit, timeout residue update, pselect sigmask semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.io_uring_setup",
+   "syscall": "io_uring_setup",
+   "variants": [],
+   "what_it_does": "Create an async I/O submission/completion ring.",
+   "subsystems": [
+    "devices",
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (shared-ring grant). The SQ/CQ rings are a shared-memory grant between userland and kernel \u2014 recorded like a MAP_SHARED grant (\u00a74.5). Ring sizing/params identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.io_uring_register",
+   "syscall": "io_uring_register",
+   "variants": [],
+   "what_it_does": "Register buffers/files with a ring.",
+   "subsystems": [
+    "devices"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Registers resources into the ring's capability set \u2014 recorded grant.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.io_uring_enter",
+   "syscall": "io_uring_enter",
+   "variants": [],
+   "what_it_does": "Submit / reap ring I/O.",
+   "subsystems": [
+    "devices"
+   ],
+   "recording_class": [
+    "STREAM",
+    "DECISION"
+   ],
+   "conformance_note": "STREAM (traffic) + DECISION at durable endpoints. Bulk SQE/CQE flow is STREAM (interior ring activity, like \u00a74.5); individual operations that are durable writes / socket sends record their endpoint decision. Completion semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.aio",
+   "syscall": "io_submit",
+   "variants": [
+    "aio_read",
+    "aio_write",
+    "io_getevents"
+   ],
+   "what_it_does": "POSIX/kernel async I/O.",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION",
+    "INPUT"
+   ],
+   "conformance_note": "DECISION (at durable endpoints) + INPUT (completions). Submissions of durable writes record their decision; completions arrive as recorded inputs. Ordering/errno per submitted op identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.eventfd",
+   "syscall": "eventfd",
+   "variants": [
+    "eventfd2"
+   ],
+   "what_it_does": "Create an event-counter fd for signalling.",
+   "subsystems": [
+    "comms",
+    "devices"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "DECISION (channel open) + STREAM (counter traffic). Channel-open recorded; the counter increments/reads are STREAM signalling. EFD_SEMAPHORE/EFD_NONBLOCK semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.signalfd",
+   "syscall": "signalfd",
+   "variants": [
+    "signalfd4"
+   ],
+   "what_it_does": "Deliver signals via a readable fd.",
+   "subsystems": [
+    "devices",
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE",
+    "INPUT"
+   ],
+   "conformance_note": "CACHE-only (delivery structure) + INPUT (signal arrivals). Creates a derived signal-delivery fd; signals arrive as recorded inputs and are read out. siginfo layout identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.inotify",
+   "syscall": "inotify_init",
+   "variants": [
+    "inotify_init1",
+    "inotify_add_watch",
+    "inotify_rm_watch"
+   ],
+   "what_it_does": "Watch filesystem events.",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "CACHE",
+    "INPUT"
+   ],
+   "conformance_note": "init/add = CACHE-only (watch structures); events = INPUT. Watch structures are derived; filesystem-change events (themselves DECISIONS in the files subsystem) surface here as readable inputs. Event mask/coalescing semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.fanotify.notify_mark",
+   "syscall": "fanotify_mark",
+   "variants": [],
+   "what_it_does": "Install a notification-only filesystem mark.",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Notification-only marks = CACHE. [Sub-row of design/10 \u00a77's fanotify row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.fanotify.permission_mark",
+   "syscall": "fanotify_init",
+   "variants": [
+    "fanotify_mark"
+   ],
+   "what_it_does": "Install a permission-gating filesystem mark.",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "LAW",
+    "DECISION"
+   ],
+   "conformance_note": "init/mark = LAW/DECISION. Permission-gating marks install access rules (LAW-adjacent). ABI identical.",
+   "status": "DISPUTED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a77's fanotify row writes 'init/mark = LAW/DECISION' and calls permission-gating marks 'LAW-adjacent', which settles neither class for the mark record. Both are encoded and the choice is raised."
+  },
+  {
+   "row_id": "dev.fanotify.permission_event",
+   "syscall": "fanotify_mark",
+   "variants": [],
+   "what_it_does": "Answer a filesystem permission event.",
+   "subsystems": [
+    "devices",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Permission responses are recorded decisions. [Sub-row of design/10 \u00a77's fanotify row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "dev.perf_event_open",
+   "syscall": "perf_event_open",
+   "variants": [],
+   "what_it_does": "Open a performance-monitoring counter.",
+   "subsystems": [
+    "devices"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "CACHE-only (observability). Counters are STREAM/observability instrumentation \u2014 creating one is a derived structure, honest-boundary sampling (03 \u00a71.5). ABI/ioctl control identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-29",
+   "probe": null,
+   "probe_absent_reason": "the devices group is inactive until EP-29 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

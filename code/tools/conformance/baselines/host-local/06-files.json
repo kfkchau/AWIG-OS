@@ -1,0 +1,3559 @@
+{
+ "group": "06-files",
+ "rows": {
+  "files.access": {
+   "state": {
+    "a.txt": {
+     "nlink": 1,
+     "perm": "0o600",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 1,
+     "ret": true
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 2,
+     "ret": true
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 3,
+     "ret": false
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 4,
+     "ret": true
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 6,
+     "ret": false
+    },
+    {
+     "call": "access",
+     "errno": null,
+     "i": 7,
+     "ret": false
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 9,
+     "ret": "fd#0"
+    },
+    {
+     "call": "faccessat",
+     "errno": null,
+     "i": 10,
+     "ret": true
+    },
+    {
+     "call": "faccessat",
+     "errno": null,
+     "i": 11,
+     "ret": false
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 12,
+     "ret": null
+    }
+   ]
+  },
+  "files.chdir": {
+   "state": {
+    "f.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    },
+    "noperm": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "sub": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "chdir",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "getcwd_tail",
+     "errno": null,
+     "i": 2,
+     "ret": "sub"
+    },
+    {
+     "call": "chdir",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 4,
+     "ret": 1
+    },
+    {
+     "call": "chdir",
+     "errno": "ENOTDIR",
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "chdir",
+     "errno": "ENOENT",
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "chdir",
+     "errno": "EACCES",
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 10,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fchdir",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "getcwd_tail",
+     "errno": null,
+     "i": 12,
+     "ret": "sub"
+    },
+    {
+     "call": "chdir",
+     "errno": null,
+     "i": 13,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 14,
+     "ret": null
+    }
+   ]
+  },
+  "files.chmod": {
+   "state": {
+    "c.txt": {
+     "nlink": 1,
+     "perm": "0o600",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o600",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o444",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 5,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fchmod",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 7,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 9,
+     "ret": "fd#1"
+    },
+    {
+     "call": "fchmodat",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 12,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o600",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "chmod",
+     "errno": "ENOENT",
+     "i": 13,
+     "ret": null
+    }
+   ]
+  },
+  "files.chown": {
+   "state": {
+    "o.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "o.txt",
+     "type": "lnk"
+    },
+    "o.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "chown",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "chown",
+     "errno": "EPERM",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "lchown",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 6,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fchown",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "chown",
+     "errno": "ENOENT",
+     "i": 9,
+     "ret": null
+    }
+   ]
+  },
+  "files.chroot": {
+   "state": {
+    "newroot": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "newroot/marker": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "582967534d0f909d",
+     "size": 2,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 1,
+     "ret": 2
+    },
+    {
+     "call": "chroot_in_child",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "errno": "EPERM"
+     }
+    }
+   ]
+  },
+  "files.close": {
+   "state": {
+    "x.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": "EBADF",
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": "EBADF",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": "EBADF",
+     "i": 4,
+     "ret": null
+    }
+   ]
+  },
+  "files.copy_file_range": {
+   "state": {
+    "dst.bin": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "4d86969d390610cf",
+     "size": 128,
+     "type": "reg"
+    },
+    "src.bin": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "4d86969d390610cf",
+     "size": 128,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 128
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 2,
+     "ret": "fd#1"
+    },
+    {
+     "call": "copy_file_range",
+     "errno": null,
+     "i": 3,
+     "ret": 64
+    },
+    {
+     "call": "copy_file_range",
+     "errno": null,
+     "i": 4,
+     "ret": 64
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 7,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 128,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "copy_file_range",
+     "errno": "EBADF",
+     "i": 8,
+     "ret": null
+    }
+   ]
+  },
+  "files.creat": {
+   "state": {
+    "c.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "write",
+     "errno": null,
+     "i": 1,
+     "ret": 3
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 3,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 4,
+     "ret": "fd#1"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 0,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    }
+   ]
+  },
+  "files.dup": {
+   "state": {
+    "d.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "a4d26868017c0ccf",
+     "size": 6,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 6
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "dup",
+     "errno": null,
+     "i": 2,
+     "ret": "fd#1"
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 6,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "len": 3,
+      "sha256": "d600474b1b8e50d3"
+     }
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 5,
+     "ret": 3
+    },
+    {
+     "call": "dup2",
+     "errno": null,
+     "i": 6,
+     "ret": "fd#2"
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 7,
+     "ret": 3
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "dup2",
+     "errno": null,
+     "i": 9,
+     "ret": "fd#3"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "dup",
+     "errno": "EBADF",
+     "i": 12,
+     "ret": null
+    }
+   ]
+  },
+  "files.fallocate": {
+   "state": {
+    "fa.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "9f1dcbc35c350d60",
+     "size": 8192,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "posix_fallocate",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 4096,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "posix_fallocate",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 8192,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "posix_fallocate",
+     "errno": "EBADF",
+     "i": 6,
+     "ret": null
+    }
+   ]
+  },
+  "files.fcntl.fdstate": {
+   "state": {
+    "a.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fcntl_flags",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "access": "O_RDWR",
+      "flags": []
+     }
+    },
+    {
+     "call": "fcntl",
+     "errno": null,
+     "i": 2,
+     "ret": 0
+    },
+    {
+     "call": "fcntl_flags",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "access": "O_RDWR",
+      "flags": [
+       "O_APPEND"
+      ]
+     }
+    },
+    {
+     "call": "fcntl_flags",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "access": "O_WRONLY",
+      "flags": [
+       "FD_CLOEXEC"
+      ]
+     }
+    },
+    {
+     "call": "fcntl",
+     "errno": null,
+     "i": 5,
+     "ret": 0
+    },
+    {
+     "call": "fcntl_flags",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "access": "O_WRONLY",
+      "flags": [
+       "FD_CLOEXEC"
+      ]
+     }
+    },
+    {
+     "call": "fcntl",
+     "errno": null,
+     "i": 7,
+     "ret": 100
+    },
+    {
+     "call": "fcntl_flags",
+     "errno": null,
+     "i": 8,
+     "ret": {
+      "access": "O_RDONLY",
+      "flags": []
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "fcntl",
+     "errno": "EBADF",
+     "i": 11,
+     "ret": null
+    }
+   ]
+  },
+  "files.fcntl.getlk": {
+   "state": {
+    "l.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "getlk",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "len": 0,
+      "start": 0,
+      "type_is_unlck": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    }
+   ]
+  },
+  "files.fcntl.setlk": {
+   "state": {
+    "l.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    },
+    "l2.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    },
+    "l3.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "setlk",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "getlk",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "len": 0,
+      "start": 0,
+      "type_is_unlck": true
+     }
+    },
+    {
+     "call": "setlk",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "lock_conflict",
+     "errno": null,
+     "i": 5,
+     "ret": {
+      "errno": "EAGAIN",
+      "refused": true
+     }
+    },
+    {
+     "call": "lock_conflict",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "errno": "EAGAIN",
+      "refused": true
+     }
+    }
+   ]
+  },
+  "files.flock": {
+   "state": {
+    "fl.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    },
+    "fl2.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    },
+    "fl3.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "flock",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "flock",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "flock",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "flock_conflict",
+     "errno": null,
+     "i": 5,
+     "ret": {
+      "errno": "EAGAIN",
+      "refused": true
+     }
+    },
+    {
+     "call": "flock_conflict",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "errno": "EAGAIN",
+      "refused": true
+     }
+    }
+   ]
+  },
+  "files.fsync": {
+   "state": {
+    "f.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "54dab9eb6d3204a0",
+     "size": 7,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "write",
+     "errno": null,
+     "i": 1,
+     "ret": 7
+    },
+    {
+     "call": "fsync",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "fdatasync",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "fsync",
+     "errno": "EBADF",
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "pipe_read_fd",
+     "errno": null,
+     "i": 6,
+     "ret": "fd#1"
+    },
+    {
+     "call": "fsync",
+     "errno": "EINVAL",
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    }
+   ]
+  },
+  "files.getcwd": {
+   "state": {
+    "inner": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    }
+   },
+   "steps": [
+    {
+     "call": "getcwd_tail",
+     "errno": null,
+     "i": 0,
+     "ret": "files.getcwd"
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "chdir",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "getcwd_tail",
+     "errno": null,
+     "i": 3,
+     "ret": "inner"
+    },
+    {
+     "call": "chdir",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "getcwd_tail",
+     "errno": null,
+     "i": 5,
+     "ret": "files.getcwd"
+    }
+   ]
+  },
+  "files.getdents": {
+   "state": {
+    "d": {
+     "nlink": 3,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "d/a": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "6b86b273ff34fce1",
+     "size": 1,
+     "type": "reg"
+    },
+    "d/b": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "d4735e3a265e16ee",
+     "size": 1,
+     "type": "reg"
+    },
+    "d/l": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "a",
+     "type": "lnk"
+    },
+    "d/p": {
+     "nlink": 1,
+     "perm": "0o644",
+     "size": 0,
+     "type": "fifo"
+    },
+    "d/sub": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "f.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 1,
+     "ret": 1
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 2,
+     "ret": 1
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "mkfifo",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "listdir",
+     "errno": null,
+     "i": 6,
+     "ret": [
+      "a",
+      "b",
+      "l",
+      "p",
+      "sub"
+     ]
+    },
+    {
+     "call": "scandir",
+     "errno": null,
+     "i": 7,
+     "ret": [
+      [
+       "a",
+       "reg"
+      ],
+      [
+       "b",
+       "reg"
+      ],
+      [
+       "l",
+       "lnk"
+      ],
+      [
+       "p",
+       "other"
+      ],
+      [
+       "sub",
+       "dir"
+      ]
+     ]
+    },
+    {
+     "call": "listdir",
+     "errno": "ENOENT",
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 9,
+     "ret": 1
+    },
+    {
+     "call": "listdir",
+     "errno": "ENOTDIR",
+     "i": 10,
+     "ret": null
+    }
+   ]
+  },
+  "files.link": {
+   "state": {
+    "d": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "src.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "3a6eb0790f39ac87",
+     "size": 4,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 4
+    },
+    {
+     "call": "link",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o644",
+      "size": 4,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o644",
+      "size": 4,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "link",
+     "errno": "EEXIST",
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "link",
+     "errno": "ENOENT",
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "link",
+     "errno": "EPERM",
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 8,
+     "ret": "fd#0"
+    },
+    {
+     "call": "linkat",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 11,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 3,
+      "perm": "0o644",
+      "size": 4,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "unlink",
+     "errno": null,
+     "i": 12,
+     "ret": null
+    },
+    {
+     "call": "unlink",
+     "errno": null,
+     "i": 13,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 14,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 4,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    }
+   ]
+  },
+  "files.lseek": {
+   "state": {
+    "s.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "9cfe7faff7054298",
+     "size": 100,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 100
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 2,
+     "ret": 10
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 3,
+     "ret": 15
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 4,
+     "ret": 100
+    },
+    {
+     "call": "lseek",
+     "errno": "EINVAL",
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 6,
+     "ret": 0
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 7,
+     "ret": 100
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "pipe_read_fd",
+     "errno": null,
+     "i": 9,
+     "ret": "fd#1"
+    },
+    {
+     "call": "lseek",
+     "errno": "ESPIPE",
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    }
+   ]
+  },
+  "files.mkdir": {
+   "state": {
+    "d": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "d2": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "d3": {
+     "nlink": 2,
+     "perm": "0o750",
+     "type": "dir"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o755",
+      "type": "dir",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "mkdir",
+     "errno": "EEXIST",
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": "ENOENT",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 4,
+     "ret": "0o2"
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o755",
+      "type": "dir",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 7,
+     "ret": "0o22"
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 8,
+     "ret": "fd#0"
+    },
+    {
+     "call": "mkdirat",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 11,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o750",
+      "type": "dir",
+      "uid_is_caller": true
+     }
+    }
+   ]
+  },
+  "files.mknod": {
+   "state": {
+    "dev.node": {
+     "nlink": 1,
+     "perm": "0o600",
+     "size": 0,
+     "type": "chr"
+    },
+    "fifo2": {
+     "nlink": 1,
+     "perm": "0o644",
+     "size": 0,
+     "type": "fifo"
+    },
+    "p.fifo": {
+     "nlink": 1,
+     "perm": "0o644",
+     "size": 0,
+     "type": "fifo"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkfifo",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 0,
+      "type": "fifo",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "mkfifo",
+     "errno": "EEXIST",
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "mknod",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "mknod",
+     "errno": null,
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 5,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 0,
+      "type": "fifo",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 6,
+     "ret": "fd#0"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    }
+   ]
+  },
+  "files.mount": {
+   "state": {
+    "mp": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "mount",
+     "errno": "EPERM",
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "mount_present",
+     "errno": null,
+     "i": 2,
+     "ret": false
+    }
+   ]
+  },
+  "files.open": {
+   "state": {
+    "adir": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "app.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "25b6746d5172ed63",
+     "size": 6,
+     "type": "reg"
+    },
+    "new.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    },
+    "seed.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "e3b0c44298fc1c14",
+     "size": 0,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 5
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 3,
+     "ret": "fd#1"
+    },
+    {
+     "call": "fd_exact",
+     "errno": null,
+     "i": 4,
+     "ret": true
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": "EEXIST",
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": "ENOENT",
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": "EISDIR",
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": "ENOTDIR",
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": "EACCES",
+     "i": 12,
+     "ret": null
+    },
+    {
+     "call": "chmod",
+     "errno": null,
+     "i": 13,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 14,
+     "ret": "fd#2"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 15,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 16,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 0,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 17,
+     "ret": "fd#3"
+    },
+    {
+     "call": "write",
+     "errno": null,
+     "i": 18,
+     "ret": 3
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 19,
+     "ret": 0
+    },
+    {
+     "call": "write",
+     "errno": null,
+     "i": 20,
+     "ret": 3
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 21,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 22,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 6,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 23,
+     "ret": "fd#4"
+    },
+    {
+     "call": "openat",
+     "errno": null,
+     "i": 24,
+     "ret": "fd#5"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 25,
+     "ret": null
+    },
+    {
+     "call": "openat",
+     "errno": "ENOENT",
+     "i": 26,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 27,
+     "ret": null
+    }
+   ]
+  },
+  "files.read": {
+   "state": {
+    "d.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "9cfe7faff7054298",
+     "size": 100,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 100
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "len": 10,
+      "sha256": "84d89877f0d4041e"
+     }
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 3,
+     "ret": 10
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "len": 10,
+      "sha256": "84d89877f0d4041e"
+     }
+    },
+    {
+     "call": "pread",
+     "errno": null,
+     "i": 5,
+     "ret": {
+      "len": 10,
+      "sha256": "84d89877f0d4041e"
+     }
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 6,
+     "ret": 20
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 7,
+     "ret": {
+      "len": 80,
+      "sha256": "af1909413b96cbb2"
+     }
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 8,
+     "ret": {
+      "len": 0,
+      "sha256": "e3b0c44298fc1c14"
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 10,
+     "ret": "fd#1"
+    },
+    {
+     "call": "read",
+     "errno": "EBADF",
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 12,
+     "ret": null
+    }
+   ]
+  },
+  "files.readlink": {
+   "state": {
+    "r.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    },
+    "s.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "tgt",
+     "type": "lnk"
+    }
+   },
+   "steps": [
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "readlink",
+     "errno": null,
+     "i": 1,
+     "ret": "tgt"
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 2,
+     "ret": 1
+    },
+    {
+     "call": "readlink",
+     "errno": "EINVAL",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "readlink",
+     "errno": "ENOENT",
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 5,
+     "ret": "fd#0"
+    },
+    {
+     "call": "readlinkat",
+     "errno": null,
+     "i": 6,
+     "ret": "tgt"
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    }
+   ]
+  },
+  "files.rename": {
+   "state": {
+    "d1": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "d2": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "d2/inner": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "594e519ae499312b",
+     "size": 1,
+     "type": "reg"
+    },
+    "e.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "559aead08264d579",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 1,
+     "ret": 1
+    },
+    {
+     "call": "rename",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "stat",
+     "errno": "ENOENT",
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "replace",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "rename",
+     "errno": "ENOENT",
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 9,
+     "ret": 1
+    },
+    {
+     "call": "rename",
+     "errno": "ENOTEMPTY",
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 11,
+     "ret": "fd#0"
+    },
+    {
+     "call": "renameat",
+     "errno": null,
+     "i": 12,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 13,
+     "ret": null
+    }
+   ]
+  },
+  "files.rmdir": {
+   "state": {
+    "e": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "e/f": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    },
+    "g.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "rmdir",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "rmdir",
+     "errno": "ENOENT",
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 4,
+     "ret": 1
+    },
+    {
+     "call": "rmdir",
+     "errno": "ENOTEMPTY",
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 6,
+     "ret": 1
+    },
+    {
+     "call": "rmdir",
+     "errno": "ENOTDIR",
+     "i": 7,
+     "ret": null
+    }
+   ]
+  },
+  "files.sendfile": {
+   "state": {
+    "out.bin": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "45359c4db243cc15",
+     "size": 60,
+     "type": "reg"
+    },
+    "src2.bin": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "45359c4db243cc15",
+     "size": 60,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 60
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 2,
+     "ret": "fd#1"
+    },
+    {
+     "call": "sendfile",
+     "errno": null,
+     "i": 3,
+     "ret": 30
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 4,
+     "ret": 0
+    },
+    {
+     "call": "sendfile",
+     "errno": null,
+     "i": 5,
+     "ret": 30
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 8,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 60,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    }
+   ]
+  },
+  "files.splice": {
+   "state": {
+    "sp.bin": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "8fd9856b4b5b1b9f",
+     "size": 100,
+     "type": "reg"
+    },
+    "sp.out": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "8fd9856b4b5b1b9f",
+     "size": 100,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 100
+    },
+    {
+     "call": "splice_through_pipe",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "in": 100,
+      "out": 100
+     }
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 100,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    }
+   ]
+  },
+  "files.stat": {
+   "state": {
+    "d": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "dang.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "nowhere",
+     "type": "lnk"
+    },
+    "f.txt": {
+     "nlink": 1,
+     "perm": "0o640",
+     "sha256": "ed7002b439e9ac84",
+     "size": 7,
+     "type": "reg"
+    },
+    "l.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "f.txt",
+     "type": "lnk"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 7
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 1,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 7,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 7,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 7,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 5,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o777",
+      "type": "lnk",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": "ENOENT",
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 8,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o777",
+      "type": "lnk",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "stat",
+     "errno": "ENOENT",
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 11,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 2,
+      "perm": "0o755",
+      "type": "dir",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 12,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 13,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 7,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 14,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 15,
+     "ret": "fd#1"
+    },
+    {
+     "call": "fstatat",
+     "errno": null,
+     "i": 16,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o640",
+      "size": 7,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "fstatat",
+     "errno": null,
+     "i": 17,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o777",
+      "type": "lnk",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 18,
+     "ret": null
+    }
+   ]
+  },
+  "files.statfs": {
+   "state": {},
+   "steps": [
+    {
+     "call": "statvfs",
+     "errno": null,
+     "i": 0,
+     "ret": {
+      "bsize_positive": true,
+      "fields_present": [
+       "f_bavail",
+       "f_bfree",
+       "f_blocks",
+       "f_bsize",
+       "f_favail",
+       "f_ffree",
+       "f_files",
+       "f_flag",
+       "f_frsize",
+       "f_fsid",
+       "f_namemax"
+      ],
+      "namemax_positive": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "fstatvfs",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "bsize_positive": true,
+      "fields_present": [
+       "f_bavail",
+       "f_bfree",
+       "f_blocks",
+       "f_bsize",
+       "f_favail",
+       "f_ffree",
+       "f_files",
+       "f_flag",
+       "f_frsize",
+       "f_fsid",
+       "f_namemax"
+      ],
+      "namemax_positive": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "statvfs",
+     "errno": "ENOENT",
+     "i": 4,
+     "ret": null
+    }
+   ]
+  },
+  "files.symlink": {
+   "state": {
+    "s.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "target.txt",
+     "type": "lnk"
+    },
+    "s2.lnk": {
+     "nlink": 1,
+     "perm": "0o777",
+     "target": "target.txt",
+     "type": "lnk"
+    }
+   },
+   "steps": [
+    {
+     "call": "symlink",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "readlink",
+     "errno": null,
+     "i": 1,
+     "ret": "target.txt"
+    },
+    {
+     "call": "lstat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o777",
+      "type": "lnk",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "symlink",
+     "errno": "EEXIST",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 4,
+     "ret": "fd#0"
+    },
+    {
+     "call": "symlinkat",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "readlink",
+     "errno": null,
+     "i": 7,
+     "ret": "target.txt"
+    }
+   ]
+  },
+  "files.sync": {
+   "state": {
+    "s.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "sync",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    }
+   ]
+  },
+  "files.truncate": {
+   "state": {
+    "t.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "5dde896887f6754c",
+     "size": 2,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 10
+    },
+    {
+     "call": "truncate",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 4,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "truncate",
+     "errno": null,
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 20,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 5,
+     "ret": "fd#0"
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "len": 20,
+      "sha256": "ee8a2e8989bcc6ee"
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "truncate",
+     "errno": "EINVAL",
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "truncate",
+     "errno": "ENOENT",
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 10,
+     "ret": "fd#1"
+    },
+    {
+     "call": "ftruncate",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 12,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 2,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 13,
+     "ret": null
+    }
+   ]
+  },
+  "files.umask": {
+   "state": {
+    "u.txt": {
+     "nlink": 1,
+     "perm": "0o600",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    },
+    "u2.txt": {
+     "nlink": 1,
+     "perm": "0o666",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 0,
+     "ret": "0o2"
+    },
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 1,
+     "ret": "0o22"
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 2,
+     "ret": 1
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 3,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o600",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 4,
+     "ret": "0o77"
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 5,
+     "ret": 1
+    },
+    {
+     "call": "stat",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o666",
+      "size": 1,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "umask",
+     "errno": null,
+     "i": 7,
+     "ret": "0o0"
+    }
+   ]
+  },
+  "files.umount": {
+   "state": {
+    "mp": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    }
+   },
+   "steps": [
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 0,
+     "ret": null
+    },
+    {
+     "call": "umount2",
+     "errno": "EPERM",
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "umount2",
+     "errno": "ENOENT",
+     "i": 2,
+     "ret": null
+    }
+   ]
+  },
+  "files.unlink": {
+   "state": {
+    "e": {
+     "nlink": 2,
+     "perm": "0o755",
+     "type": "dir"
+    },
+    "e/inner": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "594e519ae499312b",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 3
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 1,
+     "ret": "fd#0"
+    },
+    {
+     "call": "unlink",
+     "errno": null,
+     "i": 2,
+     "ret": null
+    },
+    {
+     "call": "stat",
+     "errno": "ENOENT",
+     "i": 3,
+     "ret": null
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 4,
+     "ret": {
+      "len": 3,
+      "sha256": "b49f425a7e1f9cff"
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "unlink",
+     "errno": "ENOENT",
+     "i": 6,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "unlink",
+     "errno": "EISDIR",
+     "i": 8,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 9,
+     "ret": "fd#1"
+    },
+    {
+     "call": "unlinkat_dir",
+     "errno": null,
+     "i": 10,
+     "ret": null
+    },
+    {
+     "call": "mkdir",
+     "errno": null,
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 12,
+     "ret": 1
+    },
+    {
+     "call": "unlinkat_dir",
+     "errno": "ENOTEMPTY",
+     "i": 13,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 14,
+     "ret": null
+    }
+   ]
+  },
+  "files.utimensat": {
+   "state": {
+    "u.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "utime_set",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "utime_read_ns",
+     "errno": null,
+     "i": 2,
+     "ret": [
+      1000000000000000000,
+      2000000000000000000
+     ]
+    },
+    {
+     "call": "utime_set",
+     "errno": "ENOENT",
+     "i": 3,
+     "ret": null
+    }
+   ]
+  },
+  "files.write": {
+   "state": {
+    "w.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "eb5958734c5d903c",
+     "size": 10,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "open",
+     "errno": null,
+     "i": 0,
+     "ret": "fd#0"
+    },
+    {
+     "call": "write",
+     "errno": null,
+     "i": 1,
+     "ret": 6
+    },
+    {
+     "call": "pwrite",
+     "errno": null,
+     "i": 2,
+     "ret": 2
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 3,
+     "ret": 6
+    },
+    {
+     "call": "writev",
+     "errno": null,
+     "i": 4,
+     "ret": 4
+    },
+    {
+     "call": "fsync",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "fstat",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "has_dev": true,
+      "has_ino": true,
+      "has_mtime": true,
+      "nlink": 1,
+      "perm": "0o644",
+      "size": 10,
+      "type": "reg",
+      "uid_is_caller": true
+     }
+    },
+    {
+     "call": "lseek",
+     "errno": null,
+     "i": 7,
+     "ret": 0
+    },
+    {
+     "call": "read",
+     "errno": null,
+     "i": 8,
+     "ret": {
+      "len": 10,
+      "sha256": "eb5958734c5d903c"
+     }
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "open",
+     "errno": null,
+     "i": 10,
+     "ret": "fd#1"
+    },
+    {
+     "call": "write",
+     "errno": "EBADF",
+     "i": 11,
+     "ret": null
+    },
+    {
+     "call": "close",
+     "errno": null,
+     "i": 12,
+     "ret": null
+    },
+    {
+     "call": "append_atomicity",
+     "errno": null,
+     "i": 13,
+     "ret": {
+      "every_chunk_whole": true,
+      "length_is_exact_sum": true
+     }
+    }
+   ]
+  },
+  "files.xattr": {
+   "state": {
+    "x.txt": {
+     "nlink": 1,
+     "perm": "0o644",
+     "sha256": "2d711642b726b044",
+     "size": 1,
+     "type": "reg"
+    }
+   },
+   "steps": [
+    {
+     "call": "write_file",
+     "errno": null,
+     "i": 0,
+     "ret": 1
+    },
+    {
+     "call": "setxattr",
+     "errno": null,
+     "i": 1,
+     "ret": null
+    },
+    {
+     "call": "getxattr",
+     "errno": null,
+     "i": 2,
+     "ret": {
+      "len": 2,
+      "sha256": "3bfc269594ef6492"
+     }
+    },
+    {
+     "call": "listxattr",
+     "errno": null,
+     "i": 3,
+     "ret": [
+      "user.govos"
+     ]
+    },
+    {
+     "call": "getxattr",
+     "errno": "ENODATA",
+     "i": 4,
+     "ret": null
+    },
+    {
+     "call": "setxattr",
+     "errno": null,
+     "i": 5,
+     "ret": null
+    },
+    {
+     "call": "getxattr",
+     "errno": null,
+     "i": 6,
+     "ret": {
+      "len": 2,
+      "sha256": "fb04dcb6970e4c3d"
+     }
+    },
+    {
+     "call": "removexattr",
+     "errno": null,
+     "i": 7,
+     "ret": null
+    },
+    {
+     "call": "listxattr",
+     "errno": null,
+     "i": 8,
+     "ret": []
+    },
+    {
+     "call": "removexattr",
+     "errno": "ENODATA",
+     "i": 9,
+     "ret": null
+    },
+    {
+     "call": "setxattr",
+     "errno": "ENOENT",
+     "i": 10,
+     "ret": null
+    }
+   ]
+  }
+ },
+ "target": "host-local"
+}

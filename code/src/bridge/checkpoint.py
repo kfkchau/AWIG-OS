@@ -262,10 +262,20 @@ def verify(checkpoint, record_path, blob_dir, pack_path=PACK_PATH):
     #     the `tree` member); `merkle_root`/`diverging` are reported ALONGSIDE, never folded into `ok`.
     mr = prov.get("merkle_root")
     if mr is not None:
-        verdict["merkle_root"] = (merkle.merkle_root(recomputed_tree) == mr)
+        sch = merkle_scheme_of(checkpoint)                          # B11: fold under the checkpoint's OWN scheme
+        verdict["merkle_root"] = (merkle.merkle_root(recomputed_tree, sch) == mr)
         if not verdict["merkle_root"]:
-            verdict["diverging"] = merkle.localize(checkpoint["tree"], recomputed_tree)
+            verdict["diverging"] = merkle.localize(checkpoint["tree"], recomputed_tree, sch)
     return verdict
+
+
+def merkle_scheme_of(checkpoint):
+    """The MERKLE-SCHEME VERSION a checkpoint's root was folded under (B11; EP-MAINT-OUTSIDE-2). Read
+    from provenance; ABSENT reads as scheme 1 (children-only) so every root minted before B11 verifies
+    UNCHANGED. A verifier folds the recomputed tree under THIS, never under the current default — that
+    is what makes a directory's-metadata upgrade backward-safe across already-attested checkpoints."""
+    scheme = (checkpoint.get("provenance") or {}).get("merkle_scheme")
+    return scheme if scheme is not None else merkle.SCHEME_CHILDREN_ONLY
 
 
 # --- cross-attestation (EP-45): the checkpoint made MERKLE-SHAPED, the diving-buddy pairing --------
@@ -286,6 +296,10 @@ def cross_attest(store, record_path, blob_dir, witness, row_id=None, root=None,
     ADDED keys are lawful."""
     cp = create(store, record_path, blob_dir, row_id=row_id, root=root, pack_path=pack_path)
     cp["provenance"]["merkle_root"] = merkle.merkle_root(cp["tree"])
+    # B11 (EP-MAINT-OUTSIDE-2): RECORD the scheme this root was folded under, so a verifier folds the
+    # recomputed tree under the SAME scheme. A checkpoint that omits it (every one minted before B11)
+    # reads as scheme 1 (children-only) in `merkle_scheme_of`, so old roots verify unchanged.
+    cp["provenance"]["merkle_scheme"] = merkle.CURRENT_SCHEME
     cp["witness"] = witness
     if peer_root is not None:
         cp["peer_root"] = peer_root
@@ -301,7 +315,7 @@ def _recompute_root(cp, record_path, blob_dir):
     scope = cp.get("scope") or {}
     tree = replay_snapshot.snapshot(record_path, blob_dir,
                                     row_id=scope.get("row_id"), root=scope.get("root"))
-    return merkle.merkle_root(tree)
+    return merkle.merkle_root(tree, merkle_scheme_of(cp))            # B11: the checkpoint's OWN scheme
 
 
 def pairing_verdict(cp_a, record_path_a, blob_dir_a, cp_b, record_path_b, blob_dir_b):

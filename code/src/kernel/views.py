@@ -39,6 +39,20 @@ FOLD_NAMES = ("active_rules", "actors", "resources", "permissions", "relationshi
               "op_definitions", "view_definitions")
 
 
+def fold_set():
+    """THE ATTESTED FOLD LIBRARY (design/51 N6, EP-50) — the EP-40 attested-set TWIN
+    (attestation.attested_set) over FOLD_NAMES. The set a MASTER may bind is a DECLARED, grow-only
+    member set with a citable `set_digest`: a bind to a fold OUTSIDE it is refused at CREATE-VIEW as
+    today (boot.create_view), and the set itself is now a fact any reader can recompute from the
+    declared names — a record may cite it. A SEPARATE attested set from the file-attestation members
+    (ATTESTED_MEMBERS): folds are CODE FUNCTIONS, not file artifacts, so this set carries no
+    per-member byte digest — only the digest over the sorted names, through the estate's ONE
+    canonical hash (so name order and platform variance cannot move it). Grow-only: adding a fold is
+    a deliberate edit to FOLD_NAMES; a removal is a RAISE (a shrink reds the pinned baseline)."""
+    members = tuple(sorted(FOLD_NAMES))
+    return {"kind": "fold_set", "members": members, "set_digest": canonical_hash(members)}
+
+
 def _matches(e, when):
     """Does one record match a view's trigger? Each entry tests one dimension; a value of
     {"not": X} is the minus-inside-a-trigger: the record matches only if the dimension is
@@ -869,24 +883,38 @@ class Views:
         return {"per_kind": g, "since_seq": since_seq, "record_time_now": record_time_now}
 
     def paper_tigers(self, as_of=None):
-        """Mandated views with no recorded servicing (design 28 §8): a view_definition carrying a
-        `refresh` mandate whose delivery queue is EMPTY is a paper tiger — it claims a refresh cadence
-        but the record shows it moving nothing. A view routed to the owner queue; appends nothing.
-        Honest cap: DELIVERY is the only per-run signal the record carries in v1, so a mandated
-        MASTER/query view (no move_to) has no recorded servicing signal — flagged with that reason
-        rather than silently cleared. Same fold family as boot-integrity: a rule (the mandate) × what
-        the system did (delivered)."""
+        """Mandated views with no recorded servicing (design 28 §8; design/51 N6, EP-50): a
+        view_definition carrying a `refresh` mandate that the record shows was never serviced is a
+        paper tiger — it claims a refresh cadence the record cannot account for. A pure derivation
+        routed to the owner queue; appends nothing.
+
+        SERVICING IS A RECORD (N6). A VIEW-SERVICE DECISION (view_name, head_seq, servicer) is
+        appended each time a mandated view is serviced, so a mandated MASTER/query view (no move_to)
+        — which in v1 had NO per-run signal at all — now CLEARS when its servicing is on the record,
+        and a MASTER never serviced is a FOLD, not an inference (the v1 gap closed): its own former
+        honest cap ("delivery is the only one") is discharged.
+
+        DELIVERY IS RETAINED AS A SECOND WITNESS (design/51 §6 item 4). A mandated FILTER view that
+        has DELIVERED but carries no VIEW-SERVICE record is NOT a paper tiger — the delivery signal
+        stays beside the servicing record until one campaign of servicing records exists. Same fold
+        family as boot-integrity: a rule (the mandate) × what the record shows the system did."""
         q = self.queues(as_of)
+        serviced = {(e.get("payload") or {}).get("view_name")
+                    for e in self.store.by_action("VIEW-SERVICE", as_of)}
         out = []
         for d in self.view_definitions(as_of).values():
             if not d.get("refresh"):
                 continue
+            name = d["name"]
+            if name in serviced:
+                continue                          # serviced: a VIEW-SERVICE record names it (N6)
             move_to = (d.get("then") or {}).get("move_to")
             if move_to and q.get(move_to):
-                continue                          # serviced: it has delivered — not a paper tiger
-            reason = ("mandated move-to view has delivered nothing" if move_to
-                      else "mandated view has no recorded per-run signal in v1 (delivery is the only one)")
-            out.append({"name": d["name"], "refresh": d["refresh"], "reason": reason})
+                continue                          # SECOND WITNESS: delivered — retained (§6 item 4)
+            reason = ("mandated move-to view has no VIEW-SERVICE record and has delivered nothing"
+                      if move_to else
+                      "mandated master/query view has no VIEW-SERVICE record over the current head")
+            out.append({"name": name, "refresh": d["refresh"], "reason": reason})
         return out
 
     def contradictions(self, as_of=None):

@@ -1,0 +1,610 @@
+{
+ "group": "08-ipc-comms",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a78",
+ "title": "IPC & communication",
+ "subsystem_derivation": "03 \u00a74.5 (communication \u2014 governing messages). LAW = message-contract and queue rules; DECISIONS = channel open/close and send/receive events; CACHE = queue state; STREAM = high-volume payload traffic under the recorded coalescing policy.",
+ "active": false,
+ "activates_at": "EP-30",
+ "rows": [
+  {
+   "row_id": "comms.pipe",
+   "syscall": "pipe",
+   "variants": [
+    "pipe2"
+   ],
+   "what_it_does": "Create an anonymous pipe (read + write fd).",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel open). Channel-open event recorded. Buffer capacity, O_NONBLOCK/O_DIRECT, SIGPIPE/EPIPE, atomic-write <= PIPE_BUF semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "ordering": "pipe-atomic-write"
+   }
+  },
+  {
+   "row_id": "comms.socket",
+   "syscall": "socket",
+   "variants": [],
+   "what_it_does": "Create a communication endpoint.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel open). Endpoint creation recorded as a channel-open. Domain/type/protocol, O_NONBLOCK/SOCK_CLOEXEC semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.socketpair",
+   "syscall": "socketpair",
+   "variants": [],
+   "what_it_does": "Create a connected pair of sockets.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel open). Both endpoints + their connection recorded.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.bind",
+   "syscall": "bind",
+   "variants": [],
+   "what_it_does": "Assign a local address/port to a socket.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "A governed claim on a name (address/port) \u2014 recorded, cites the rule allowing it. EADDRINUSE/EACCES on privileged ports identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "ordering": "exclusive-name-claim"
+   }
+  },
+  {
+   "row_id": "comms.listen",
+   "syscall": "listen",
+   "variants": [],
+   "what_it_does": "Mark a socket passive (accept queue).",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel role change). Recorded role change; backlog semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.accept",
+   "syscall": "accept",
+   "variants": [
+    "accept4"
+   ],
+   "what_it_does": "Accept an incoming connection.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "INPUT",
+    "DECISION"
+   ],
+   "conformance_note": "INPUT (connection arrival) + DECISION (channel open). The connection request arrives as an input; accepting opens a new recorded channel. Blocking is a scheduling decision. EAGAIN/ECONNABORTED, SOCK_NONBLOCK semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.connect",
+   "syscall": "connect",
+   "variants": [],
+   "what_it_does": "Initiate a connection to a peer.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel open). Channel-open recorded, cites reachability/permission rule. Non-blocking EINPROGRESS, ECONNREFUSED/ETIMEDOUT semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.send",
+   "syscall": "send",
+   "variants": [
+    "sendto",
+    "sendmsg",
+    "sendmmsg"
+   ],
+   "what_it_does": "Send data on a socket.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "DECISION (send event) + STREAM (payload aggregate). The send event is recorded (payload full or hash-referenced per the recorded coalescing policy, as with files); high-volume payload is STREAM. Peer receives exact bytes \u2014 full-fidelity. MSG_* flags, EPIPE/EMSGSIZE, ancillary data (SCM_RIGHTS fd-passing \u2014 itself a recorded custody transfer) semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "coalescible": true
+   }
+  },
+  {
+   "row_id": "comms.recv",
+   "syscall": "recv",
+   "variants": [
+    "recvfrom",
+    "recvmsg",
+    "recvmmsg"
+   ],
+   "what_it_does": "Receive data from a socket.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "INPUT",
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "INPUT (data arrival) + DECISION (receive event) + STREAM (payload). Arrival recorded as input; the receive event recorded; payload delivered full-fidelity. MSG_PEEK/MSG_WAITALL/MSG_TRUNC, EAGAIN semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "coalescible": true
+   }
+  },
+  {
+   "row_id": "comms.shutdown",
+   "syscall": "shutdown",
+   "variants": [],
+   "what_it_does": "Close one or both directions of a socket.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel close/half-close). Recorded. SHUT_RD/WR/RDWR semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.getsockopt",
+   "syscall": "getsockopt",
+   "variants": [],
+   "what_it_does": "Read a socket option.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.setsockopt.contract",
+   "syscall": "setsockopt",
+   "variants": [],
+   "what_it_does": "Set a socket option that changes the channel contract.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Options that change the channel contract (SO_REUSEADDR, SO_BINDTODEVICE, membership) = recorded decision. ABI/errno identical. [Sub-row of design/10 \u00a78's mixed setsockopt row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.setsockopt.tuning",
+   "syscall": "setsockopt",
+   "variants": [],
+   "what_it_does": "Set a socket option that only tunes buffers or timeouts.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Buffer-size/timeout tuning = CACHE. ABI/errno identical. [Sub-row of design/10 \u00a78's mixed setsockopt row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.getsockname",
+   "syscall": "getsockname",
+   "variants": [
+    "getpeername"
+   ],
+   "what_it_does": "Read local / peer address.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.shmget",
+   "syscall": "shmget",
+   "variants": [],
+   "what_it_does": "Get / create a SysV shared-memory segment.",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (the grant). The \u00a74.5 grant: who may share which region, under what rule \u2014 recorded, rule-cited. IPC_CREAT/IPC_EXCL, EEXIST/ENOSPC identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.shmat",
+   "syscall": "shmat",
+   "variants": [],
+   "what_it_does": "Attach a shared segment into the address space.",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (attach grant) \u2014 interior writes not audited (\u00a74.5) \u2014 the application's own activity. SHM_RDONLY/SHM_RND semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.shmdt",
+   "syscall": "shmdt",
+   "variants": [],
+   "what_it_does": "Detach a shared segment.",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (revoke). Recorded release of the attach grant.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.shmctl.stat",
+   "syscall": "shmctl",
+   "variants": [],
+   "what_it_does": "Read a shared segment's state (IPC_STAT).",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "IPC_STAT = CACHE read. [Sub-row of design/10 \u00a78's mixed shmctl row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.shmctl.lifecycle",
+   "syscall": "shmctl",
+   "variants": [],
+   "what_it_does": "Control a shared segment's lifecycle (IPC_RMID, IPC_SET, lock).",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION",
+    "LAW"
+   ],
+   "conformance_note": "DECISION/LAW (lifecycle). IPC_RMID/SET = recorded lifecycle decision. Lazy-destroy-until-last-detach semantics identical.",
+   "status": "DISPUTED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a78's shmctl row heads 'DECISION/LAW (lifecycle) + CACHE (IPC_STAT)' and its note then calls IPC_RMID/SET 'a recorded lifecycle decision', so the LAW half of the heading is never assigned to any sub-op. Both are encoded and the split is raised."
+  },
+  {
+   "row_id": "comms.semctl.stat",
+   "syscall": "semctl",
+   "variants": [],
+   "what_it_does": "Read a semaphore set's state (IPC_STAT).",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "IPC_STAT = CACHE read. [Sub-row of design/10 \u00a78's semget/semctl row, split exactly where that row's own note splits it.]",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.semget",
+   "syscall": "semget",
+   "variants": [
+    "semctl"
+   ],
+   "what_it_does": "Get / control a SysV semaphore set.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "LAW"
+   ],
+   "conformance_note": "DECISION/LAW. Set creation and control = recorded grant/config.",
+   "status": "DISPUTED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a78's semget/semctl row heads 'DECISION/LAW' for creation and control without assigning either class to either act. Both are encoded and the split is raised."
+  },
+  {
+   "row_id": "comms.semop",
+   "syscall": "semop",
+   "variants": [
+    "semtimedop"
+   ],
+   "what_it_does": "Operate on semaphores (P/V).",
+   "subsystems": [
+    "comms",
+    "scheduling"
+   ],
+   "recording_class": [
+    "STREAM",
+    "DECISION"
+   ],
+   "conformance_note": "STREAM (+ block/wake DECISION). Per-op synchronization applying an already-granted contract \u2014 high-frequency STREAM; blocking-wait is a scheduling decision. SEM_UNDO, EAGAIN/EIDRM semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.msgget",
+   "syscall": "msgget",
+   "variants": [
+    "msgctl"
+   ],
+   "what_it_does": "Get / control a SysV message queue.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "LAW"
+   ],
+   "conformance_note": "DECISION/LAW (channel open/config). Queue creation/control recorded. IPC_STAT = CACHE read.",
+   "status": "DISPUTED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "disputed_because": "design/10 \u00a78's msgget/msgctl row heads 'DECISION/LAW (channel open/config)' without assigning either class to either act. Both are encoded and the split is raised."
+  },
+  {
+   "row_id": "comms.msgsnd",
+   "syscall": "msgsnd",
+   "variants": [
+    "msgrcv"
+   ],
+   "what_it_does": "Send / receive on a SysV message queue.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "DECISION (event) + STREAM (payload). As sockets: event recorded, payload full or hash-referenced; blocking is scheduling. IPC_NOWAIT, message-type selection, E2BIG/EAGAIN semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "coalescible": true
+   }
+  },
+  {
+   "row_id": "comms.mq_open",
+   "syscall": "mq_open",
+   "variants": [
+    "mq_unlink"
+   ],
+   "what_it_does": "Open / remove a POSIX message queue.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (channel open/close). Recorded. Named-queue namespace, O_CREAT/O_EXCL semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.mq_send",
+   "syscall": "mq_timedsend",
+   "variants": [
+    "mq_timedreceive"
+   ],
+   "what_it_does": "Send / receive on a POSIX message queue.",
+   "subsystems": [
+    "comms",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "DECISION (event) + STREAM (payload). Event recorded, payload per policy; priority ordering and timeout semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change.",
+   "rules": {
+    "coalescible": true
+   }
+  },
+  {
+   "row_id": "comms.mq_notify",
+   "syscall": "mq_notify",
+   "variants": [],
+   "what_it_does": "Register async notification on a queue.",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Registration recorded; delivery is an INPUT arrival.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.futex",
+   "syscall": "futex",
+   "variants": [
+    "futex_waitv"
+   ],
+   "what_it_does": "Fast userspace mutex \u2014 wait / wake on a userland word.",
+   "subsystems": [
+    "comms",
+    "scheduling"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "block/wake DECISION; the contended word's ops not audited. The nuanced \u00a74.5 case: the futex word lives in userland (often shared) memory, so its atomic mutations are interior shared-memory activity \u2014 not audited. gov-os records only the kernel-side block/wake scheduling decisions (high-frequency wait/wake in aggregate is STREAM). FUTEX_WAIT/WAKE/REQUEUE/PI, EAGAIN/ETIMEDOUT, robust-list cleanup semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.eventfd_ipc",
+   "syscall": "eventfd",
+   "variants": [],
+   "what_it_does": "Lightweight cross-process/thread signalling counter (as IPC).",
+   "subsystems": [
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION",
+    "STREAM"
+   ],
+   "conformance_note": "DECISION (open) + STREAM (counter). See \u00a77; listed here as an IPC primitive.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.pidfd_getfd",
+   "syscall": "pidfd_getfd",
+   "variants": [],
+   "what_it_does": "Duplicate an fd out of another process.",
+   "subsystems": [
+    "comms",
+    "process"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (custody transfer). Moving a custody grant across processes \u2014 recorded, permission-gated. EPERM identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "comms.process_vm",
+   "syscall": "process_vm_readv",
+   "variants": [
+    "process_vm_writev"
+   ],
+   "what_it_does": "Read/write another process's memory directly.",
+   "subsystems": [
+    "comms",
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (cross-process access grant). A governed cross-actor memory access \u2014 permission-gated, recorded. EPERM/ESRCH/EFAULT semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-30",
+   "probe": null,
+   "probe_absent_reason": "the comms group is inactive until EP-30 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

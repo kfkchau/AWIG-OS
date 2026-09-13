@@ -1,0 +1,298 @@
+{
+ "group": "05-memory",
+ "map_ref": "design/10-SYSCALL-CONFORMANCE-MAP.md \u00a75",
+ "title": "Memory",
+ "subsystem_derivation": "03 \u00a74.2 (memory \u2014 governing space). LAW = allocation policy + budgets; DECISIONS = mapping created / region granted / page evicted / budget amended; INPUTS = faults as arrival events; CACHE = page tables and free-lists; STREAM = raw accesses.",
+ "active": false,
+ "activates_at": "EP-31",
+ "rows": [
+  {
+   "row_id": "mem.brk",
+   "syscall": "brk",
+   "variants": [
+    "sbrk"
+   ],
+   "what_it_does": "Move the program break (grow/shrink heap).",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Region grant/release against the caller's budget \u2014 recorded. Returns new break / old break exactly; ENOMEM on budget exhaustion identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mmap_private",
+   "syscall": "mmap",
+   "variants": [],
+   "what_it_does": "Map a region of memory (private/anon).",
+   "subsystems": [
+    "memory",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Mapping-created grant: recorded, cites the budget rule. File-backed also touches files (open custody already granted via the fd). Address, MAP_FIXED, PROT_* semantics identical; EACCES/ENOMEM/EINVAL match.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mmap_shared",
+   "syscall": "mmap",
+   "variants": [],
+   "what_it_does": "Map a shared region (file or anon shared) \u2014 MAP_SHARED.",
+   "subsystems": [
+    "memory",
+    "comms"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (grant) \u2014 interior writes not audited. The \u00a74.5 canonical case: the grant (who shares which region with whom) is a recorded decision; the interior writes are not audited \u2014 userland's own activity. ABI unchanged; coherence/visibility semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.munmap",
+   "syscall": "munmap",
+   "variants": [],
+   "what_it_does": "Unmap a region.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Mapping revoked \u2014 recorded release. Subsequent access faults (SIGSEGV) identically.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mremap",
+   "syscall": "mremap",
+   "variants": [],
+   "what_it_does": "Resize / move a mapping.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Re-grant recorded (old revoked, new granted). MREMAP_MAYMOVE, returned address, ENOMEM identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mprotect",
+   "syscall": "mprotect",
+   "variants": [
+    "pkey_mprotect"
+   ],
+   "what_it_does": "Change protection on a region.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "DECISION (amends region permission). A permission change on granted space \u2014 recorded, cites rule. Fault behaviour on violation (SIGSEGV) identical; EACCES on illegal transition matches.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.madvise_hint",
+   "syscall": "madvise",
+   "variants": [],
+   "what_it_does": "Advise the kernel on usage patterns (advisory).",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "STREAM"
+   ],
+   "conformance_note": "Pure hints (MADV_WILLNEED/SEQUENTIAL/RANDOM) feed the eviction-evidence stream, change no law. Return 0 identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.madvise_release",
+   "syscall": "madvise",
+   "variants": [],
+   "what_it_does": "Release pages / punch holes (MADV_DONTNEED, MADV_FREE, MADV_REMOVE).",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "These change resident state \u2014 recorded release (and, for REMOVE on shared file, a file content decision). Post-call zero-fill / re-fault semantics identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mlock",
+   "syscall": "mlock",
+   "variants": [
+    "mlock2",
+    "mlockall"
+   ],
+   "what_it_does": "Pin pages resident.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "A budget-affecting grant (pinned against the RLIMIT_MEMLOCK budget, which is LAW) \u2014 recorded, cites rule. ENOMEM/EPERM on the lock budget identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.munlock",
+   "syscall": "munlock",
+   "variants": [
+    "munlockall"
+   ],
+   "what_it_does": "Unpin pages.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Recorded release of the pin grant.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.msync",
+   "syscall": "msync",
+   "variants": [],
+   "what_it_does": "Flush a mapped region to its backing file.",
+   "subsystems": [
+    "memory",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Writes file content \u2014 content is DECISION-class (03 \u00a74.3); the flush records the write and its blob hash. MS_SYNC/MS_ASYNC ordering identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mincore",
+   "syscall": "mincore",
+   "variants": [],
+   "what_it_does": "Query which pages are resident.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Reads page-table-derived residency; no record. Byte-vector result identical.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mbind",
+   "syscall": "mbind",
+   "variants": [
+    "set_mempolicy"
+   ],
+   "what_it_does": "Set NUMA allocation policy.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "LAW"
+   ],
+   "conformance_note": "Placement policy \u2014 recorded amendment. get_mempolicy counterpart is CACHE-only.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.get_mempolicy",
+   "syscall": "get_mempolicy",
+   "variants": [],
+   "what_it_does": "Read NUMA policy.",
+   "subsystems": [
+    "memory"
+   ],
+   "recording_class": [
+    "CACHE"
+   ],
+   "conformance_note": "Query.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.memfd_create",
+   "syscall": "memfd_create",
+   "variants": [],
+   "what_it_does": "Create an anonymous memory-backed file.",
+   "subsystems": [
+    "memory",
+    "files"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Creates a new file object (custody grant) \u2014 recorded. Sealing flags (F_SEAL_* via fcntl) are further recorded decisions. Often mapped MAP_SHARED for sharing \u2014 the share grant is that mmap's decision (\u00a74.5).",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  },
+  {
+   "row_id": "mem.mmap_device",
+   "syscall": "mmap",
+   "variants": [],
+   "what_it_does": "Map device memory (e.g. framebuffer, DMA) on a device fd.",
+   "subsystems": [
+    "memory",
+    "devices"
+   ],
+   "recording_class": [
+    "DECISION"
+   ],
+   "conformance_note": "Grant crosses the typed driver boundary (03 \u00a74.4) \u2014 recorded bind of device memory into the address space. Subsequent accesses are device STREAM.",
+   "status": "ENCODED",
+   "activates_at": "EP-31",
+   "probe": null,
+   "probe_absent_reason": "the memory group is inactive until EP-31 (design/36 \u00a76). A row's probe steps are row DATA in this same file; they are authored when the group activates, so activation is a data change in this tree and never a harness-code change."
+  }
+ ]
+}

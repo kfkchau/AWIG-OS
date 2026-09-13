@@ -60,6 +60,7 @@ mechanism is proven only in the TEST founding worlds that call `register_attesta
 import os
 
 from .canonical import canonical_hash
+from . import crypto  # the ONE vetted-library boundary — the attestation seal is real when present
 
 # The S-plane root and the one excluded subtree. `founding/` is the LAW's home (data +
 # installer), so the law guard greps src/ MINUS founding and the attested set is that surface.
@@ -107,10 +108,18 @@ ATTESTED_MEMBERS = (
     "kernel/authority.py",
     "kernel/blobs.py",
     "kernel/boot.py",
+    "kernel/border.py",   # grow-only add under EP-49A-BUILD (THE BORDER: THE DOOR, the campaign-5
+                          # crux; §5 fence "+ its ATTESTED_MEMBERS line and count-pin companion",
+                          # carried in-fence per the EP-48 precedent): the NEW border stance beside
+                          # crossing.py (BORDER-SUBMIT/REPLY/REFUSAL, the crossing-id, the real seal),
+                          # a src/kernel/*.py the law guard greps, so the F4 twin requires it here —
+                          # same precedent as kernel/crypto.py and kernel/signer.py (KEY-MATERIAL-REAL)
+                          # and subsystems/sockets.py (EP-48-BUILD).
     "kernel/canonical.py",
     "kernel/commit.py",
     "kernel/compose.py",
     "kernel/crossing.py",
+    "kernel/crypto.py",   # grow-only add under KEY-MATERIAL-REAL (archi :3031/:3041 double-stop lesson, carried in-fence): the NEW one vetted-library boundary, a src/kernel/*.py the law guard greps, so the F4 twin requires it here (same precedent as kernel/keys.py :2781/:2782 and kernel/erasure.py :2842).
     "kernel/erasure.py",   # grow-only add — MAINT-ATTEST-ADD-ERASURE (board :2842): the EP-41B destruction-ceremony surface, a src/kernel/*.py the law guard greps, so the F4 twin requires it here (same precedent as kernel/keys.py :2781/:2782).
     "kernel/errors.py",
     "kernel/gate.py",
@@ -121,6 +130,11 @@ ATTESTED_MEMBERS = (
     "kernel/protection.py",
     "kernel/push.py",
     "kernel/reconcile.py",
+    "kernel/signer.py",   # grow-only add under KEY-MATERIAL-REAL (archi :3249; the :3031/:3041 double-stop
+                          # lesson, the crypto.py companion doubled): the NEW SigningKeyStore that holds the
+                          # system signing key BESIDE the byte-frozen vault, a src/kernel/*.py the law guard
+                          # greps, so the F4 twin requires it here (same precedent as kernel/crypto.py and
+                          # kernel/keys.py :2781/:2782).
     "kernel/store.py",
     "kernel/syscall_port.py",
     "kernel/vault.py",
@@ -137,8 +151,21 @@ ATTESTED_MEMBERS = (
     "subsystems/comms.py",
     "subsystems/devices.py",
     "subsystems/files.py",
+    "subsystems/filter.py",   # grow-only add under EP-52-BUILD (FIREWALL-IN-THE-RECORD, C5 P7, the
+                              # founding mover NET-LAW-FILTER + FILTER-DECISION; §5 fence "+ its
+                              # ATTESTED_MEMBERS line and count-pin companion", carried in-fence per the
+                              # EP-48 precedent): the NEW which-rule-decided fold beside sockets.py, a
+                              # src/subsystems/*.py the law guard greps, so the F4 twin requires it here —
+                              # same precedent as subsystems/sockets.py (EP-48-BUILD) and kernel/border.py
+                              # (EP-49A-BUILD). The count-pins (test_ep40/46/keymat) move 52 -> 53 by name.
     "subsystems/memory.py",
     "subsystems/scheduling.py",
+    "subsystems/sockets.py",   # grow-only add under EP-48-BUILD (SOCKET-GRANTS, the founding mover;
+                               # §5 name-and-count sweep + :3255(b) by-name widen, carried in-fence): a
+                               # new src/subsystems/*.py the law guard greps (the socket-table fold, the
+                               # governed connection view the shadow retires into), so the F4 twin
+                               # requires it here — same precedent as subsystems/comms.py and
+                               # kernel/crypto.py (KEY-MATERIAL-REAL, :3031/:3041).
 )
 
 # THE KNOWN-OUT MEMBER, DECLARED (architect ruling board :2751, tooth i) — a silent exclusion
@@ -183,6 +210,34 @@ def attested_set(src_dir=None):
         "set_digest": canonical_hash(members),
         "excluded": dict(EXCLUDED),
     }
+
+
+def _attestation_message(attested):
+    """The message an attestation seal signs over — the attested SET-DIGEST, which already binds
+    every member's byte-digest (a change to any member moves it), through the estate's ONE hash form.
+    Signer and verifier recompute exactly this, so a tampered member reddens the seal (RW-FORGE)."""
+    return canonical_hash({"attestation-set-digest": attested.get("set_digest")})
+
+
+def attestation_seal(attested, signer, sealed_hash):
+    """THE ATTESTATION SEAL, MADE REAL (KEY-MATERIAL-REAL A5; design/37 Q3 + §9's deferred primitive;
+    archi :3249). A REAL Ed25519 signature over the attested record's set-digest, produced BY THE
+    SIGNER (the SigningKeyStore that holds the system signing key BESIDE the byte-frozen vault) with the
+    key sealed under `sealed_hash` (a use, never a read). Returns the tagged signature. The pre-real
+    era's integrity mark — the set-digest itself — is untouched and still stands for UNSEALED
+    attestations; this ADDS a real signature over it, never replacing the record shape. With the vetted
+    library absent `signer.sign` REFUSES citing the absent library — a real seal is never faked
+    (RW-DOWNGRADE)."""
+    return signer.sign(sealed_hash, _attestation_message(attested))
+
+
+def verify_attestation_seal(attested, seal, public_key):
+    """True iff `seal` is a valid Ed25519 signature over `attested`'s set-digest under `public_key`
+    (the system key's published public half). A tampered attested surface — any member changed, so a
+    changed set-digest — fails verification (RW-FORGE, the check that can fail). Refuses citing the
+    absent library when it is not present (a tagged seal cannot be verified without it, never a
+    modelled substitute)."""
+    return crypto.verify(public_key, seal, _attestation_message(attested))
 
 
 def law_guard_surface(src_dir=None):

@@ -69,6 +69,7 @@ read direction: an apex-actor-above-the-law decrypt path is the shape the consti
 import hashlib
 
 from kernel import keys                              # the OPEN-key derivation, consumed read-only
+from kernel import crypto                            # the ONE vetted-library boundary — real AEAD/wrap when present
 from kernel.canonical import canonical_hash          # the estate's ONE hash form, REUSED for both fingerprints
 
 
@@ -79,6 +80,16 @@ SEALED = "sealed"
 WRAP = "wrap"
 OUTER = "outer"
 INNER = "inner"
+# THE ERA MARKER (KEY-MATERIAL-REAL §3). A piece produced by the REAL path carries `ALG` naming the
+# AEAD (`xchacha20poly1305`); a PRE-REAL (modelled) piece has no ALG field and is XOR-sealed. Every
+# open/unwrap dispatches on this so a real piece and a pre-real piece each verify under their own era
+# — the past stays byte-untouched (a modelled piece is byte-identical to before, ALG absent).
+ALG = "alg"
+
+
+def _is_real_piece(piece):
+    """True iff `piece` was sealed by the REAL path (carries the AEAD era marker)."""
+    return (piece.get(ALG) if isinstance(piece, dict) else None) == crypto.TAG_AEAD
 
 
 class NotAReader(Exception):
@@ -165,24 +176,48 @@ def seal(content, reader_sign_keys, location, *, piece_key=None):
     The per-piece key is a fresh secret unless `piece_key` is supplied (a re-key, or a caller
     holding one). It is NEVER placed in the piece in the clear — only its per-reader wrapped forms
     are. A reader with no derivable open key (a keyless account) is skipped: it cannot be wrapped
-    to, exactly as it cannot be signed for."""
+    to, exactly as it cannot be signed for.
+
+    ERA-SPLIT (KEY-MATERIAL-REAL §3). With the vetted library PRESENT the content is sealed with a
+    REAL AEAD (XChaCha20-Poly1305, the location bound as associated data) and the per-piece key is
+    WRAPPED to each reader by a REAL X25519 sealed box — the piece carries the `ALG` era marker. With
+    it ABSENT the content is XOR-sealed and the key XOR-wrapped exactly as before (no ALG), so a
+    fresh checkout seals and opens as today. The two fingerprints are computed the same way in both
+    eras (outer over the sealed bytes, inner over the content)."""
     if piece_key is None:
         piece_key = new_piece_key()
     if isinstance(content, str):
         content = content.encode("utf-8")
-    sealed = seal_bytes(content, piece_key)
+    real = crypto.real_available()
+    if real:
+        sealed = crypto.aead_seal(content, piece_key, aad=location)   # AEAD, location as AAD
+    else:
+        sealed = seal_bytes(content, piece_key)                       # modelled XOR keystream
     wrap = {}
     for sign_key in reader_sign_keys:
         op = keys.open_public_key(sign_key)
-        if op is not None:
-            wrap[op] = seal_bytes(piece_key, op)     # the piece key, wrapped to this reader's open key
-    return {
+        if op is None:
+            continue
+        if real:
+            wrap[op] = crypto.box_wrap(_key_bytes(piece_key), op)     # X25519 sealed box to the open key
+        else:
+            wrap[op] = seal_bytes(piece_key, op)                      # the piece key, XOR-wrapped
+    piece = {
         LOCATION: location,                          # WHERE the sealed content lives — in the clear
         SEALED: sealed,                              # the content, sealed (ciphertext)
         WRAP: wrap,                                  # per-reader wrapped per-piece key
         OUTER: outer_fingerprint(sealed),           # verifiable without opening
         INNER: inner_fingerprint(content),          # checked at opening
     }
+    if real:
+        piece[ALG] = crypto.TAG_AEAD                 # the era marker — a real piece names its AEAD
+    return piece
+
+
+def _key_bytes(piece_key):
+    """The per-piece key as raw bytes for wrapping — a str piece key is utf-8 encoded, bytes pass
+    through. Its exact bytes are what a reader recovers by unwrapping and hands back to open."""
+    return piece_key.encode("utf-8") if isinstance(piece_key, str) else bytes(piece_key)
 
 
 def is_reader(piece, reader_sign_key):
@@ -200,14 +235,21 @@ def unwrap_key(piece, reader_secret):
     the piece key. Refuses (`NotAReader`) when the derived open key is not in the wrap set — a
     non-reader's secret derives an address that was never wrapped to, and a non-holder cannot present
     a reader's secret at all (it is one-way behind the card). The secret never leaves this call and
-    is never recorded."""
+    is never recorded.
+
+    ERA-SPLIT (§3): a REAL piece unwraps with the reader's PRIVATE open key (X25519 sealed box, only
+    the holder's own secret derives it); a PRE-REAL piece XOR-unwraps under the public open key,
+    byte-identical to before."""
     op = _open_public_of_secret(reader_secret)
     wrapped = (piece.get(WRAP) or {}).get(op)
     if wrapped is None:
         raise NotAReader(
             "this account is not a wrapped reader of the piece — its open key is not in the wrapped "
             "set, so there is no key to unwrap (design/43 point 5; the gate admits only a reader)")
-    return seal_bytes(wrapped, op).decode("utf-8")   # unwrap: XOR back under the same open key
+    if _is_real_piece(piece):
+        open_private = keys.open_private_key(reader_secret)   # derived from the holder's OWN secret
+        return crypto.box_unwrap(wrapped, open_private).decode("utf-8")
+    return seal_bytes(wrapped, op).decode("utf-8")   # modelled: XOR back under the same open key
 
 
 def open_content(piece, reader_sign_key, reader_secret):
@@ -233,7 +275,19 @@ def open_content(piece, reader_sign_key, reader_secret):
             "this account is not a wrapped reader of the piece — opening is refused and the caller "
             "records the refusal (design/43 point 5; RW4)")
     piece_key = unwrap_key(piece, reader_secret)
-    content = seal_bytes(piece.get(SEALED), piece_key)
+    if _is_real_piece(piece):
+        # REAL AEAD: a wrong key or a tampered ciphertext fails the Poly1305 tag and raises — mapped
+        # to ContentMismatch so the ceremony's failing column is the SAME across eras (design/43 point
+        # 4). The AEAD refuses BEFORE the inner check even runs, which is strictly stronger than the
+        # XOR era's open-to-garbage-then-inner-catches.
+        try:
+            content = crypto.aead_open(piece.get(SEALED), piece_key, aad=piece.get(LOCATION))
+        except Exception:
+            raise ContentMismatch(
+                "the sealed content did not open under the recovered key — the AEAD tag rejected it "
+                "(a wrong key or a corrupted blob), refused at opening (design/43 point 4)")
+    else:
+        content = seal_bytes(piece.get(SEALED), piece_key)   # modelled XOR
     if inner_fingerprint(content) != piece.get(INNER):
         raise ContentMismatch(
             "the recovered content does not match the piece's inner fingerprint — it did not open to "
@@ -258,11 +312,16 @@ def add_reader(piece, new_reader_sign_key, piece_key):
 
     An add is a WRAP, never a re-seal: re-encrypting the content on every reader add would make the
     outer fingerprint move for a change that added nobody's content, and would re-key readers who did
-    not ask to be re-keyed (RW5)."""
+    not ask to be re-keyed (RW5). ERA-SPLIT (§3): a real piece wraps the same key with an X25519
+    sealed box; a pre-real piece XOR-wraps it — the SEALED bytes and both fingerprints are untouched
+    in both eras, and the ALG marker is carried through unchanged."""
     op = keys.open_public_key(new_reader_sign_key)
     new_wrap = dict(piece.get(WRAP) or {})
     if op is not None:
-        new_wrap[op] = seal_bytes(piece_key, op)
+        if _is_real_piece(piece):
+            new_wrap[op] = crypto.box_wrap(_key_bytes(piece_key), op)
+        else:
+            new_wrap[op] = seal_bytes(piece_key, op)
     out = dict(piece)
     out[WRAP] = new_wrap
     return out

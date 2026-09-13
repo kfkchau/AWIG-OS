@@ -508,6 +508,14 @@ class CustodyState:
                 # `names[dst] = names.pop(src)` had: a rename onto itself therefore leaves
                 # and re-enters, exactly as it did.
                 self._bind(dst, self._unbind(src))
+                # B6: a rename of a POPULATED directory carries every descendant to the new
+                # prefix. Only the directory's own name moved before, so /a/b survived under the
+                # old path after /a -> /x and /x/b resolved to nothing (a dangling subtree). Each
+                # descendant is re-keyed under the new path; the list is snapshotted before
+                # mutating the namespace.
+                prefix = src + "/"
+                for old in [n for n in self.names if n.startswith(prefix)]:
+                    self._bind(dst + "/" + old[len(prefix):], self._unbind(old))
         elif action == "FILE-PERM":
             node = self._node(p)
             if node is not None:
@@ -741,12 +749,28 @@ def _creator(e):
     is RAISED, not taken here.
     """
     prov = e.get("provenance") or {}
-    # A PROVENANCE THAT NAMES NO UID IS A RECORD THAT DOES NOT SAY WHO, and 0 is the answer
-    # for exactly that: the system acted (`store._append_one` defaults `source: "system"` and
-    # carries no uid for engine-originated records). It is written as a branch rather than as
-    # a coercion because the two cases are different questions: "the record is silent" and
-    # "the record states something unreadable". The second now refuses (EP-28C W4b).
-    uid = 0 if prov.get("uid") is None else _num(prov["uid"], "the asserted uid")
+    # A PROVENANCE THAT NAMES NO UID IS A RECORD THAT DOES NOT SAY WHO by provenance — but the
+    # record's ACTOR may still say who. R14 (EP-MAINT-OUTSIDE-4): a FILE-CREATE whose provenance
+    # carries no uid folded to root (0), so a real mount's created node came back owned by root and
+    # default_permissions denied every non-root write into it. The kernel-asserted actor is rendered
+    # "uid:<n>" (kernel_port / records_fs `_actor`) whenever no MAP-UID account covers the caller, so
+    # the creating uid is ALREADY on the record — recover it from the actor, never a silent 0. A
+    # system-originated create (actor "SYSTEM", `source: "system"`, no uid) names no uid, and 0 stays
+    # the answer for exactly that. Resolving a MAPPED account actor back to a uid needs a MAP-UID
+    # reverse fold (the store this fold does not hold) and stays raised — the "uid:<n>" rendering is
+    # the case the guest arm surfaced and is closed here. An unreadable provenance uid still refuses
+    # (EP-28C W4b): the branch below reads the actor ONLY when provenance is silent, never unreadable.
+    if prov.get("uid") is not None:
+        uid = _num(prov["uid"], "the asserted uid")
+    else:
+        actor = e.get("actor")
+        if isinstance(actor, str) and actor.startswith("uid:"):
+            try:
+                uid = int(actor[4:])
+            except ValueError:
+                uid = 0
+        else:
+            uid = 0
     gid = 0 if prov.get("gid") is None else _num(prov["gid"], "the asserted gid")
     return uid, gid
 
@@ -976,7 +1000,33 @@ def _perm(v, kind):
 def fold(records):
     """The custody state derived from a record sequence and NOTHING ELSE. This is the
     function T-CUSTODY-IS-DERIVED runs after killing every derived structure: hand it the
-    append-only record, get the filesystem back."""
+    append-only record, get the filesystem back.
+
+    RECOVERY IS CONSUMED HERE (EP-MAINT-OUTSIDE-1 B4). A recover splice records the estate waking
+    to an older SOUND point, but until now no file fold read it, so the mount kept serving the
+    DAMAGED tail — the act was recorded and no view computed from it. When a recover splice stands,
+    the served state is the state at the RECOVERED point (the sound seq the splice woke to) plus the
+    acts recorded AFTER the splice — NEVER the adjudicated-broken tail between the recovered point
+    and the splice. Absent a recover splice this is the plain forward fold, byte-identical."""
+    records = list(records)
+    from kernel import erasure                     # lazy: kernel is an import-leaf here, no cycle
+    points = erasure.recovered_points(records)     # ALL live splices (A-2), not only the latest
+    if points:
+        # Skip the UNION of the live splices' adjudicated-broken tails (A-2; EP-MAINT-OUTSIDE-2). Each
+        # live splice declares (target_seq, splice_seq] broken — the served state is the recovered
+        # sound points plus the acts recorded AFTER them, never any broken tail between a recovered
+        # point and its splice. A SINGLE recovery is the singleton union — byte-identical to the
+        # pre-B4/A-2 one-tail skip; two recoveries where the second woke past the first's splice now
+        # skip BOTH tails, so the first's broken tail is not replayed.
+        st = CustodyState()
+        for i, e in enumerate(records):
+            seq = e.get("seq")
+            seq = seq if seq is not None else i + 1
+            if any(p[erasure.TARGET_SEQ] < seq <= p["seq"] for p in points):
+                continue                           # inside a live splice's adjudicated-broken tail — skipped
+            st.apply(e)
+            st.applied += 1
+        return st
     st = CustodyState()
     for e in records:
         st.apply(e)

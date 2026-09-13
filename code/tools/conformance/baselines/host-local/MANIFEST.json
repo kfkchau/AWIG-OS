@@ -1,0 +1,986 @@
+{
+ "captured_at": "2026-08-02T09:06:16+00:00",
+ "coverage": {
+  "activation_unassigned": [],
+  "active_driven_in_primary": 28,
+  "active_probed": 40,
+  "active_undriven": [
+   {
+    "reason": "generated variant of files.open (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.open~openat2"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~readv"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~preadv"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~preadv2"
+   },
+   {
+    "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.write~pwritev"
+   },
+   {
+    "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.write~pwritev2"
+   },
+   {
+    "reason": "generated variant of files.lseek (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.lseek~llseek"
+   },
+   {
+    "reason": "generated variant of files.stat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.stat~statx"
+   },
+   {
+    "reason": "generated variant of files.access (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.access~faccessat2"
+   },
+   {
+    "reason": "generated variant of files.rename (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.rename~renameat2"
+   },
+   {
+    "reason": "generated variant of files.mknod (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mknod~mknodat"
+   },
+   {
+    "reason": "generated variant of files.chown (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.chown~fchownat"
+   },
+   {
+    "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.utimensat~futimesat"
+   },
+   {
+    "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.utimensat~utime"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fsetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lsetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fgetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lgetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~flistxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~llistxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fremovexattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lremovexattr"
+   },
+   {
+    "reason": "generated variant of files.sync (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.sync~syncfs"
+   },
+   {
+    "reason": "A write lease requires the descriptor to be the file's only opener, which the harness cannot guarantee in a shared scratch tree, and F_NOTIFY is the superseded predecessor of inotify whose delivery is a signal rather than a return value. Neither is driven this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+    "row_id": "files.fcntl.lease"
+   },
+   {
+    "reason": "generated variant of files.dup (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.dup~dup3"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~move_mount"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsopen"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsconfig"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsmount"
+   },
+   {
+    "reason": "pivot_root needs a prepared new root filesystem and its own mount namespace, and it changes the root of the process that calls it. Driving it means building a second root inside the guest, which is the kernel-entry arc's lab work rather than this instrument's. The row's assertion exists; its ABI leg is unproven, declared.",
+    "row_id": "files.pivot_root"
+   },
+   {
+    "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.splice~tee"
+   },
+   {
+    "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.splice~vmsplice"
+   },
+   {
+    "reason": "Neither call has a stdlib or libc-wrapper binding, and both take structured arguments (struct mount_attr, OPEN_TREE_CLONE) that a raw binding would have to lay out by hand. Not built this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+    "row_id": "files.mount_setattr"
+   },
+   {
+    "reason": "generated variant of files.mount_setattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount_setattr~open_tree"
+   }
+  ],
+  "active_unprobed": [
+   {
+    "reason": "driven inside files.open's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.open~openat"
+   },
+   {
+    "reason": "generated variant of files.open (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.open~openat2"
+   },
+   {
+    "reason": "driven inside files.read's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.read~pread64"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~readv"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~preadv"
+   },
+   {
+    "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.read~preadv2"
+   },
+   {
+    "reason": "driven inside files.write's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.write~pwrite64"
+   },
+   {
+    "reason": "driven inside files.write's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.write~writev"
+   },
+   {
+    "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.write~pwritev"
+   },
+   {
+    "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.write~pwritev2"
+   },
+   {
+    "reason": "generated variant of files.lseek (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.lseek~llseek"
+   },
+   {
+    "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.stat~lstat"
+   },
+   {
+    "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.stat~fstat"
+   },
+   {
+    "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.stat~fstatat"
+   },
+   {
+    "reason": "generated variant of files.stat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.stat~statx"
+   },
+   {
+    "reason": "driven inside files.statfs's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.statfs~fstatfs"
+   },
+   {
+    "reason": "driven inside files.access's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.access~faccessat"
+   },
+   {
+    "reason": "generated variant of files.access (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.access~faccessat2"
+   },
+   {
+    "reason": "driven inside files.link's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.link~linkat"
+   },
+   {
+    "reason": "driven inside files.symlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.symlink~symlinkat"
+   },
+   {
+    "reason": "driven inside files.unlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.unlink~unlinkat"
+   },
+   {
+    "reason": "driven inside files.rename's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.rename~renameat"
+   },
+   {
+    "reason": "generated variant of files.rename (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.rename~renameat2"
+   },
+   {
+    "reason": "driven inside files.mkdir's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.mkdir~mkdirat"
+   },
+   {
+    "reason": "generated variant of files.mknod (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mknod~mknodat"
+   },
+   {
+    "reason": "driven inside files.truncate's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.truncate~ftruncate"
+   },
+   {
+    "reason": "driven inside files.chmod's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.chmod~fchmod"
+   },
+   {
+    "reason": "driven inside files.chmod's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.chmod~fchmodat"
+   },
+   {
+    "reason": "driven inside files.chown's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.chown~fchown"
+   },
+   {
+    "reason": "driven inside files.chown's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.chown~lchown"
+   },
+   {
+    "reason": "generated variant of files.chown (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.chown~fchownat"
+   },
+   {
+    "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.utimensat~futimesat"
+   },
+   {
+    "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.utimensat~utime"
+   },
+   {
+    "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.xattr~getxattr"
+   },
+   {
+    "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.xattr~listxattr"
+   },
+   {
+    "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.xattr~removexattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fsetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lsetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fgetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lgetxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~flistxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~llistxattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~fremovexattr"
+   },
+   {
+    "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.xattr~lremovexattr"
+   },
+   {
+    "reason": "driven inside files.fsync's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.fsync~fdatasync"
+   },
+   {
+    "reason": "generated variant of files.sync (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.sync~syncfs"
+   },
+   {
+    "reason": "A write lease requires the descriptor to be the file's only opener, which the harness cannot guarantee in a shared scratch tree, and F_NOTIFY is the superseded predecessor of inotify whose delivery is a signal rather than a return value. Neither is driven this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+    "row_id": "files.fcntl.lease"
+   },
+   {
+    "reason": "driven inside files.dup's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.dup~dup2"
+   },
+   {
+    "reason": "generated variant of files.dup (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.dup~dup3"
+   },
+   {
+    "reason": "driven inside files.getdents's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.getdents~getdents64"
+   },
+   {
+    "reason": "driven inside files.readlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.readlink~readlinkat"
+   },
+   {
+    "reason": "driven inside files.chdir's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.chdir~fchdir"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~move_mount"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsopen"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsconfig"
+   },
+   {
+    "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount~fsmount"
+   },
+   {
+    "reason": "driven inside files.umount's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+    "row_id": "files.umount~umount2"
+   },
+   {
+    "reason": "pivot_root needs a prepared new root filesystem and its own mount namespace, and it changes the root of the process that calls it. Driving it means building a second root inside the guest, which is the kernel-entry arc's lab work rather than this instrument's. The row's assertion exists; its ABI leg is unproven, declared.",
+    "row_id": "files.pivot_root"
+   },
+   {
+    "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.splice~tee"
+   },
+   {
+    "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.splice~vmsplice"
+   },
+   {
+    "reason": "Neither call has a stdlib or libc-wrapper binding, and both take structured arguments (struct mount_attr, OPEN_TREE_CLONE) that a raw binding would have to lay out by hand. Not built this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+    "row_id": "files.mount_setattr"
+   },
+   {
+    "reason": "generated variant of files.mount_setattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+    "row_id": "files.mount_setattr~open_tree"
+   }
+  ],
+  "by_group": {
+   "06-files": {
+    "activates_at": "EP-25",
+    "active": 102,
+    "probed": 40,
+    "total": 102
+   }
+  },
+  "disputed": [
+   "files.xattr",
+   "files.xattr~getxattr",
+   "files.xattr~listxattr",
+   "files.xattr~removexattr",
+   "files.xattr~fsetxattr",
+   "files.xattr~lsetxattr",
+   "files.xattr~fgetxattr",
+   "files.xattr~lgetxattr",
+   "files.xattr~flistxattr",
+   "files.xattr~llistxattr",
+   "files.xattr~fremovexattr",
+   "files.xattr~lremovexattr"
+  ],
+  "primaries": 43,
+  "probe_limits": {
+   "files.access": [
+    "access(2) reports through its boolean return, not errno, so \u00a711.1 has nothing to compare on this row; the boolean IS the ABI answer.",
+    "Running as root makes every access() answer true; the row is meaningful only on an unprivileged pass and is skipped on a root pass."
+   ],
+   "files.access~faccessat": [
+    "access(2) reports through its boolean return, not errno, so \u00a711.1 has nothing to compare on this row; the boolean IS the ABI answer.",
+    "Running as root makes every access() answer true; the row is meaningful only on an unprivileged pass and is skipped on a root pass."
+   ],
+   "files.access~faccessat2": [
+    "access(2) reports through its boolean return, not errno, so \u00a711.1 has nothing to compare on this row; the boolean IS the ABI answer.",
+    "Running as root makes every access() answer true; the row is meaningful only on an unprivileged pass and is skipped on a root pass."
+   ],
+   "files.chmod": [
+    "EPERM on a non-owned file needs a file owned by another user inside the scratch tree; the harness creates none and does not reach outside its scratch tree to find one, so that errno is not driven."
+   ],
+   "files.chmod~fchmod": [
+    "EPERM on a non-owned file needs a file owned by another user inside the scratch tree; the harness creates none and does not reach outside its scratch tree to find one, so that errno is not driven."
+   ],
+   "files.chmod~fchmodat": [
+    "EPERM on a non-owned file needs a file owned by another user inside the scratch tree; the harness creates none and does not reach outside its scratch tree to find one, so that errno is not driven."
+   ],
+   "files.chown": [
+    "The set-uid-bit-clear side effect needs a successful change of the USER, which needs root; it is not driven on the unprivileged pass.",
+    "fchownat has no separate stdlib binding beyond the dir_fd form and is not separately driven.",
+    "These steps set the group to gid 4 (adm), which the caller must be a MEMBER of for an unprivileged ownership change to be lawful \u2014 a property of the environment a capture runs in, not of the filesystem. A target whose user is not in that group answers EPERM where these captures answer 0, and \u00a711.2a makes that a finding about this ROW rather than about the target. Named here because the row previously drove chown(-1,-1), which changes nothing: the kernel sends no SETATTR, the filesystem is never called, and the row's recording assertion was untestable (design/10 \u00a711.1d; EP-25 ADDENDUM 9 C3)."
+   ],
+   "files.chown~fchown": [
+    "The set-uid-bit-clear side effect needs a successful change of the USER, which needs root; it is not driven on the unprivileged pass.",
+    "fchownat has no separate stdlib binding beyond the dir_fd form and is not separately driven.",
+    "These steps set the group to gid 4 (adm), which the caller must be a MEMBER of for an unprivileged ownership change to be lawful \u2014 a property of the environment a capture runs in, not of the filesystem. A target whose user is not in that group answers EPERM where these captures answer 0, and \u00a711.2a makes that a finding about this ROW rather than about the target. Named here because the row previously drove chown(-1,-1), which changes nothing: the kernel sends no SETATTR, the filesystem is never called, and the row's recording assertion was untestable (design/10 \u00a711.1d; EP-25 ADDENDUM 9 C3)."
+   ],
+   "files.chown~fchownat": [
+    "The set-uid-bit-clear side effect needs a successful change of the USER, which needs root; it is not driven on the unprivileged pass.",
+    "fchownat has no separate stdlib binding beyond the dir_fd form and is not separately driven.",
+    "These steps set the group to gid 4 (adm), which the caller must be a MEMBER of for an unprivileged ownership change to be lawful \u2014 a property of the environment a capture runs in, not of the filesystem. A target whose user is not in that group answers EPERM where these captures answer 0, and \u00a711.2a makes that a finding about this ROW rather than about the target. Named here because the row previously drove chown(-1,-1), which changes nothing: the kernel sends no SETATTR, the filesystem is never called, and the row's recording assertion was untestable (design/10 \u00a711.1d; EP-25 ADDENDUM 9 C3)."
+   ],
+   "files.chown~lchown": [
+    "The set-uid-bit-clear side effect needs a successful change of the USER, which needs root; it is not driven on the unprivileged pass.",
+    "fchownat has no separate stdlib binding beyond the dir_fd form and is not separately driven.",
+    "These steps set the group to gid 4 (adm), which the caller must be a MEMBER of for an unprivileged ownership change to be lawful \u2014 a property of the environment a capture runs in, not of the filesystem. A target whose user is not in that group answers EPERM where these captures answer 0, and \u00a711.2a makes that a finding about this ROW rather than about the target. Named here because the row previously drove chown(-1,-1), which changes nothing: the kernel sends no SETATTR, the filesystem is never called, and the row's recording assertion was untestable (design/10 \u00a711.1d; EP-25 ADDENDUM 9 C3)."
+   ],
+   "files.chroot": [
+    "The successful confinement path needs root; on an unprivileged pass the observation is the EPERM the map's own note names. The row's root pass is not built this EP because a successful chroot inside a shared probe process is a confinement the harness would then have to escape.",
+    "The row carries no outcome_class and must not gain one. Under design/10 \u00a711.1f it stops expecting a record at all rather than expecting a differently-classed one: declaring NOT-GOVERNED would turn the row green and break the synthetic control fixture, because the fixture produces what the row declares. Reclassifying the row is the amendment; declaring an outcome on an unamended row would have been a way of hiding it (design/10 \u00a711.1f; EP-25 ADDENDUM 10 D1).",
+    "What would refute this amendment, stated so a later round can check it cheaply (design/10 \u00a711.1f): if any filesystem interface does receive a root-change notification, the row belongs back in the files group as DECISION and this class is wrong."
+   ],
+   "files.creat": [
+    "creat(2) is driven through its documented equivalent open(2) flag set, which is what the map's own note says it is; the legacy entry point itself is not separately bound."
+   ],
+   "files.dup": [
+    "dup3's O_CLOEXEC form has no stdlib binding; it rides `dup2` unproven."
+   ],
+   "files.dup~dup2": [
+    "dup3's O_CLOEXEC form has no stdlib binding; it rides `dup2` unproven."
+   ],
+   "files.dup~dup3": [
+    "dup3's O_CLOEXEC form has no stdlib binding; it rides `dup2` unproven."
+   ],
+   "files.fallocate": [
+    "The binding is posix_fallocate(3), which is mode-0 allocation only; FALLOC_FL_PUNCH_HOLE, _ZERO_RANGE and _COLLAPSE_RANGE have no stdlib binding and are not driven.",
+    "ENOSPC needs a full filesystem and is not driven."
+   ],
+   "files.fcntl.setlk": [
+    "EDEADLK needs a deadlock cycle across processes and is not driven.",
+    "F_SETLKW's blocking path is a wait, and \u00a711.6 puts timing out of contract; only the non-blocking refusal is driven."
+   ],
+   "files.fsync": [
+    "EIO on flush failure needs a failing device and is not driven."
+   ],
+   "files.fsync~fdatasync": [
+    "EIO on flush failure needs a failing device and is not driven."
+   ],
+   "files.getcwd": [
+    "Only the final path component is observed: the absolute path contains the scratch root, which differs per target and per run and is therefore a dynamic byte (\u00a711.3)."
+   ],
+   "files.getdents": [
+    "Entry ORDER is not asserted: the map promises the d_type semantics and the entry set, and no filesystem promises a directory's on-disk order. The observation is sorted before comparison, which is the guarantee's level (\u00a711.2)."
+   ],
+   "files.getdents~getdents64": [
+    "Entry ORDER is not asserted: the map promises the d_type semantics and the entry set, and no filesystem promises a directory's on-disk order. The observation is sorted before comparison, which is the guarantee's level (\u00a711.2)."
+   ],
+   "files.link": [
+    "EXDEV needs two filesystems in one scratch tree and EMLINK needs the link-count ceiling; neither is driven."
+   ],
+   "files.link~linkat": [
+    "EXDEV needs two filesystems in one scratch tree and EMLINK needs the link-count ceiling; neither is driven."
+   ],
+   "files.mknod": [
+    "mknodat has no stdlib binding; it rides `mknod` unproven.",
+    "The successful device-node path needs root; the unprivileged EPERM path is what the map's note names and is what is driven."
+   ],
+   "files.mknod~mknodat": [
+    "mknodat has no stdlib binding; it rides `mknod` unproven.",
+    "The successful device-node path needs root; the unprivileged EPERM path is what the map's note names and is what is driven."
+   ],
+   "files.mount": [
+    "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+    "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+   ],
+   "files.mount~fsconfig": [
+    "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+    "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+   ],
+   "files.mount~fsmount": [
+    "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+    "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+   ],
+   "files.mount~fsopen": [
+    "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+    "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+   ],
+   "files.mount~move_mount": [
+    "move_mount and the fsopen/fsconfig/fsmount family have no binding built this EP; they ride `mount` unproven.",
+    "The MS_* flag matrix (MS_RDONLY, MS_BIND, MS_REC) is not driven: the row's purpose here is the LAW-class assertion and the privileged/unprivileged errno split."
+   ],
+   "files.open": [
+    "openat2 (and its open_how struct, including RESOLVE_* flags) has no stdlib binding; it rides `open` unproven.",
+    "O_NONBLOCK on a FIFO is exercised by files.mknod, not here."
+   ],
+   "files.open~openat": [
+    "openat2 (and its open_how struct, including RESOLVE_* flags) has no stdlib binding; it rides `open` unproven.",
+    "O_NONBLOCK on a FIFO is exercised by files.mknod, not here."
+   ],
+   "files.open~openat2": [
+    "openat2 (and its open_how struct, including RESOLVE_* flags) has no stdlib binding; it rides `open` unproven.",
+    "O_NONBLOCK on a FIFO is exercised by files.mknod, not here."
+   ],
+   "files.read": [
+    "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+    "readv/preadv are not separately bound; they ride `read` unproven."
+   ],
+   "files.read~pread64": [
+    "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+    "readv/preadv are not separately bound; they ride `read` unproven."
+   ],
+   "files.read~preadv": [
+    "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+    "readv/preadv are not separately bound; they ride `read` unproven."
+   ],
+   "files.read~preadv2": [
+    "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+    "readv/preadv are not separately bound; they ride `read` unproven."
+   ],
+   "files.read~readv": [
+    "EAGAIN and EINTR are timing-dependent arrival conditions; \u00a711.6 puts timing out of contract and they are not driven.",
+    "readv/preadv are not separately bound; they ride `read` unproven."
+   ],
+   "files.rename": [
+    "renameat2's RENAME_NOREPLACE and RENAME_EXCHANGE have no stdlib binding; they ride `rename` unproven.",
+    "EXDEV needs two filesystems in one scratch tree and is not driven."
+   ],
+   "files.rename~renameat": [
+    "renameat2's RENAME_NOREPLACE and RENAME_EXCHANGE have no stdlib binding; they ride `rename` unproven.",
+    "EXDEV needs two filesystems in one scratch tree and is not driven."
+   ],
+   "files.rename~renameat2": [
+    "renameat2's RENAME_NOREPLACE and RENAME_EXCHANGE have no stdlib binding; they ride `rename` unproven.",
+    "EXDEV needs two filesystems in one scratch tree and is not driven."
+   ],
+   "files.sendfile": [
+    "The socket destination is the comms group's population and is driven there, not here."
+   ],
+   "files.splice": [
+    "tee and vmsplice have no stdlib binding; they ride `splice` unproven.",
+    "The SPLICE_F_* flag set is not driven."
+   ],
+   "files.splice~tee": [
+    "tee and vmsplice have no stdlib binding; they ride `splice` unproven.",
+    "The SPLICE_F_* flag set is not driven."
+   ],
+   "files.splice~vmsplice": [
+    "tee and vmsplice have no stdlib binding; they ride `splice` unproven.",
+    "The SPLICE_F_* flag set is not driven."
+   ],
+   "files.stat": [
+    "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+   ],
+   "files.statfs": [
+    "The binding is statvfs(3), the libc wrapper over statfs(2); the raw struct statfs field layout is not observed. Every field of both is a live figure of the target, so \u00a711.3 makes this shape-only either way."
+   ],
+   "files.statfs~fstatfs": [
+    "The binding is statvfs(3), the libc wrapper over statfs(2); the raw struct statfs field layout is not observed. Every field of both is a live figure of the target, so \u00a711.3 makes this shape-only either way."
+   ],
+   "files.stat~fstat": [
+    "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+   ],
+   "files.stat~fstatat": [
+    "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+   ],
+   "files.stat~lstat": [
+    "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+   ],
+   "files.stat~statx": [
+    "statx has no stdlib binding; its extended mask (btime, attributes) rides `stat` unproven."
+   ],
+   "files.sync": [
+    "syncfs has no stdlib binding; it rides `sync` unproven."
+   ],
+   "files.sync~syncfs": [
+    "syncfs has no stdlib binding; it rides `sync` unproven."
+   ],
+   "files.truncate": [
+    "EFBIG needs the filesystem's maximum file size and is not driven."
+   ],
+   "files.truncate~ftruncate": [
+    "EFBIG needs the filesystem's maximum file size and is not driven."
+   ],
+   "files.umount": [
+    "MNT_FORCE and MNT_DETACH are not driven; the row drives the plain detach, the not-a-mountpoint errno, and the busy case."
+   ],
+   "files.umount~umount2": [
+    "MNT_FORCE and MNT_DETACH are not driven; the row drives the plain detach, the not-a-mountpoint errno, and the busy case."
+   ],
+   "files.utimensat": [
+    "UTIME_NOW and UTIME_OMIT are not expressible through the stdlib binding (which takes an explicit pair or None-for-now); the OMIT half is not driven."
+   ],
+   "files.utimensat~futimesat": [
+    "UTIME_NOW and UTIME_OMIT are not expressible through the stdlib binding (which takes an explicit pair or None-for-now); the OMIT half is not driven."
+   ],
+   "files.utimensat~utime": [
+    "UTIME_NOW and UTIME_OMIT are not expressible through the stdlib binding (which takes an explicit pair or None-for-now); the OMIT half is not driven."
+   ],
+   "files.write": [
+    "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+    "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+   ],
+   "files.write~pwrite64": [
+    "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+    "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+   ],
+   "files.write~pwritev": [
+    "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+    "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+   ],
+   "files.write~pwritev2": [
+    "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+    "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+   ],
+   "files.write~writev": [
+    "ENOSPC and EDQUOT need a full or quota-bound filesystem; they are not driven, and a target that cannot report them is not thereby conformant.",
+    "pwritev/pwritev2 are not separately bound; they ride `write` unproven."
+   ],
+   "files.xattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~fgetxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~flistxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~fremovexattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~fsetxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~getxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~lgetxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~listxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~llistxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~lremovexattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~lsetxattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ],
+   "files.xattr~removexattr": [
+    "The security.* and system.posix_acl_* namespaces are not written: they are permission-bearing and writing them needs privilege the unprivileged pass does not have."
+   ]
+  },
+  "root_probed": 2,
+  "rows_active": 102,
+  "rows_inactive": 0,
+  "rows_total": 102,
+  "variants": 59
+ },
+ "files": {
+  "06-files.json": {
+   "bytes": 54672,
+   "rows": 40,
+   "sha256": "abdb8c6d487c27315f32b0cfc5c9d01e60d191a2fca2845c70afced896025c8f"
+  }
+ },
+ "harness_version": "1",
+ "pinning_law": "design/36 K4: these captures are pinned artifacts. Verify mode reads them and never the live stock system. Re-capturing is a deliberate act with its own dated entry, never a side effect of running a verify.",
+ "root_pass_identity": null,
+ "skipped": [
+  {
+   "reason": "target 'host-local' declares no root capability; the privileged pass of this row is not captured here",
+   "row_id": "files.mount#root"
+  },
+  {
+   "reason": "target 'host-local' declares no root capability; the privileged pass of this row is not captured here",
+   "row_id": "files.umount#root"
+  },
+  {
+   "reason": "driven inside files.open's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.open~openat"
+  },
+  {
+   "reason": "generated variant of files.open (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.open~openat2"
+  },
+  {
+   "reason": "driven inside files.read's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.read~pread64"
+  },
+  {
+   "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.read~readv"
+  },
+  {
+   "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.read~preadv"
+  },
+  {
+   "reason": "generated variant of files.read (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.read~preadv2"
+  },
+  {
+   "reason": "driven inside files.write's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.write~pwrite64"
+  },
+  {
+   "reason": "driven inside files.write's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.write~writev"
+  },
+  {
+   "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.write~pwritev"
+  },
+  {
+   "reason": "generated variant of files.write (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.write~pwritev2"
+  },
+  {
+   "reason": "generated variant of files.lseek (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.lseek~llseek"
+  },
+  {
+   "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.stat~lstat"
+  },
+  {
+   "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.stat~fstat"
+  },
+  {
+   "reason": "driven inside files.stat's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.stat~fstatat"
+  },
+  {
+   "reason": "generated variant of files.stat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.stat~statx"
+  },
+  {
+   "reason": "driven inside files.statfs's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.statfs~fstatfs"
+  },
+  {
+   "reason": "driven inside files.access's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.access~faccessat"
+  },
+  {
+   "reason": "generated variant of files.access (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.access~faccessat2"
+  },
+  {
+   "reason": "driven inside files.link's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.link~linkat"
+  },
+  {
+   "reason": "driven inside files.symlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.symlink~symlinkat"
+  },
+  {
+   "reason": "driven inside files.unlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.unlink~unlinkat"
+  },
+  {
+   "reason": "driven inside files.rename's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.rename~renameat"
+  },
+  {
+   "reason": "generated variant of files.rename (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.rename~renameat2"
+  },
+  {
+   "reason": "driven inside files.mkdir's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.mkdir~mkdirat"
+  },
+  {
+   "reason": "generated variant of files.mknod (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mknod~mknodat"
+  },
+  {
+   "reason": "driven inside files.truncate's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.truncate~ftruncate"
+  },
+  {
+   "reason": "driven inside files.chmod's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.chmod~fchmod"
+  },
+  {
+   "reason": "driven inside files.chmod's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.chmod~fchmodat"
+  },
+  {
+   "reason": "driven inside files.chown's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.chown~fchown"
+  },
+  {
+   "reason": "driven inside files.chown's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.chown~lchown"
+  },
+  {
+   "reason": "generated variant of files.chown (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.chown~fchownat"
+  },
+  {
+   "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.utimensat~futimesat"
+  },
+  {
+   "reason": "generated variant of files.utimensat (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.utimensat~utime"
+  },
+  {
+   "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.xattr~getxattr"
+  },
+  {
+   "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.xattr~listxattr"
+  },
+  {
+   "reason": "driven inside files.xattr's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.xattr~removexattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~fsetxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~lsetxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~fgetxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~lgetxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~flistxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~llistxattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~fremovexattr"
+  },
+  {
+   "reason": "generated variant of files.xattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.xattr~lremovexattr"
+  },
+  {
+   "reason": "driven inside files.fsync's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.fsync~fdatasync"
+  },
+  {
+   "reason": "generated variant of files.sync (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.sync~syncfs"
+  },
+  {
+   "reason": "A write lease requires the descriptor to be the file's only opener, which the harness cannot guarantee in a shared scratch tree, and F_NOTIFY is the superseded predecessor of inotify whose delivery is a signal rather than a return value. Neither is driven this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+   "row_id": "files.fcntl.lease"
+  },
+  {
+   "reason": "driven inside files.dup's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.dup~dup2"
+  },
+  {
+   "reason": "generated variant of files.dup (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.dup~dup3"
+  },
+  {
+   "reason": "driven inside files.getdents's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.getdents~getdents64"
+  },
+  {
+   "reason": "driven inside files.readlink's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.readlink~readlinkat"
+  },
+  {
+   "reason": "driven inside files.chdir's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.chdir~fchdir"
+  },
+  {
+   "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mount~move_mount"
+  },
+  {
+   "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mount~fsopen"
+  },
+  {
+   "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mount~fsconfig"
+  },
+  {
+   "reason": "generated variant of files.mount (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mount~fsmount"
+  },
+  {
+   "reason": "driven inside files.umount's own step list rather than as a separate assertion: the call is exercised on every capture and verify, and a divergence from its primary WOULD be seen, but it has no observation of its own to compare.",
+   "row_id": "files.umount~umount2"
+  },
+  {
+   "reason": "pivot_root needs a prepared new root filesystem and its own mount namespace, and it changes the root of the process that calls it. Driving it means building a second root inside the guest, which is the kernel-entry arc's lab work rather than this instrument's. The row's assertion exists; its ABI leg is unproven, declared.",
+   "row_id": "files.pivot_root"
+  },
+  {
+   "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.splice~tee"
+  },
+  {
+   "reason": "generated variant of files.splice (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.splice~vmsplice"
+  },
+  {
+   "reason": "Neither call has a stdlib or libc-wrapper binding, and both take structured arguments (struct mount_attr, OPEN_TREE_CLONE) that a raw binding would have to lay out by hand. Not built this EP; the row's assertion exists and its ABI leg is unproven, declared.",
+   "row_id": "files.mount_setattr"
+  },
+  {
+   "reason": "generated variant of files.mount_setattr (design/10 \u00a712: variants ride their primary, same class, same note). It is not driven at all, so a divergence from the primary would not be seen \u2014 declared, not assumed.",
+   "row_id": "files.mount_setattr~open_tree"
+  }
+ ],
+ "target": "host-local",
+ "target_description": "The build host itself, unprivileged and local. It exists because the self-test's fixture targets run here, and a fixture judged against a baseline captured on a DIFFERENT kernel would be a two-variable experiment: a failure could be the fixture or the kernel difference. This baseline holds the kernel difference still. It declares no root capability \u2014 nothing here starts services or raises privilege on the owner's machine \u2014 so every root-pass row is skipped with that reason recorded in the manifest.",
+ "target_identity": {
+  "euid_is_root": false,
+  "probe_version": "1",
+  "python": "3.12.3",
+  "uname": {
+   "machine": "x86_64",
+   "release": "7.0.0-28-generic",
+   "sysname": "Linux",
+   "version": "#28~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Jul  1 15:50:57 UTC 2"
+  }
+ },
+ "target_kind": "stock"
+}
