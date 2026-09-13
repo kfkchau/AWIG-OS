@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "name": "gov-os base view tree",
+    "status": "v1, 2026-07-15, owner-ruled in session; structured form of design/25-VIEW-TREE.md",
+    "rulings": [
+      "two definitive stores only: event store, item store; relationship is derived",
+      "numbering = derivation: each child is its parent plus exactly one move (filter, product, split)",
+      "parentage is not exclusive; the tree shows primary deriving logic",
+      "active-only from depth: [a] views hold current state; history/asOf = once-off queries, never nodes",
+      "functional necessity only: everything else is a custom view created through the view req view",
+      "dos = must-happen (condition -> system makes it happen); donts = must-not-happen (condition -> system prevents)",
+      "may is NOT a rule class: it is the residual computed per call; permission/sight/authority/due/wake/consistency are LIVE CHECKS, never stored views",
+      "default-deny = the root donts (no authorising chain -> no act); grants create the chain that un-matches the root dont"
+    ]
+  },
+  "stores": [
+    { "id": "1", "name": "event store", "note": "definitive; every assertion, prescriptive or not; append-only" },
+    { "id": "2", "name": "item store", "note": "definitive; versioned nouns; address = item_id x record_time; content bytes by hash" }
+  ],
+  "views": [
+    { "id": "1.1", "name": "req view", "active": false, "derives_from": ["1"], "via": "filter: prescriptive events, all lifecycle states", "note": "drafts, active, retired, remembered; lifecycle slices are once-off" },
+    { "id": "1.1.1", "name": "active req view", "active": true, "derives_from": ["1.1"], "via": "filter: put in power, not retired", "note": "the law in force now" },
+    { "id": "1.1.1.1", "name": "active dos view", "active": true, "derives_from": ["1.1.1"], "via": "split: positive polarity", "note": "must-happen; condition -> system makes it happen; timers, handlers, udev-style bindings, routing all live here" },
+    { "id": "1.1.1.1.1", "name": "compliance view", "active": true, "derives_from": ["1.1.1.1", "2.2.1"], "via": "product: actor x active dos", "note": "who is bound by what, now" },
+    { "id": "1.1.1.1.1.1", "name": "local duty profile", "active": true, "derives_from": ["1.1.1.1.1"], "via": "filter: one specific actor", "note": "one actor's standing obligations; per-actor prefilter surface" },
+    { "id": "1.1.1.2", "name": "active donts view", "active": true, "derives_from": ["1.1.1"], "via": "split: negative polarity", "note": "must-not-happen; includes root donts (default-deny); firewall, seccomp-style filters, locks, protection bits, rlimits all live here" },
+    { "id": "1.1.1.3", "name": "view req view", "active": true, "derives_from": ["1.1.1"], "via": "filter: reqs whose object is a view", "note": "the meta-view: dictates creation, refresh, broadcast of every custom view" },
+    { "id": "1.2", "name": "activity log view", "active": false, "derives_from": ["1"], "via": "filter: non-prescriptive events", "note": "the happenings; the log itself is the store; slices are once-off" },
+    { "id": "1.2.1", "name": "governance activity log view", "active": true, "derives_from": ["1.2"], "via": "filter: rule-citing acts", "note": "decisions, grants, refusals, amendments; the audit spine" },
+    { "id": "1.2.2", "name": "wait/wake view", "active": true, "derives_from": ["1.2"], "via": "fold: block events minus wake events", "note": "who is blocked on which condition; live check wake() matches arrivals against it" },
+    { "id": "2.1", "name": "action view", "active": true, "derives_from": ["2"], "via": "filter: verb items registered, not retired", "note": "the registry IS this view; unregistered = does not exist" },
+    { "id": "2.2", "name": "resource view", "active": true, "derives_from": ["2"], "via": "filter: actable-on items", "note": "actor-inclusive" },
+    { "id": "2.2.1", "name": "actor view", "active": true, "derives_from": ["2.2"], "via": "filter: items that can act", "note": "class = S/U position, nothing else" },
+    { "id": "2.2.1.1", "name": "system actors", "active": true, "derives_from": ["2.2.1"], "via": "split: pure S", "note": "deterministic, same for all; tags: subsystem, device, process" },
+    { "id": "2.2.1.2", "name": "human actors", "active": true, "derives_from": ["2.2.1"], "via": "split: S and U", "note": "owner, admins, users" },
+    { "id": "2.2.1.3", "name": "agentic actors", "active": true, "derives_from": ["2.2.1"], "via": "split: U only", "note": "tiered: org as a whole, each bot; pwc lives here" },
+    { "id": "2.2.2", "name": "system information view", "active": true, "derives_from": ["2.2"], "via": "filter: information about information", "note": "the info-architecture layer" },
+    { "id": "2.2.2.1", "name": "information space view", "active": true, "derives_from": ["2.2.2"], "via": "filter: container territories", "note": "what permissions attach to; spaces nest" },
+    { "id": "2.2.2.1.1", "name": "permanent space", "active": true, "derives_from": ["2.2.2.1"], "via": "split: survives power-off", "note": "disk-backed" },
+    { "id": "2.2.2.1.2", "name": "non-permanent space", "active": true, "derives_from": ["2.2.2.1"], "via": "split: volatile", "note": "ram, transient; persistence is the ONLY intrinsic space dimension" },
+    { "id": "2.2.2.2", "name": "information scope item view", "active": true, "derives_from": ["2.2.2"], "via": "filter: named housings", "note": "content never sits bare in a space" },
+    { "id": "2.2.2.2.1", "name": "view list view", "active": true, "derives_from": ["2.2.2.2"], "via": "filter: view-definition items", "note": "a view is itself a scope item" },
+    { "id": "2.2.2.2.2", "name": "content-housing item", "active": true, "derives_from": ["2.2.2.2"], "via": "filter: houses content", "note": "file and memory region unified; which it is derives from its space's persistence" },
+    { "id": "2.2.2.2.3", "name": "system policy/rule item", "active": true, "derives_from": ["2.2.2.2"], "via": "filter: named req banners", "note": "req events attach by reference; e.g. usb-port-blocking policy" },
+    { "id": "2.2.2.3", "name": "information content item view", "active": true, "derives_from": ["2.2.2"], "via": "filter: the actual bytes", "note": "hash addressing is store mechanism; as-of-T is a once-off query" },
+    { "id": "2.2.3", "name": "tunnel item view", "active": true, "derives_from": ["2.2"], "via": "filter: valid message paths", "note": "endpoints are relations; payloads are content items" },
+    { "id": "3", "name": "relationship view", "active": true, "derives_from": ["1"], "via": "projection: slot pairs from events, frame-scoped", "note": "derived master graph; regenerable; never asserted, never stored transitively" },
+    { "id": "3.1", "name": "parent-child view", "active": true, "derives_from": ["3"], "via": "split: containment family (nested/embedded)", "note": "chained, walkable; frames give space tree, paths, custody, policy composition, authority lineage" },
+    { "id": "3.2", "name": "contact view", "active": true, "derives_from": ["3"], "via": "split: touching/overlapping family (adjacent/intersecting)", "note": "frames give shared regions, channel topology, conflict surfaces; distance-beyond-one is once-off" }
+  ],
+  "live_checks": [
+    { "name": "permission(actor, action, object, target)", "consults": ["1.1.1.1", "1.1.1.2", "3.1"], "returns": "compelled | blocked | free-to-choose", "note": "the may-space computed per call; a do matching = compelled; a dont matching (incl. root donts, unless an authorising chain exists) = blocked; else free" },
+    { "name": "sight(actor, item)", "consults": ["1.1.1.2", "3.1"], "returns": "readable | not-readable", "note": "permission specialised to reading; feeds provenance; sight binds action" },
+    { "name": "authority(actor, amendment)", "consults": ["1.2.1", "3.1"], "returns": "chain | no-chain", "note": "walk grant events to founding grounds, live, at amendment time" },
+    { "name": "due(now-state)", "consults": ["1.1.1.1"], "returns": "the firing list", "note": "which dos' conditions are hit; the only reason anything ever fires" },
+    { "name": "wake(arrival)", "consults": ["1.2.2"], "returns": "actors to wake", "note": "match one arrival against the blocked set" },
+    { "name": "consistency(proposed-req)", "consults": ["1.1.1"], "returns": "clean | contradiction", "note": "same frame, same scope, at CREATE-RULE time" }
+  ],
+  "tiers": {
+    "1_base": "the tree above; permanent, workered, [a] = active content",
+    "2_working": "hot products composed from base, cached ephemerally, no governance machinery on the hot path: runnable set, memory map, path resolution, bindings, channel topology, headroom",
+    "3_custom": "everything else (audit dashboards, metabolism, history cuts, domain slices); created only through the view req view; permanent only if a req says so"
+  }
+}
