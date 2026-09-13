@@ -77,11 +77,13 @@ The ones that matter most, in plain words:
 - A handover removed the content before the rulebook had decided whether the handover was allowed. Now the decision comes first, is written down, and only then does the content leave.
 - A write the rulebook refused could still be read back through the mounted filesystem for as long as the operating system kept a copy of it. The mount now sends every read to the record instead of keeping a copy. That has a price, and the price is real: a program that maps a file into memory for shared writing is refused by the operating system; a program that writes and reads through two open handles before saving sees what was last saved, not its own unsaved write; and a second program reading a file after another program's refused write sees what was last saved, never the refused bytes. We measured all three on a real mount and kept the measurements.
 - A permission that a later rule had overturned still counted when a new action asked for it. One check now decides what is still in force, and every part of the program that grants or holds something asks it.
-- Two copies of the program could open the same record at once and each write the same entry number. The record now takes one writer at a time.
+- Two copies of the program could open the same record at once and each write the same entry number. The record was given a one-writer rule. A third round, below, found that rule could still be beaten. The repair is made in the private repository and ships at the next release; the code in this copy still checks a process-id file.
 - Stored content was trusted by its name and not by its bytes. It is now checked against its bytes each time, and a missing item is refused rather than served as an empty file.
 - A file created on the mount was written down as belonging to the administrator, whatever account created it. It is now written down as belonging to the account that created it.
 
 The rest are smaller and are listed, one line each, with their repair, in the private repository's build record. The repairs are in this code, with the tests that prove them.
+
+On 13 September I ran a third round, the same way, on this public copy. It found four things. The one-writer rule above could be beaten by racing real processes, so two writers got in. A half-written last line in the record stopped the program from opening instead of being set aside. A value the record could not write down came back as an error instead of a refusal, and left the record refusing everything after it. And the shipped test runner would have passed an empty test folder. All four are repaired and tested in the private repository and ship at the next release. Until then this copy carries them, and this page says so.
 
 ## What you can and cannot check from here
 
