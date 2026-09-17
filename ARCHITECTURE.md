@@ -14,6 +14,10 @@ A defect in a mechanism is not a defect in its contract, and the pages say which
 
 The fence and the two openings. An agent behind a fence holds one permission set for a session and acts directly on everything inside it; the known failure is a document that turns the agent, and the fence has no answer because the agent's act is its own. Here an AI organisation is an entity with two watched openings, the demand side and the supply side. A turned document arrives on the demand side. Whatever the organisation then wants arrives on the supply side as a proposal the gate decides against the rulebook, and taking data out needs a grant that was never made, so the proposal comes back as a refusal row citing the rule. What this bounds is the damage, to the grant set; a turned organisation with a grant can misuse the grant. The border that makes an outside submission a draft the gate decides is built and proven in test worlds between a host and a guest (design 49, `bridge/`); the organisation between the openings is a stand-in pack today (design 51, EP-51).
 
+## 0a. What the rules cannot change
+
+Every act crosses the gate, and the rules decide it. Two kinds of row do not cross the gate, and they are named here so that "one gate" is read exactly. The first are the founding rows, written when a system is born: the gate cannot decide its own birth. The second is the gate's own copy of each decision it has just made: writing down what it did is not a new act. Both are named in the code where they happen. Below the rules there is also a floor the rules do not reach: how a row is written and that no row is ever changed or removed; how each row names the one before it; how the gate itself proceeds, a refusal written before it is raised; which rules are fixed at the founding and cannot be amended; and how the rows are turned into views. A rule can govern any act. A rule cannot change what a row is.
+
 ## 1. Five architectural commitments
 
 **Everything as information.**
@@ -33,15 +37,17 @@ The AI organisation is inspectable from outside and structurally bounded from in
 
 AWIG OS does not prescribe what your rules should say. It guarantees how rules exist: one format, legible, executable, traceable.
 
-## 2. Build method: reference model first
+## 2. Build method: reference model first, then a kernel of our own
 
-AWIG OS is being rebuilt layer by layer from a running reference model, in the verified-kernel tradition: an executable specification first, with the production implementation written and checked against it.
+The order of work is fixed: the governing layer first, as a running reference model in Python, so that the record, the gate, the rules and the views run and are tested before any kernel exists beneath them; then a kernel written from a blank page beneath a declared seam. The seam names twelve kinds of work. The kernel performs exactly those, and everything above the seam is unchanged. Programs above it see a Linux-compatible surface; the code beneath is ours, written from behaviour and interfaces, not from Linux source. "Linux" is a trademark of Linus Torvalds and is not claimed by this project.
 
-1. **Reference model.** A complete, running reimplementation of the original minimal Linux core (no device drivers in scope), implemented in Python. This is the executable specification. It defines the required behaviour the production core is checked against.
-2. **Layer-by-layer replacement.** Each layer of the reference core is replaced by the new governance-native core while the whole remains running and behaviour-verified against the model. Replace the heart while the robot keeps walking.
-3. **Behavioural compatibility.** The system preserves the syscall-level contract, so it is *Linux-compatible* to the programs above it while being independent code beneath.
+An earlier route, replacing a minimal Linux core subsystem by subsystem, is history and is marked as history in `design/16`. The route in force is `design/47` and `design/54`, and the design map at `design/README.md` says which is which.
 
-The result is a clean-room reimplementation: written from behaviour and interfaces, not translated from Linux source. It is Linux-compatible, not Linux. "Linux" is a trademark of Linus Torvalds and is not claimed by this project. The reference model is preserved permanently in the repository history as the project's lineage.
+The reference model is an executable specification in the sense that the kernel is tested against it, act for act. It is not a proof. Nothing here is formally verified; seL4 is the precedent for that and the bar this project has not reached.
+
+## 2a. Why a kernel of our own, and not a layer on seL4 or Linux
+
+The governing layer runs on Linux today, and a pilot runs it that way. It cannot be the whole answer. A kernel we did not write has its own doors to the disk, the network and the devices, and any program it runs can use them; our gate sees none of that. A program in a box with two doors has a third door the moment the box sits on someone else's kernel. The only way to close it is a kernel that opens nothing except through the gate. So the kernel beneath the seam is ours, and it does the twelve kinds of work and nothing else. seL4 is the nearest thing to it: small, authority held as capabilities, proofs of what it does. Its proofs are the bar. What it does not do is what we need beneath the gate: the record under every act, the border at the wire, custody of content, the two doors. That is why the kernel is written and not borrowed.
 
 ## 3. The theory it runs on
 
@@ -55,7 +61,7 @@ The first runnable milestone is deliberately minimal:
 
 > One rule executes in the standard format; one permission runs and leaves a verifiable trace; a third party can independently verify both.
 
-Everything else, the full rule engine, the AI organisation, the automation splitter, grows from that verified seed.
+Everything else, the full rule engine, the AI organisation, the automation splitter, grows from that seed, the one a stranger can run.
 
 ## 5. What ships, and the one warning
 
