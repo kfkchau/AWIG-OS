@@ -1,3 +1,5 @@
+<p align="center"><img src="./assets/awig-mark.png" alt="The AWIG OS mark: water branching down through green rice terraces from the roofs at the top" width="180"></p>
+
 # AWIG OS
 
 *An operating system that follows a thousand-year-old way of governing.*
