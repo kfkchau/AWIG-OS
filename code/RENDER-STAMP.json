@@ -1,11 +1,11 @@
 {
  "files": {
-  "../FREEZE.txt": "74795efdcbb29d7cb767c023003a1ecb35fabd650c5c6c9a46b7a6dc92de09f3",
+  "../FREEZE.txt": "1c322148c1e7d7806379306834e94223e0eb10821ccb95d6328d49d6ee059fe1",
   "../LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
   "../LICENSE-APACHE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
   "../LICENSE-DOCS": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
   "../LICENSING.md": "48045217e3b2d1b4644e615562f4921bc8047bcc03820bf405823b98895480a7",
-  "../README.md": "4c8ed32c283b62e45906bad98fddb471d2fe1ea53521b60d12eac8ad4c743118",
+  "../README.md": "ff0e353177db3a18a10291ed7896ae47a47d51d8a0b338df722e281a06d39fd2",
   "../check.py": "818d2f0bebb25de981d1b4dc6bade6f5597f09bd8511e6c716e6b79bff49d20e",
   "../seed_demo.py": "41e5c96a524378670d0228052942f640d9d08e31cc22a1186daed39cf96b3457",
   "body/ata.c": "99fbe7cc74fb33abcd7c35448a442a75c7b826a093a0d131382de86aeb8cf28c",
@@ -100,14 +100,14 @@
   "subsystems/scheduling.py": "738490756565d2cff48bd6b81034a9236a302b007dfbad1abab4d1148bb9612f",
   "subsystems/sockets.py": "15d03cd8629d4ee430eaa6ea6a7830bac98662d1ed7b67db6e6460d4da4ce36f"
  },
- "generated_utc": "2026-09-20T01:39:11Z",
+ "generated_utc": "2026-09-20T02:45:36Z",
  "product": "AWIG OS",
  "rendered_extras_from": {
-  "commit": "c7066950262880b7c985f0909bc0848fbb510ec1",
+  "commit": "6d5faf2c6dbcedaff325c020e55b03d34db76ea3",
   "repo": "the estate's src/ (private mirror)"
  },
  "rendered_from": {
-  "commit": "c7066950262880b7c985f0909bc0848fbb510ec1",
+  "commit": "6d5faf2c6dbcedaff325c020e55b03d34db76ea3",
   "founding_version": "1.55.0",
   "repo": "the estate's src/ (private mirror)"
  },
@@ -245,7 +245,7 @@
   "tests/test_ep28c_w4e_c.py": "6e5eb1ce9ae6505056e51dd72447bfafc39f0c2cb6b6e5c44128f6c1fa209194",
   "tests/test_ep28c_w4e_c2.py": "b7182befd8b2bba174e3e0fa813f5b345871ef06d1e1ad8d5b1fdbd1bf3ec300",
   "tests/test_ep28c_w4e_r.py": "48cc6bd6a5e86a3729b0ddff7457ee9180078edf619bb178d809a314d3bf4d55",
-  "tests/test_ep28c_w6.py": "f9df649c4433bd6034dae281d957da86017746c5404d4c355751ef5cc984ce16",
+  "tests/test_ep28c_w6.py": "51ed012c020ce3b7215528ce1122d01f37dd6efbfb427365a13fca77b4987727",
   "tests/test_ep28c_w7.py": "ea76b1b684dbda5fbb39b3fa766b548a689b7a6649294eee44f07d1b2d642710",
   "tests/test_ep28c_w8.py": "b38d8ea0ee5525c7a1b043d2da13e1cfeb4826e5c1fea27fb54c53fdb000e76c",
   "tests/test_ep28d.py": "68bfff73d8b125a8a1e23cbb998dd296e3ba4def9b4f12f9f06d6ef3c1315c50",
@@ -471,7 +471,7 @@
   "tools/postman/postman.py": "582d081f8bdda6bf522a62aabfae927ec2029036e597464a6f22e9a58f9d8002",
   "tools/postman/postman.service": "fea8577168f710cf3897d4ee7e81405f859ca08513c61116515425c181a41437",
   "tools/postman/test_postman.py": "39fbcb4db2fdd230f3805910e3b8b876dbed0972bfda66beae03b07edd11c846",
-  "tools/release/awig-code-README.md": "4c8ed32c283b62e45906bad98fddb471d2fe1ea53521b60d12eac8ad4c743118",
+  "tools/release/awig-code-README.md": "ff0e353177db3a18a10291ed7896ae47a47d51d8a0b338df722e281a06d39fd2",
   "tools/release/check.py": "f63c428e383b3dc79113782181a8a436fb576bb3a91411bdc7ca90f704e6468a",
   "tools/release/check_clean_from_cut.py": "8d84f424a601b312462d474b0b5834dcaa735e36f922310a090457801e9bae77",
   "tools/release/edition.py": "f0222cce861568a4ac3dc5a15d6cf4655151ed5f16f534fa06f27cf768ac9997",
@@ -494,7 +494,7 @@
  },
  "tree_checksums": {
   "src": "98a7af07662ead649fd2110db53f50ed4e8eed876cb14a705debe14ebebc7062",
-  "tests": "a7471e4562a27fe61f5924d212493d7c119186c635bb43df59cae947a384aa28",
-  "tools": "48205422c642eb7ad743e178b3e841e4bca42a6db35aebcb710e889705eee87f"
+  "tests": "fd9dde4053b8507d9209667d1d419f413299d09223a4cb32c5c6093ac3a5721f",
+  "tools": "f802084c57dd90a9937f5018f3130d067d513a91281e01b2d278c167e3d4e273"
  }
 }

@@ -6,7 +6,7 @@ What each public marker contains, in plain words. Every figure names the machine
 
 The first runnable piece, kept as a tag on the last commit that carried the `seed` folder. Two files and Python 3. One rule runs in the common format, one permission runs and leaves a record you can verify, and a stranger can check both. The folder has since been replaced by the fuller `code` folder below. Its history stays under this tag.
 
-## `c7-close`: our own kernel, rulebook version 1.55.0, 20 September 2026
+## `c7-close`: our own kernel, rulebook version 1.55.0, 20 September 2026 (4.1 the same day: a kernel section in `code/README.md`, and one chance-prone timing case skips itself by name)
 
 The `code` folder is replaced whole. The previous contents stay under the tag `c5-close`. Campaigns 6, 6a and 7 arrive together. What they added, in plain words:
 
