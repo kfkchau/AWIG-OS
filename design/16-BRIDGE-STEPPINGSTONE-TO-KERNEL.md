@@ -1,5 +1,6 @@
 <!-- gov-os provenance · FRAME: systems-architecture · CORPUS-CLASS: systems-architecture (seL4/POSIX/OS-textbook) · Vocabulary is OS-architecture per OS textbooks and the seL4/gVisor literature (kernel, syscall, capability, permission, memory protection). NON-GOAL: no offensive capability of any kind; defines record, gate, view, and kernel-conformance only. Full declaration: SCOPE-STATEMENT.md. -->
-<!-- doc: class=CANON status=FROZEN supersedes=- superseded-by=- verified=2026-07-24 -->
+<!-- doc: class=CANON status=SUPERSEDED-FOR-THE-ROUTE supersedes=- superseded-by=design/54-CAMPAIGN-7-SELF-HOSTING.md verified=2026-07-24 -->
+<!-- AS-BUILT 2026-09-13 (the architect, board :4177, on outside round three's contract question 3): THE ROUTE THIS PAPER DESCRIBES — replacing Linux subsystem by subsystem — IS SUPERSEDED. The active route is our own kernel written from a blank page beneath the seam (design/47 the seed, design/54 campaign 7, building since 2026-09-11). This paper stays as history of how the seam was reached; its 'current and load-bearing' line below is dated 2026-07-24 and no longer describes the route. The record management it describes is unchanged. -->
 # GOV-OS — The Bridge: from record-machine-as-program to record-kernel
 
 > **SUPERSESSION NOTE (2026-07-18 line-audit).** CURRENT AND LOAD-BEARING — nothing

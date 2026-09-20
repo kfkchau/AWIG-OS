@@ -1,0 +1,1071 @@
+{
+ "title": "gov-os ontology chain",
+ "provenance": "design/59-THE-ONTOLOGY-CHAIN.md, DRAFT-FOR-OWNER, 2026-09-16",
+ "terms": [
+  {
+   "id": "item",
+   "label": "item",
+   "from_": [],
+   "how": "primitive",
+   "section": "Part 1",
+   "note": "a clear scopeable thing"
+  },
+  {
+   "id": "time",
+   "label": "time",
+   "from_": [],
+   "how": "primitive",
+   "section": "Part 1",
+   "note": "passing"
+  },
+  {
+   "id": "comparison",
+   "label": "comparison",
+   "from_": [
+    "item"
+   ],
+   "how": "primitive act",
+   "section": "Part 1",
+   "note": "multi-item; the lens is inside it"
+  },
+  {
+   "id": "same",
+   "label": "same",
+   "from_": [
+    "comparison"
+   ],
+   "how": "split",
+   "section": "Part 1",
+   "note": "two items identical in one comparison"
+  },
+  {
+   "id": "different",
+   "label": "different",
+   "from_": [
+    "comparison"
+   ],
+   "how": "split",
+   "section": "Part 1",
+   "note": "two items not identical in one comparison"
+  },
+  {
+   "id": "change",
+   "label": "change",
+   "from_": [
+    "different",
+    "time"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "different of one item across time"
+  },
+  {
+   "id": "unchanged",
+   "label": "unchanged",
+   "from_": [
+    "same",
+    "time"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "same of one item across time"
+  },
+  {
+   "id": "transformation",
+   "label": "transformation",
+   "from_": [
+    "change"
+   ],
+   "how": "split",
+   "section": "Part 1",
+   "note": "change of what the item IS"
+  },
+  {
+   "id": "move",
+   "label": "move",
+   "from_": [
+    "change"
+   ],
+   "how": "split",
+   "section": "Part 1",
+   "note": "change of WHERE the item is: a place, or a holder's hands"
+  },
+  {
+   "id": "actor",
+   "label": "actor",
+   "from_": [
+    "item",
+    "change"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "item that is change driving"
+  },
+  {
+   "id": "non-actor",
+   "label": "non-actor",
+   "from_": [
+    "item",
+    "change"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "item that drives no change; can still undergo change"
+  },
+  {
+   "id": "physicalness",
+   "label": "physicalness",
+   "from_": [
+    "item"
+   ],
+   "how": "axis",
+   "section": "Part 1",
+   "note": "physical <-> virtual"
+  },
+  {
+   "id": "consumability",
+   "label": "consumability",
+   "from_": [
+    "item"
+   ],
+   "how": "axis",
+   "section": "Part 1",
+   "note": "consumable <-> non-consumable"
+  },
+  {
+   "id": "information",
+   "label": "information",
+   "from_": [
+    "physicalness",
+    "consumability"
+   ],
+   "how": "cell",
+   "section": "Part 1",
+   "note": "item in form virtual x non-consumable"
+  },
+  {
+   "id": "structurality",
+   "label": "structurality",
+   "from_": [
+    "information",
+    "comparison"
+   ],
+   "how": "axis",
+   "section": "Part 1",
+   "note": "structured <-> unstructured: how much of the reading is built into the item's own form"
+  },
+  {
+   "id": "activity",
+   "label": "activity",
+   "from_": [
+    "information",
+    "change",
+    "actor"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "information about change: actor, action, object, target (the row)"
+  },
+  {
+   "id": "observation",
+   "label": "observation",
+   "from_": [
+    "transformation",
+    "activity"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "transforming, sub-category creation, of activity (the pen)"
+  },
+  {
+   "id": "rule",
+   "label": "rule",
+   "from_": [
+    "information"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "information that is a requirement: should / should-not"
+  },
+  {
+   "id": "event",
+   "label": "event",
+   "from_": [
+    "activity"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "activity of happened"
+  },
+  {
+   "id": "draft",
+   "label": "draft",
+   "from_": [
+    "information",
+    "actor"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "information an actor created that awaits a decision; status derived later"
+  },
+  {
+   "id": "decision",
+   "label": "decision",
+   "from_": [
+    "activity",
+    "unchanged"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "activity that permanentises an information: changeable -> unchanged"
+  },
+  {
+   "id": "governance",
+   "label": "governance",
+   "from_": [
+    "activity",
+    "rule",
+    "actor"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "activity with a rule as object or target, by actors whose permission reaches rules"
+  },
+  {
+   "id": "compliance",
+   "label": "compliance / breach",
+   "from_": [
+    "same",
+    "different",
+    "event",
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 1",
+   "note": "same / different of an event and the rule it falls under"
+  },
+  {
+   "id": "judgment",
+   "label": "judgment",
+   "from_": [
+    "transformation",
+    "structurality",
+    "actor"
+   ],
+   "how": "=",
+   "section": "Part 2 S/U",
+   "note": "the transformation an actor performs on unstructured information to produce a reading"
+  },
+  {
+   "id": "cellS",
+   "label": "S",
+   "from_": [
+    "activity",
+    "structurality"
+   ],
+   "how": "cell",
+   "section": "Part 2 S/U",
+   "note": "input and output both structured"
+  },
+  {
+   "id": "cellU",
+   "label": "U",
+   "from_": [
+    "activity",
+    "judgment"
+   ],
+   "how": "cell",
+   "section": "Part 2 S/U",
+   "note": "input or output needs judgment"
+  },
+  {
+   "id": "cellUs",
+   "label": "U{s}",
+   "from_": [
+    "cellU",
+    "cellS"
+   ],
+   "how": "cell",
+   "section": "Part 2 S/U",
+   "note": "structured input handed to a judgment (template with slots)"
+  },
+  {
+   "id": "cellSu",
+   "label": "S{u}",
+   "from_": [
+    "cellU",
+    "cellS"
+   ],
+   "how": "cell",
+   "section": "Part 2 S/U",
+   "note": "a judgment's output caught in a structured shape (typed envelope)"
+  },
+  {
+   "id": "celllaw",
+   "label": "cell law",
+   "from_": [
+    "activity",
+    "cellS",
+    "cellU"
+   ],
+   "how": "rule",
+   "section": "Part 2 S/U",
+   "note": "every activity sits in exactly one cell, declared per operation"
+  },
+  {
+   "id": "actorclass",
+   "label": "actor class",
+   "from_": [
+    "actor",
+    "celllaw"
+   ],
+   "how": "derived",
+   "section": "Part 2 S/U",
+   "note": "program drives S only; ai drives U; human both; system = the actor at the border"
+  },
+  {
+   "id": "ceiling",
+   "label": "ceiling",
+   "from_": [
+    "rule",
+    "actorclass"
+   ],
+   "how": "=",
+   "section": "Part 2 S/U",
+   "note": "a rule that only shrinks what a class may be granted"
+  },
+  {
+   "id": "relationship",
+   "label": "relationship",
+   "from_": [
+    "comparison",
+    "item",
+    "activity"
+   ],
+   "how": "=",
+   "section": "Part 2 relations",
+   "note": "comparison of two items or two activities: part-of, standing beside, linked to, where in space"
+  },
+  {
+   "id": "geometry",
+   "label": "geometry (Venn2)",
+   "from_": [
+    "relationship",
+    "rule",
+    "time"
+   ],
+   "how": "=",
+   "section": "Part 2 relations",
+   "note": "UR unrelated, AD touching, IN overlapping, NS inside at the edge, EM inside at the core; a row, never a stored graph"
+  },
+  {
+   "id": "frame",
+   "label": "frame",
+   "from_": [
+    "rule",
+    "relationship"
+   ],
+   "how": "=",
+   "section": "Part 2 relations",
+   "note": "the rule a relation was created under; composition holds only within one frame"
+  },
+  {
+   "id": "tree",
+   "label": "tree",
+   "from_": [
+    "geometry"
+   ],
+   "how": "derived",
+   "section": "Part 2 relations",
+   "note": "closure over NS/EM rows in one frame; never stored"
+  },
+  {
+   "id": "occupancy",
+   "label": "occupancy",
+   "from_": [
+    "geometry",
+    "actor",
+    "tree"
+   ],
+   "how": "=",
+   "section": "Part 2 relations",
+   "note": "an AD relation instance between an actor and a place in a tree (the hat)"
+  },
+  {
+   "id": "authority",
+   "label": "authority",
+   "from_": [
+    "rule",
+    "occupancy"
+   ],
+   "how": "derived",
+   "section": "Part 2 relations",
+   "note": "a rule on roles plus two occupancies, computed; never a relation row"
+  },
+  {
+   "id": "rulecontent",
+   "label": "rule content",
+   "from_": [
+    "rule"
+   ],
+   "how": "axis",
+   "section": "Part 2 relations",
+   "note": "enforcement: scope x mechanism x source x strength; measurement: length x width x height"
+  },
+  {
+   "id": "envchange",
+   "label": "environment change",
+   "from_": [
+    "different",
+    "event",
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "different between the world's events and the assumptions a rule was made under"
+  },
+  {
+   "id": "monitoring",
+   "label": "monitoring",
+   "from_": [
+    "comparison",
+    "event"
+   ],
+   "how": "derived",
+   "section": "Part 2 OMGS",
+   "note": "the record plus what is derived over it, at any moment"
+  },
+  {
+   "id": "analysis",
+   "label": "analysis",
+   "from_": [
+    "information",
+    "actor",
+    "event"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "actors writing information rows about what the events show"
+  },
+  {
+   "id": "reporting",
+   "label": "reporting",
+   "from_": [
+    "draft",
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "a draft to change a rule, sent between actors"
+  },
+  {
+   "id": "announcement",
+   "label": "announcement",
+   "from_": [
+    "event",
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "the event that a rule now exists; at digital speed the record's order is the announcement"
+  },
+  {
+   "id": "communication",
+   "label": "communication",
+   "from_": [
+    "rule",
+    "structurality"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "the rule restated in a more unstructured form for a human reader"
+  },
+  {
+   "id": "enforcement",
+   "label": "enforcement",
+   "from_": [
+    "compliance",
+    "decision"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "events brought to same with the rule: the gate refusing, or a breach row"
+  },
+  {
+   "id": "legitimacy",
+   "label": "legitimacy",
+   "from_": [
+    "same",
+    "rule",
+    "actor"
+   ],
+   "how": "derived",
+   "section": "Part 2 OMGS",
+   "note": "sameness between what rules require and what their users accept"
+  },
+  {
+   "id": "metabolism",
+   "label": "metabolism",
+   "from_": [
+    "change",
+    "rule",
+    "time"
+   ],
+   "how": "derived",
+   "section": "Part 2 OMGS",
+   "note": "intake of rules against retirement across time"
+  },
+  {
+   "id": "metarule",
+   "label": "meta-rule",
+   "from_": [
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 2 OMGS",
+   "note": "a rule over the making of rules"
+  },
+  {
+   "id": "row",
+   "label": "row",
+   "from_": [
+    "activity",
+    "rule",
+    "time"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "one activity with its rule cited, its signature, its two times, the hash of the row before"
+  },
+  {
+   "id": "record",
+   "label": "record",
+   "from_": [
+    "observation",
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "every observation this body made, in one order, only ever added; the only definitive"
+  },
+  {
+   "id": "twotimes",
+   "label": "two times",
+   "from_": [
+    "decision",
+    "row",
+    "time"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "deciding time (legitimacy) + recording time (order); arrival never adjudicates"
+  },
+  {
+   "id": "gate",
+   "label": "gate",
+   "from_": [
+    "actor",
+    "draft",
+    "decision"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the one actor that turns a draft into a decision row; the only pen"
+  },
+  {
+   "id": "operation",
+   "label": "operation",
+   "from_": [
+    "activity",
+    "rule",
+    "celllaw"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a registered action shape: fields, checks, cell, rule cited; a definition row"
+  },
+  {
+   "id": "check",
+   "label": "check",
+   "from_": [
+    "comparison",
+    "gate"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a comparison the gate performs, from a closed vocabulary; an address: place x source x scope x combination"
+  },
+  {
+   "id": "polarity",
+   "label": "polarity",
+   "from_": [
+    "rule",
+    "gate"
+   ],
+   "how": "rule",
+   "section": "Part 2 gov-os",
+   "note": "match-permission only: what no rule grants is refused"
+  },
+  {
+   "id": "founding",
+   "label": "founding / constitution",
+   "from_": [
+    "rule",
+    "event"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the first rules, written before any event; never entered live"
+  },
+  {
+   "id": "tier",
+   "label": "tier",
+   "from_": [
+    "founding",
+    "rule"
+   ],
+   "how": "axis",
+   "section": "Part 2 gov-os",
+   "note": "constitutional + owner + ordinary; protection conserved: no gap, no demotion"
+  },
+  {
+   "id": "power",
+   "label": "power",
+   "from_": [
+    "rule",
+    "actor",
+    "information"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the positive grant row; everything outside it the computed shadow"
+  },
+  {
+   "id": "space",
+   "label": "space",
+   "from_": [
+    "tree",
+    "item"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a containment tree of items; reach includes subspaces"
+  },
+  {
+   "id": "identity",
+   "label": "identity",
+   "from_": [
+    "row",
+    "actor",
+    "occupancy"
+   ],
+   "how": "derived",
+   "section": "Part 2 gov-os",
+   "note": "establishment row > session rows > occupancy rows; the view over them"
+  },
+  {
+   "id": "signature",
+   "label": "signature",
+   "from_": [
+    "identity",
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "live identity from the channel transferred into the stored row"
+  },
+  {
+   "id": "key",
+   "label": "key",
+   "from_": [
+    "row",
+    "actor"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the bind row tying a secret to an actor; the key is a view over bind and revoke rows"
+  },
+  {
+   "id": "chain",
+   "label": "chain",
+   "from_": [
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "each row names the hash of the row before; a break is provable at a point"
+  },
+  {
+   "id": "attestation",
+   "label": "attestation",
+   "from_": [
+    "comparison",
+    "record"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the body reads its own code whole and compares it to the digest in its record"
+  },
+  {
+   "id": "custody",
+   "label": "custody",
+   "from_": [
+    "move",
+    "actor"
+   ],
+   "how": "derived",
+   "section": "Part 2 gov-os",
+   "note": "the view over move rows saying which actor last received an item; no delete, only handover"
+  },
+  {
+   "id": "blob",
+   "label": "blob",
+   "from_": [
+    "information",
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "content outside the row, addressed by hash; the row keeps the hash"
+  },
+  {
+   "id": "view",
+   "label": "view",
+   "from_": [
+    "comparison",
+    "record"
+   ],
+   "how": "derived",
+   "section": "Part 2 gov-os",
+   "note": "information derived by comparison over the record; deleted and recomputed identical"
+  },
+  {
+   "id": "viewtree",
+   "label": "view tree",
+   "from_": [
+    "view"
+   ],
+   "how": "split",
+   "section": "Part 2 gov-os",
+   "note": "four masters: events + rules + items + relationships; level 2 one split; level 3 S/U; level 4 computed"
+  },
+  {
+   "id": "stamp",
+   "label": "stamp",
+   "from_": [
+    "view",
+    "draft",
+    "comparison"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a master view's comparison of a draft as it climbs; detection never legitimacy"
+  },
+  {
+   "id": "loop",
+   "label": "loop",
+   "from_": [
+    "stamp",
+    "gate",
+    "record"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a draft climbs through views that stamp it, the gate decides, the record broadcasts back"
+  },
+  {
+   "id": "program",
+   "label": "program",
+   "from_": [
+    "actor",
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "an actor established by a row; processes its incarnations; files its custody"
+  },
+  {
+   "id": "glassbox",
+   "label": "glass box",
+   "from_": [
+    "program",
+    "gate"
+   ],
+   "how": "rule",
+   "section": "Part 2 gov-os",
+   "note": "every program has exactly two openings, to the user and to the system"
+  },
+  {
+   "id": "border",
+   "label": "border",
+   "from_": [
+    "gate",
+    "draft"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the system as the one entity that cannot live behind a border; an outside request is a draft"
+  },
+  {
+   "id": "handshake",
+   "label": "handshake",
+   "from_": [
+    "identity",
+    "attestation",
+    "record"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "who + what code + sane memory: three checks, mutual, graded admission"
+  },
+  {
+   "id": "onepen",
+   "label": "one pen per record",
+   "from_": [
+    "record",
+    "gate"
+   ],
+   "how": "rule",
+   "section": "Part 2 gov-os",
+   "note": "many records per body lawful; two pens on one record never"
+  },
+  {
+   "id": "institution",
+   "label": "institution",
+   "from_": [
+    "rule",
+    "row",
+    "tree"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a set of stage-role rows under one constitution; a tree of institutions; no gate above the boxes"
+  },
+  {
+   "id": "seam",
+   "label": "seam (twelve kinds of work)",
+   "from_": [
+    "activity",
+    "move",
+    "transformation"
+   ],
+   "how": "cell",
+   "section": "Part 2 gov-os",
+   "note": "four object roots x six operations; the empty cells refusals by name"
+  },
+  {
+   "id": "body",
+   "label": "body",
+   "from_": [
+    "seam",
+    "record"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "our own kernel: the performer beneath the seam, generated from the twelve rows, read whole and signed"
+  },
+  {
+   "id": "witnessclass",
+   "label": "witness class",
+   "from_": [
+    "actor",
+    "body"
+   ],
+   "how": "split",
+   "section": "Part 2 gov-os",
+   "note": "witness-the-code (what hosts the gate) + witness-the-acts (every other entity)"
+  },
+  {
+   "id": "enclosure",
+   "label": "enclosure",
+   "from_": [
+    "witnessclass",
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a borrowed worker run unmodified with its own declared served set; every crossing a row"
+  },
+  {
+   "id": "genesis",
+   "label": "genesis",
+   "from_": [
+    "record",
+    "attestation"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the standing guardian of identity across every gap in consciousness"
+  },
+  {
+   "id": "wake",
+   "label": "wake checklist",
+   "from_": [
+    "genesis",
+    "chain",
+    "founding",
+    "view",
+    "key"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "body, chain, constitution read back, views folded fresh, keys valid, account chain intact, then the first act"
+  },
+  {
+   "id": "genesispair",
+   "label": "genesis pair",
+   "from_": [
+    "genesis",
+    "handshake"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "two bodies sharing no write path verify each other; a mutual receipt"
+  },
+  {
+   "id": "brake",
+   "label": "brake",
+   "from_": [
+    "view",
+    "rule"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "a frozen, negative-only view that answers before its row lands"
+  },
+  {
+   "id": "air",
+   "label": "air",
+   "from_": [
+    "row"
+   ],
+   "how": "=",
+   "section": "Part 2 gov-os",
+   "note": "the row as the smallest piece anyone can take without taking us"
+  }
+ ],
+ "matrices": [
+  {
+   "name": "item forms -> information",
+   "rows": [
+    "physical",
+    "virtual"
+   ],
+   "cols": [
+    "consumable",
+    "non-consumable"
+   ],
+   "cells": {
+    "virtual|non-consumable": "information"
+   },
+   "note": "information is one cell of the item-forms matrix"
+  },
+  {
+   "name": "comparison x time -> change",
+   "rows": [
+    "same",
+    "different"
+   ],
+   "cols": [
+    "across time"
+   ],
+   "cells": {
+    "same|across time": "unchanged",
+    "different|across time": "change"
+   }
+  },
+  {
+   "name": "S/U cells (structurality of input x output)",
+   "rows": [
+    "input S",
+    "input U"
+   ],
+   "cols": [
+    "output S",
+    "output U"
+   ],
+   "cells": {
+    "input S|output S": "S",
+    "input S|output U": "U{s}",
+    "input U|output S": "S{u}",
+    "input U|output U": "U"
+   }
+  },
+  {
+   "name": "actor class x change it may drive",
+   "rows": [
+    "program",
+    "ai",
+    "human",
+    "system"
+   ],
+   "cols": [
+    "S",
+    "U"
+   ],
+   "cells": {
+    "program|S": "yes",
+    "ai|U": "yes",
+    "human|S": "yes",
+    "human|U": "yes",
+    "system|S": "yes (border)"
+   }
+  },
+  {
+   "name": "the twelve kinds of work (+ four): object root x operation",
+   "rows": [
+    "STAYS",
+    "WORKS",
+    "TIME",
+    "OTHERS"
+   ],
+   "cols": [
+    "PUT",
+    "TAKE",
+    "DROP",
+    "HOLD",
+    "WAIT",
+    "TELL"
+   ],
+   "cells": {
+    "STAYS|PUT": "1 append, 2 write-once",
+    "STAYS|TAKE": "4 read file, 5 read founding",
+    "STAYS|DROP": "3 remove",
+    "STAYS|HOLD": "refused",
+    "STAYS|TELL": "refused",
+    "WORKS|PUT": "6 memory (put/drop)",
+    "WORKS|TELL": "refused",
+    "TIME|TAKE": "7 clock",
+    "TIME|WAIT": "8 wait; 16 wait on many",
+    "TIME|PUT": "refused (set the clock)",
+    "OTHERS|TAKE": "9 entropy; 12 connection",
+    "OTHERS|PUT": "10 thread; 12 connection; 13 start a process; 15 channel",
+    "OTHERS|HOLD": "11 one writer",
+    "OTHERS|TELL": "14 signal"
+   }
+  },
+  {
+   "name": "OMGS stages as roles rows play",
+   "rows": [
+    "proposal cycle",
+    "implementation cycle"
+   ],
+   "cols": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "cells": {
+    "proposal cycle|1": "environment change (a condition)",
+    "proposal cycle|2": "monitoring (the record + derived)",
+    "proposal cycle|3": "analysis (information rows)",
+    "proposal cycle|4": "reporting (a draft)",
+    "implementation cycle|1": "decision (gate)",
+    "implementation cycle|2": "announcement (the order)",
+    "implementation cycle|3": "communication (unstructured restatement)",
+    "implementation cycle|4": "enforcement (compliance/breach)"
+   }
+  }
+ ]
+}

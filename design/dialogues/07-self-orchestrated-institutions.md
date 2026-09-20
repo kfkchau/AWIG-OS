@@ -37,7 +37,7 @@ build.
 
 ## D07.4 — the wrong example that taught the shape (owner)
 "like ms365 two people editing same doc or what??" — ruled the OPPOSITE
-shape: one book on Microsoft's machine, one hand, one throat. The C6-shaped
+shape: one book on [a large software company]'s machine, one hand, one throat. The C6-shaped
 real cases: git (sealed commits re-verified at the receiver's hand — the
 owner runs one daily), hospital-to-hospital custody handover (design/46's
 ceremony between institutions), export certificate crossing sovereign

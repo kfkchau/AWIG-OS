@@ -1,6 +1,6 @@
 # design/ for this release: a rendering, not the source
 
-Copied whole from the estate's `design/` at the pinned commit 40eb0ff7 by `git archive`, 60 files, about 174,199 words of Markdown. The estate's `design/` remains the source. Nothing was hand-edited except the standing redactions below (release/REDACTIONS.txt, the owner's option 2: the word replaced by a visible mark, every other word verbatim).
+Copied whole from the estate's `design/` at the pinned commit 06f13a36 by `git archive`, 76 files, about 258,820 words of Markdown. The estate's `design/` remains the source. Nothing was hand-edited except the standing redactions below (release/REDACTIONS.txt, the owner's option 2: the word replaced by a visible mark, every other word verbatim).
 
 ## Redactions applied
 
@@ -9,6 +9,19 @@ Copied whole from the estate's `design/` at the pinned commit 40eb0ff7 by `git a
 | dialogues/01-custody-conservation.md | 16 | one word replaced by the mark | "legal correct [expletive]??" |
 | dialogues/03-check-vocabulary-and-polarity.md | 16 | one word replaced by the mark | "smell of a [expletive] list" |
 | dialogues/06-tamper-anchor-fanqie.md | 49 | one word replaced by the mark | "not me making [expletive] up" |
+
+## Strong words and names
+
+By the owner's standing word, every strong word in these papers is replaced by the visible mark [expletive], and the names of real companies and their products are replaced by labels that say what kind of thing was named ([a word processor], [a phone operating system] and so on), the same label for the same name throughout. Nothing else in any sentence is changed. Open technical projects a reader needs in order to check the work keep their names.
+
+| file | strong words marked | names made neutral |
+|---|---|---|
+| 49-RUN-SURFACE-SCAN.md | 0 | 5 |
+| 50-PRECEDENTS-AND-BENCHMARK.md | 0 | 1 |
+| 56-CAMPAIGN-8-ACTOR-DIMENSIONS-AND-THE-LOAD-ACT.md | 0 | 5 |
+| dialogues/07-self-orchestrated-institutions.md | 0 | 1 |
+| dialogues/09-the-ontology-chain.md | 8 | 0 |
+| dialogues/10-c8-actors-and-loading.md | 6 | 12 |
 
 ## Scrub scan (laptop paths, emails, session ids, transcript files, third parties, places, phones)
 
@@ -32,7 +45,7 @@ Hits: 3. Listed for the owner's word; none removed by the campaign seat.
 | 13-VIEWS-AND-PROC-CATALOGUE.md | CANON / FROZEN |
 | 14-SEAM-CONTRACTS.md | CANON / FROZEN |
 | 15-FAILURE-BOOK.md | CANON / FROZEN |
-| 16-BRIDGE-STEPPINGSTONE-TO-KERNEL.md | CANON / FROZEN |
+| 16-BRIDGE-STEPPINGSTONE-TO-KERNEL.md | CANON / SUPERSEDED-FOR-THE-ROUTE |
 | 17-SORTING-PASS.md | CANON / FROZEN |
 | 18-LAW-BOOK.md | CANON / SUPERSEDED |
 | 19-TEST-BATTERY.md | CANON / SUPERSEDED |
@@ -74,6 +87,16 @@ Hits: 3. Listed for the owner's word; none removed by the campaign seat.
 | 50-PRECEDENTS-AND-BENCHMARK.md | DESIGN / PROPOSED |
 | 51-CAMPAIGN-5-NETWORKING.md | DESIGN / ACTIVE |
 | 52-CAMPAIGN-6-SELF-ORCHESTRATED-INSTITUTIONS.md | DESIGN-PAPER / ACTIVE |
+| 53-CAMPAIGN-6A-VIEW-TREE-AND-LOOP.md | CANON / see-the-board-fold |
+| 54-CAMPAIGN-7-SELF-HOSTING.md | CANON / see-the-board-fold |
+| 55-PWC-ON-GOV-OS-SEED.md | SEED / DRAFT |
+| 56-CAMPAIGN-8-ACTOR-DIMENSIONS-AND-THE-LOAD-ACT.md | CANON / DRAFT |
+| 57-THE-DERIVED-SURFACE-SEED.md | SEED / DRAFT |
+| 58-THE-ROOT-AGAINST-THE-BUILD.md | MAPPING / DRAFT |
+| 59-THE-ONTOLOGY-CHAIN.md | no header |
+| 60-ROOT-TO-SURFACE-IN-ONE-FLOW.md | DESIGN / LIVE |
+| 61-CAMPAIGN-9-THE-INSTALLER.md | CAMPAIGN-PAPER / DRAFT |
+| README.md | CANON / LIVE |
 | dialogues/01-custody-conservation.md | DIALOGUE-RECORD / DRAFT-FOR-OWNER |
 | dialogues/02-item-4-rederivation.md | DIALOGUE-RECORD / DRAFT-FOR-OWNER |
 | dialogues/03-check-vocabulary-and-polarity.md | DIALOGUE-RECORD / DRAFT-FOR-OWNER |
@@ -82,6 +105,9 @@ Hits: 3. Listed for the owner's word; none removed by the campaign seat.
 | dialogues/06-tamper-anchor-fanqie.md | DIALOGUE-RECORD / DRAFT-FOR-OWNER |
 | dialogues/07-self-orchestrated-institutions.md | DIALOGUE / RECORDED |
 | dialogues/08-air-ecosystem.md | DIALOGUE / RECORDED |
+| dialogues/09-the-ontology-chain.md | DIALOGUE / LIVE |
+| dialogues/10-c8-actors-and-loading.md | DIALOGUE / LIVE |
+| dialogues/11-permissions-and-the-shaped-region.md | DIALOGUE / LIVE |
 | dialogues/README.md | INDEX / LIVE |
 
 ## Integrity

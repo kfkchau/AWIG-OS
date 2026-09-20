@@ -1,5 +1,5 @@
 <!-- gov-os provenance · FRAME: systems-architecture · CORPUS-CLASS: systems-architecture (seL4/POSIX/OS-textbook) · Vocabulary is OS-architecture (boot, firmware, kernel, driver, attestation). NON-GOAL: no offensive capability of any kind; defines record, gate, view, and ceremony conformance only. Full declaration: SCOPE-STATEMENT.md. -->
-<!-- doc: class=SEED status=RULED-SHAPE supersedes=- superseded-by=- verified=2026-09-05 provenance=D07.8,D07.9,D07.10,D07.11 -->
+<!-- doc: class=SEED status=RULED-SHAPE supersedes=- superseded-by=- verified=2026-09-10 provenance=D07.8,D07.9,D07.10,D07.11 -->
 
 # GOV-OS — design 47: THE C7 SEED — SELF-HOSTING
 
@@ -128,3 +128,46 @@ the owner's "okay accept, go" (D07.12). It lives in the charter as THE
 NO-SILENT-LINUX RIDER, binding all streams from 2026-09-05. Open items
 remaining in §6: (a) core provenance (the owner's one-way door), and
 (b) the translator's home (C7 vs C5's device remainders).
+
+## 8 — THE OWNER'S THREE CRITERIA (2026-09-10, his words; board :3860)
+
+"thing I care is defintiive level accuracy, universal derivabiltiy and max
+architecture first outcome." Filed as the standing test for every C7
+decision, in that order, and the paper is written against it:
+
+1. **Definitive-level accuracy.** The paper and the constitution are exactly
+   right before any row is minted. The two one-way doors — the core's
+   provenance (§6a), and whether the gate's host is a sealed verified
+   interpreter or the gate moves to something small enough to sign — are
+   decided at the definitive, never discovered mid-build.
+2. **Universal derivability.** Nothing stored that can be computed, at
+   every layer C7 adds: the chip carries the genesis part only (§4); the
+   constitution lives once, in the record; the session's local slice is
+   derived; a rewrite, if the signing law ever demands one, is a derivation
+   checked against the same tests; every performance number is the same
+   acts under two performers, one seam.
+3. **Max architecture-first outcome.** Choose the shape that yields the
+   most architecture first and the least translation: the swap with sealed
+   artifacts beneath the seam is C7; a rewrite of the kernel is a later
+   campaign, taken only if the signing law demands it.
+
+Driven the same day (wc): kernel 15,863 lines · bridge 5,186 · founding 304
+· src 24,736 · 181 test modules. The VM (the guest) is where the core first
+boots and where the software-path numbers are real; a physical device's
+number needs the real machine.
+
+## 9 — THE AUTHORISATION TO PROCEED (2026-09-10, the owner's words; board :3877)
+
+"okay keep pushing etc once done okay to proceed auto to c7, make low risk
+decisins and changes that are easily revertable." So: at C6a's end the
+estate proceeds to C7 without waiting for the owner's acknowledgement; the
+paper is written beside C6a's last rows; GREEN and YELLOW decisions are the
+seats' own, every change easily revertable (tests behind a fence,
+git-revertible; no key bound, no hardware bought, no world founded by a
+ceremony, no public release). What stays the owner's, by his own criterion:
+§6(a) the core's provenance; the interpreter (sealed artifact, or the gate
+moved to a signable host); the chip body and any physical device; a new
+first-key ceremony. WORKING ASSUMPTION for the paper, revertable and named
+as such until his word: a sealed verified kernel and a sealed interpreter
+(the shape his three criteria in §8 score highest); any row that would
+commit to it irreversibly is held for his word.

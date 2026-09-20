@@ -1,0 +1,552 @@
+{
+  "_meta": {
+    "name": "gov-os base view tree, version 2",
+    "status": "v2.2, 2026-09-10, owner-ruled at the architect's seat (board :3739; levels 3 and 4 re-cut, board :3760); structured form of design/25-VIEW-TREE.md VERSION 2; v1 file 25-view-tree.json untouched as history; v2.2 3817: seed_form per node (the oracle for VT-3 A3), the third view form ruled",
+    "purpose": "views exist to ensure governance quality; every permanent node answers one governance question; a node that only re-indexes its parent does not exist",
+    "rulings": [
+      "four master views at level 1: events, rules, items, relationships (two definitive kinds plus the master each throws off)",
+      "level 2 is one split per node, MECE; a product of a parent with a dimension is the parent re-indexed and lives at level 4",
+      "old rules are a permanent node (supersedes v1 ruling 3 'history is never a node'; later ruling controls; conflict shown)",
+      "level 3 is one axis everywhere: S/U (actor class on the event and rule sides; the item's own cell on the static side) [SUPERSEDED at v2.1: under 3 the class/cell split moved to level 4; the event and rule sides keep it at level 3]",
+      "actor top group is the class, never the top organisation; the group tree lives in relationships as containment rows",
+      "relationships are venn2 rows only and globally true: one fact, two signed halves, held at both ends; a single held half is a finding",
+      "a relation row's frame is the rule it was created under; reading = that rule's text; roles = actor/object/target; valid time = the creating and ending acts; transaction time = the recording moment; source = the signature",
+      "authority is never a relation row; parent-child is containment; who commands whom is a rule plus occupancies, computed",
+      "overlap is never a node: computed where scopes are structured, declared as a judgment row where scopes are text; real shared ground is promoted to an item [REFINED at v2.1: a declared overlap is a non-tree ROW under 4.x.3; computed overlap of scopes stays a check]",
+      "levels 1-3 permanent on disk as seeded view rows; level 4 and up in memory, saved only when a rule says so",
+      "an events master is not a view anyone binds to; nothing operational reads the raw record",
+      "level 2 is liveness on every derived master: rules, items, relationships split active/old by latest-wins; nothing erased",
+      "names are relations (non-tree rows under 4), never items; an item has one place in 3",
+      "level 3 under 3 is actors and static; class, kind and cell are level 4",
+      "level 3 under 4: actor tree, item tree (directional containment by ends), non-tree (touching, declared overlap, names, connections)",
+      "many parents lawful, none outside the tree: every actor and static item has at least one chain to the root in the governing frame; orphan or loop refused at the gate; a rule's scope reaches down every chain",
+      "the third view form: a DERIVED view row (from a parent view, narrowed by one closed derived dimension: actor_class, scope_class, item_kind, liveness, tree_kind) — design/28's system view given a row form; every level-3 node is one derive; level 1-2 nodes bind folds; level 4 is computed (board :3817)"
+    ],
+    "seed_campaign": "design/53-CAMPAIGN-6A-VIEW-TREE-AND-LOOP.md (campaign C6a, after C6 closes)"
+  },
+  "definitive": [
+    {
+      "id": "0",
+      "name": "record",
+      "note": "one pen; every row an act under a rule; append-only"
+    },
+    {
+      "id": "0b",
+      "name": "blobs",
+      "note": "content bytes by hash, write-once"
+    }
+  ],
+  "views": [
+    {
+      "id": "1",
+      "level": 1,
+      "name": "events",
+      "derives_from": [
+        "0"
+      ],
+      "via": "the record as happenings",
+      "governance_question": "what happened, under which rule",
+      "bind_today": null,
+      "note": "definitive at this level; not a bindable master",
+      "seed_form": "definitive"
+    },
+    {
+      "id": "1.1",
+      "level": 2,
+      "name": "rule-changing acts",
+      "derives_from": [
+        "1"
+      ],
+      "via": "split: the row's effect is a rule",
+      "governance_question": "how the constitution moved",
+      "seed_form": "bind:rule_changing_acts"
+    },
+    {
+      "id": "1.1.1",
+      "level": 3,
+      "name": "rule-changing acts by programs",
+      "derives_from": [
+        "1.1"
+      ],
+      "via": "split: actor class S",
+      "seed_form": "derive:actor_class=program"
+    },
+    {
+      "id": "1.1.2",
+      "level": 3,
+      "name": "rule-changing acts by humans",
+      "derives_from": [
+        "1.1"
+      ],
+      "via": "split: actor class S+U",
+      "seed_form": "derive:actor_class=human"
+    },
+    {
+      "id": "1.1.3",
+      "level": 3,
+      "name": "rule-changing acts by AI",
+      "derives_from": [
+        "1.1"
+      ],
+      "via": "split: actor class U",
+      "seed_form": "derive:actor_class=ai"
+    },
+    {
+      "id": "1.2",
+      "level": 2,
+      "name": "acts under rules",
+      "derives_from": [
+        "1"
+      ],
+      "via": "split: the row's effect is not a rule",
+      "governance_question": "compliance: decisions, refusals, crossings, receipts",
+      "seed_form": "bind:acts_under_rules"
+    },
+    {
+      "id": "1.2.1",
+      "level": 3,
+      "name": "acts under rules by programs",
+      "derives_from": [
+        "1.2"
+      ],
+      "via": "split: actor class S",
+      "seed_form": "derive:actor_class=program"
+    },
+    {
+      "id": "1.2.2",
+      "level": 3,
+      "name": "acts under rules by humans",
+      "derives_from": [
+        "1.2"
+      ],
+      "via": "split: actor class S+U",
+      "seed_form": "derive:actor_class=human"
+    },
+    {
+      "id": "1.2.3",
+      "level": 3,
+      "name": "acts under rules by AI",
+      "derives_from": [
+        "1.2"
+      ],
+      "via": "split: actor class U",
+      "seed_form": "derive:actor_class=ai"
+    },
+    {
+      "id": "2",
+      "level": 1,
+      "name": "rules",
+      "derives_from": [
+        "1"
+      ],
+      "via": "filter: rows that bind",
+      "governance_question": "what binds",
+      "bind_today": "active_rules + op_definitions + view_definitions",
+      "seed_form": "bind:rules"
+    },
+    {
+      "id": "2.1",
+      "level": 2,
+      "name": "active rules",
+      "derives_from": [
+        "2"
+      ],
+      "via": "split: live (latest-wins)",
+      "bind_today": "active_rules",
+      "seed_form": "bind:active_rules"
+    },
+    {
+      "id": "2.1.1",
+      "level": 3,
+      "name": "active rules binding programs",
+      "derives_from": [
+        "2.1"
+      ],
+      "via": "filter: scope names class S",
+      "seed_form": "derive:scope_class=program"
+    },
+    {
+      "id": "2.1.2",
+      "level": 3,
+      "name": "active rules binding humans",
+      "derives_from": [
+        "2.1"
+      ],
+      "via": "filter: scope names class S+U",
+      "seed_form": "derive:scope_class=human"
+    },
+    {
+      "id": "2.1.3",
+      "level": 3,
+      "name": "active rules binding AI",
+      "derives_from": [
+        "2.1"
+      ],
+      "via": "filter: scope names class U",
+      "seed_form": "derive:scope_class=ai"
+    },
+    {
+      "id": "2.1.4",
+      "level": 3,
+      "name": "active rules binding all actors",
+      "derives_from": [
+        "2.1"
+      ],
+      "via": "filter: scope names no class (the root and the constitution)",
+      "seed_form": "derive:scope_class=all"
+    },
+    {
+      "id": "2.2",
+      "level": 2,
+      "name": "old rules",
+      "derives_from": [
+        "2"
+      ],
+      "via": "split: superseded or withdrawn",
+      "note": "never erased; the rules fold without the latest-wins filter",
+      "seed_form": "bind:old_rules"
+    },
+    {
+      "id": "2.2.1",
+      "level": 3,
+      "name": "old rules that bound programs",
+      "derives_from": [
+        "2.2"
+      ],
+      "via": "filter: scope names class S",
+      "seed_form": "derive:scope_class=program"
+    },
+    {
+      "id": "2.2.2",
+      "level": 3,
+      "name": "old rules that bound humans",
+      "derives_from": [
+        "2.2"
+      ],
+      "via": "filter: scope names class S+U",
+      "seed_form": "derive:scope_class=human"
+    },
+    {
+      "id": "2.2.3",
+      "level": 3,
+      "name": "old rules that bound AI",
+      "derives_from": [
+        "2.2"
+      ],
+      "via": "filter: scope names class U",
+      "seed_form": "derive:scope_class=ai"
+    },
+    {
+      "id": "2.2.4",
+      "level": 3,
+      "name": "old rules that bound all actors",
+      "derives_from": [
+        "2.2"
+      ],
+      "via": "filter: scope names no class",
+      "seed_form": "derive:scope_class=all"
+    },
+    {
+      "id": "3",
+      "level": 1,
+      "name": "items",
+      "derives_from": [
+        "0",
+        "0b"
+      ],
+      "via": "versioned nouns over creation rows and blobs; one thing, one place",
+      "governance_question": "what exists",
+      "bind_today": "actors + resources (+ spaces, keys, tunnels, devices as folds)",
+      "seed_form": "bind:items"
+    },
+    {
+      "id": "3.1",
+      "level": 2,
+      "name": "active items",
+      "derives_from": [
+        "3"
+      ],
+      "via": "split: in the active view (latest-wins)",
+      "seed_form": "bind:active_items"
+    },
+    {
+      "id": "3.1.1",
+      "level": 3,
+      "name": "active actors",
+      "derives_from": [
+        "3.1"
+      ],
+      "via": "split: can act",
+      "bind_today": "actors",
+      "seed_form": "bind:actors"
+    },
+    {
+      "id": "3.1.1.1",
+      "level": 4,
+      "name": "active programs",
+      "derives_from": [
+        "3.1.1"
+      ],
+      "via": "filter: class S",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.1.2",
+      "level": 4,
+      "name": "active humans",
+      "derives_from": [
+        "3.1.1"
+      ],
+      "via": "filter: class S+U",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.1.3",
+      "level": 4,
+      "name": "active AI",
+      "derives_from": [
+        "3.1.1"
+      ],
+      "via": "filter: class U",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.2",
+      "level": 3,
+      "name": "active static",
+      "derives_from": [
+        "3.1"
+      ],
+      "via": "split: cannot act",
+      "bind_today": "resources",
+      "seed_form": "bind:static_composite"
+    },
+    {
+      "id": "3.1.2.1",
+      "level": 4,
+      "name": "content",
+      "derives_from": [
+        "3.1.2"
+      ],
+      "via": "filter: kind content",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.2.2",
+      "level": 4,
+      "name": "spaces",
+      "derives_from": [
+        "3.1.2"
+      ],
+      "via": "filter: kind space",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.2.3",
+      "level": 4,
+      "name": "keys",
+      "derives_from": [
+        "3.1.2"
+      ],
+      "via": "filter: kind key",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.2.4",
+      "level": 4,
+      "name": "tunnels",
+      "derives_from": [
+        "3.1.2"
+      ],
+      "via": "filter: kind tunnel",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.1.2.5",
+      "level": 4,
+      "name": "devices",
+      "derives_from": [
+        "3.1.2"
+      ],
+      "via": "filter: kind device",
+      "seed_form": "computed"
+    },
+    {
+      "id": "3.2",
+      "level": 2,
+      "name": "old items",
+      "derives_from": [
+        "3"
+      ],
+      "via": "split: previous versions and removed from the active view; never erased",
+      "seed_form": "bind:old_items"
+    },
+    {
+      "id": "3.2.1",
+      "level": 3,
+      "name": "old actors",
+      "derives_from": [
+        "3.2"
+      ],
+      "via": "split: can act",
+      "note": "level 4 as under 3.1.1",
+      "seed_form": "derive:item_kind=actor"
+    },
+    {
+      "id": "3.2.2",
+      "level": 3,
+      "name": "old static",
+      "derives_from": [
+        "3.2"
+      ],
+      "via": "split: cannot act",
+      "note": "level 4 as under 3.1.2",
+      "seed_form": "derive:item_kind=static"
+    },
+    {
+      "id": "4",
+      "level": 1,
+      "name": "relationships",
+      "derives_from": [
+        "3"
+      ],
+      "via": "venn2 rows over items; one fact, two signed halves held at both ends",
+      "governance_question": "what a rule reaches, and where information may move",
+      "bind_today": "relationships + permissions (grant rows)",
+      "seed_form": "bind:relationships"
+    },
+    {
+      "id": "4.1",
+      "level": 2,
+      "name": "active relationships",
+      "derives_from": [
+        "4"
+      ],
+      "via": "split: live (not ended, withdrawn or superseded)",
+      "seed_form": "derive:liveness=active"
+    },
+    {
+      "id": "4.1.1",
+      "level": 3,
+      "name": "active actor tree",
+      "derives_from": [
+        "4.1"
+      ],
+      "via": "filter: containment (NS/EM), both ends actors; rooted at the constitution's root group",
+      "governance_question": "who a rule reaches through groups",
+      "seed_form": "derive:tree_kind=actor_tree"
+    },
+    {
+      "id": "4.1.2",
+      "level": 3,
+      "name": "active item tree",
+      "derives_from": [
+        "4.1"
+      ],
+      "via": "filter: containment (NS/EM), a static end; rooted at the mother space",
+      "governance_question": "what a rule reaches through containers",
+      "seed_form": "derive:tree_kind=item_tree"
+    },
+    {
+      "id": "4.1.3",
+      "level": 3,
+      "name": "active non-tree",
+      "derives_from": [
+        "4.1"
+      ],
+      "via": "filter: symmetric geometry (AD touching, IN declared overlap); names to things; connections",
+      "governance_question": "who may talk to whom or what; what shares ground",
+      "seed_form": "derive:tree_kind=non_tree"
+    },
+    {
+      "id": "4.2",
+      "level": 2,
+      "name": "old relationships",
+      "derives_from": [
+        "4"
+      ],
+      "via": "split: ended, withdrawn, or superseded by a later version of the same relation",
+      "seed_form": "bind:old_relationships"
+    },
+    {
+      "id": "4.2.1",
+      "level": 3,
+      "name": "old actor tree",
+      "derives_from": [
+        "4.2"
+      ],
+      "via": "filter: as 4.1.1",
+      "seed_form": "derive:tree_kind=actor_tree"
+    },
+    {
+      "id": "4.2.2",
+      "level": 3,
+      "name": "old item tree",
+      "derives_from": [
+        "4.2"
+      ],
+      "via": "filter: as 4.1.2",
+      "seed_form": "derive:tree_kind=item_tree"
+    },
+    {
+      "id": "4.2.3",
+      "level": 3,
+      "name": "old non-tree",
+      "derives_from": [
+        "4.2"
+      ],
+      "via": "filter: as 4.1.3",
+      "seed_form": "derive:tree_kind=non_tree"
+    }
+  ],
+  "not_nodes": {
+    "overlap": "a declared overlap is a non-tree ROW (4.x.3, geometry IN, a judgment act); overlap computed from two rules' scopes is a check at level 4, never a node",
+    "authority": "never a relation row; a rule on roles plus occupancies, computed per call",
+    "permission": "the may is computed per call (v1 ruling 5); grant rows are relations under 4.3",
+    "chains of effect": "paths over 4.3 plus the record's own causation; level 4",
+    "frames": "level 4; a frame is the rule a relation was created under",
+    "names": "name-touches-thing rows under non-tree; a retired name is an old relationship; never an item"
+  },
+  "relation_row_target_shape": {
+    "subject": "item id",
+    "object": "item id",
+    "geometry": "AD | IN | NS | EM (UR is absence, never stored)",
+    "zone": "edge | core | unknown (computed when the frame's edge width is known, else asserted)",
+    "frame": "the rule the relation was created under (derived from the creating act's rule_cited)",
+    "reading": "that rule's text (derived)",
+    "roles": "the row's actor / object / target (derived)",
+    "valid_time": "the creating and ending acts (derived)",
+    "transaction_time": "the recording moment (minted at append)",
+    "source": "the signature (derived)",
+    "new_fields_needed": [
+      "geometry",
+      "zone"
+    ]
+  },
+  "tiers": {
+    "1_permanent": "levels 1-3 above; seeded as view rows; on disk",
+    "2_memory": "level 4 and up; computed; saved only when a rule says so (e.g. a user profile on a laptop)"
+  },
+  "live_checks": "unchanged from v1: permission, sight, authority, due, wake, consistency — functions, never stored views",
+  "tree_invariant": {
+    "governing_frame": "the permission frame: the actor tree rooted at the constitution's root group; the item tree rooted at the mother space",
+    "rule": "every actor and every static item has AT LEAST ONE parent chain reaching the root; many parents lawful; an orphan or a loop is refused at the gate",
+    "built_today": "spaces (gate.py:501-518 orphan/loop refusal)",
+    "owed": "the same refusal for actors",
+    "inheritance": "a rule's scope reaches down every chain; colliding rules on one node via two chains are the overlap check's case"
+  },
+  "derived_dimensions": {
+    "closed_grow_only_pinned": [
+      "actor_class",
+      "scope_class",
+      "item_kind",
+      "liveness",
+      "tree_kind"
+    ],
+    "actor_class": "the acting actor's declared class: program | human | ai",
+    "scope_class": "the class a rule's scope names: program | human | ai | all",
+    "item_kind": "actor | static",
+    "liveness": "active | old",
+    "tree_kind": "actor_tree | item_tree | non_tree (from geometry and ends)"
+  }
+}
