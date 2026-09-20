@@ -6,6 +6,34 @@
 
 ---
 
+## Kernel status, 21 September 2026
+
+| | Today |
+|---|---|
+| Architecture | x86-64, one processor |
+| Runs without Linux | Yes |
+| Boots in | QEMU (multiboot). Real hardware: not yet |
+| Written in | C and assembly, about 11,600 lines, in [`code/src/body`](./code/src/body) |
+| Memory | Physical, virtual and heap management, each checked at boot |
+| User-mode isolation | Built. A program the kernel does not trust runs in ring 3 and crosses by one door; its trespass and its refusal are checked at boot |
+| Scheduler | Preemptive, with threads and futex waits; it runs in the full build |
+| Disk and network | ATA and virtio-net drivers; the network stack runs as a boxed worker. With no device attached the kernel says so and skips those acts |
+| Standard Python on it | Yes, unmodified, in the full build |
+| Same bytes on rebuild | Yes. The plain image is 65,588 bytes and repeated builds give one fingerprint (Debian, gcc 14.2.0, binutils 2.44) |
+| Self-check | At every start. Plant a change and the matching check fails |
+| What it is for | Every act passes a written rule and is recorded, refusals included |
+| Licence and stage | GPLv3, pre-alpha |
+
+**Build it and boot it.** On a Linux machine with `gcc`, `binutils`, Python 3 and `qemu-system-x86_64`, and nothing of ours installed:
+
+    cd code/src/body
+    ./build.sh . /tmp/awig-body
+    qemu-system-x86_64 -cpu qemu64 -display none -no-reboot -m 256 -rtc base=utc -serial stdio -kernel /tmp/awig-body/body.img
+
+Every check prints PASS or FAIL on the serial line, and the last line is `BODY-HALT`. This is the plain kernel; the full build, its numbers beside Linux, and everything that is not true yet are in [`STATUS.md`](./STATUS.md).
+
+---
+
 ## 0. Read this first
 
 Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason.
