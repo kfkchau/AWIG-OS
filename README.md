@@ -14,7 +14,7 @@ Every organisation keeps five things in five places: a rulebook, an audit log, a
 
 What that is for, situation by situation, with a command under each: [`WHAT-THIS-IS-FOR.md`](./WHAT-THIS-IS-FOR.md). The decision you have to defend, the no nobody can produce, the contractor who left, the machine that was wiped, the AI you let in.
 
-Each part of this has a precedent, and they are named here before you look for them. Capability systems (KeyKOS, EROS, seL4) decide by held authority instead of by user. Reference monitors (Flask, SELinux) separate the rule from the enforcement. Event-sourced systems rebuild state from a log. Drawbridge ran a whole Windows over forty-five calls. What is ours is the composition and the direction: those systems decide whether an act is allowed; this one records under which rule, granted by whom, amended how, still in force, and rebuilds that answer from the record alone. Access is decided. Authority has a provenance.
+Each part of this has a precedent, and they are named here before you look for them. Capability systems (KeyKOS, EROS, seL4) decide by held authority instead of by user. Reference monitors (Flask, SELinux) separate the rule from the enforcement. Event-sourced systems rebuild state from a log. Drawbridge ran a whole Windows over a few dozen calls. What is ours is the composition and the direction: those systems decide whether an act is allowed; this one records under which rule, granted by whom, amended how, still in force, and rebuilds that answer from the record alone. Access is decided. Authority has a provenance.
 
 The questions a careful reader asks next, one line each:
 
@@ -25,6 +25,7 @@ The questions a careful reader asks next, one line each:
 - **Where is the AI?** An AI model is a file of numbers, and a file cannot act. What acts is the program that loads it, and here that program meets the world at two doors only. The doors are built and tested between two machines; nobody lives between them yet. [`STATUS.md`](./STATUS.md) says so.
 - **Can data be deleted?** Not here. Content changes hands by a handover with a receipt; there is no destroy. What that means for personal data is an open contract and [`STATUS.md`](./STATUS.md) lists it under what is not true yet.
 - **What is true today?** [`STATUS.md`](./STATUS.md), dated, machine by machine. Where it and the code disagree, the code is right.
+- **What comes next?** [`ROADMAP.md`](./ROADMAP.md): what is being built now and what follows, in order, with no dates.
 
 Four things a stranger would watch for, and where each stands: a kernel that boots without Linux and runs a program it does not trust (done in campaign 7: it boots in a virtual machine, refuses to start on a changed byte, and runs the standard Python interpreter as sealed content; you can build and boot the plain kernel from `code/src/body`; real hardware is campaign 9); a hostile security review (three rounds, findings and repairs on `STATUS.md`); an outside contributor landing something substantial (none yet); one system that is not AWIG OS using the same rules and record (none yet). When all four are true this page will say so.
 

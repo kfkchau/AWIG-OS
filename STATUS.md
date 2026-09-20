@@ -67,15 +67,15 @@ It is slower than Linux, and it is narrow by design: it is the record's own body
 
 Named as work the build side has committed to, not as things you can use. Each entry closes when a stranger can check it; no dates.
 
-- **Campaign 8: the load act and the actor model.** A program's rule set sealed at load, actors separated from static information, permissions reshaped not stacked. When it closes: every program the system runs is born by one row you can read, and cannot ask for more than the rules sealed on that row.
-- **Campaign 9: the one-file installer.** A stripped Linux kept only as a boxed driver worker under our kernel. Its first act on a real computer is a probe from a USB stick that deletes nothing. Beside it, the side-by-side stretch: the same acts on Linux and on our kernel, both records compared byte for byte, before the real record moves onto the kernel.
+- **What is being built now, and what follows, in order:** [`ROADMAP.md`](./ROADMAP.md). Two lines run in parallel today: every program born as an actor by one recorded act, and the one-file installer that boots a real computer from a USB stick and touches no disk.
+- **Beside the installer, the side-by-side stretch:** the same acts on Linux and on our kernel, both records compared byte for byte, before the real record moves onto the kernel.
 - **Carried from the outside reviews:** an effect that happened with no row after a crash shown as unknown, never as done; destroying content as a recorded act with a receipt, where the law requires it; more than one holder of a stage of governance over one scope; the second public test run with the real locks installed.
 
 ## Designed on paper, not built
 
 - The AI team that is meant to work inside it. The room has two doors, built and tested between two machines, and nobody living in it.
-- Every program born on the record with its rules sealed at load (campaign 8, above).
-- Running on real hardware (campaign 9, above).
+- Every program born on the record with its rules sealed at load (being built now; see [`ROADMAP.md`](./ROADMAP.md)).
+- Running on real hardware (the installer, being built now; see [`ROADMAP.md`](./ROADMAP.md)).
 
 ## What is not true yet
 
