@@ -8,6 +8,22 @@
 
 ## 0. Read this first
 
+Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason.
+
+All of it is kept in one book that is only ever added to. The one book does five jobs that are normally five separate systems:
+
+1. The rulebook: what anyone may do.
+2. The logbook: what anyone did, every yes and every no, each with the rule and the reason.
+3. The constitution: how the rules themselves may change.
+4. The institution: who holds which seat and which power right now.
+5. The machine's blueprint: the kernel's own definition, from which its code is made.
+
+Because it is one book, the five cannot disagree.
+
+Today the book and its gate run, and our own kernel boots in a virtual machine with no Linux beneath it. Every program being born on the record with its rules sealed is being built now. What is true today is in [`STATUS.md`](./STATUS.md); what comes next is in [`ROADMAP.md`](./ROADMAP.md).
+
+The rest of this section says the same thing for a careful reader.
+
 Operating systems start from the machine and add rules on top: a permission here, a policy engine there, a log beside it all. AWIG OS starts from the other end. It begins with a written theory of legitimate authority, who may act, under which rule, granted by whom, and makes the machine an instance of that theory. Every act is a decision the machine records, citing the rule that allowed it. Every refusal is recorded the same way. A thing here is either information or an actor. Information never acts. An actor exists from the moment the system loads it, on the record, and can do only what its rules allow. The ground under all of it: record what happened, compute everything else.
 
 Every organisation keeps five things in five places: a rulebook, an audit log, an institution, a constitution, and the machine that acts, and reads its own history from copies of copies. Here they are one record and five names for it. The record is the definitive; every view, every log, every screen is derived from it and can be thrown away and rebuilt, hash for hash. Fix the definitive and the derivative follows. One kind of rule governs everything the rules govern, from who may open a file to how the rules themselves may change, with no special language for anyone. An AI organisation lives inside it on the far side of one boundary: what it says stays unstructured, what the institution does is structured rows, and nothing crosses from the one to the other except by passing a rule.

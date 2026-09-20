@@ -2,6 +2,8 @@
 
 Dated 20 September 2026. `STATUS.md` says what is true today; where this page and the code disagree, the code is right.
 
+Everything that can change something on a computer, a program, a driver, an AI, a person, acts here only through written rules, and every yes and every no is written down with its reason.
+
 Every organisation keeps five things in five places: a rulebook, an audit log, an institution, a constitution, and the machine that acts. None of the five is the one that does the acting, and each is kept by a different profession with its own tools. Here they are one record and five names for it. The record is the definitive. Everything else, every screen, every log, every report, is derived from it and can be thrown away and rebuilt, hash for hash. Fix the definitive and the derivative follows.
 
 That is the whole idea. Here is what it is for.
