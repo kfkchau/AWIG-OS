@@ -94,8 +94,16 @@ def _recorded_value(store, n, op="FILE-XATTR-SET"):
 # A2 — PART 1: FILE-XATTR-SET.value raw bytes ENCODED at the door to the B8 tagged form (idempotent)
 # ==================================================================================================
 
+try:                                                                  # the fusepy adapter is only needed
+    import bridge.records_fs as _records_fs                            # by the one B8-tag cross-check below
+    _FUSE_OK = _records_fs is not None
+except ModuleNotFoundError:                                            # 'fuse' (fusepy) absent outside the lab
+    _FUSE_OK = False
+
+
 class TestXattrEncoded(unittest.TestCase):
 
+    @unittest.skipUnless(_FUSE_OK, "SKIP GUEST-FACILITY: needs the fusepy adapter (module 'fuse') bound by bridge.records_fs")
     def test_the_door_tag_is_the_records_fs_b8_tag_byte_identical(self):
         # The kernel cannot import the bridge adapter (records_fs imports kernel.errors — kernel->bridge
         # would be circular), so the B8 tag is RE-USED at the door, not imported. Prove the two strings
@@ -210,8 +218,15 @@ class TestReadAggregateReKinded(unittest.TestCase):
 class TestFoundingBump(unittest.TestCase):
 
     def test_the_founding_is_one_minor_above_the_base(self):
-        # ONE MINOR bump for the re-kind (a DATA-born move). Reds against the base 1.49.0.
-        self.assertEqual(_pack()["founding_version"], "1.50.0")
+        # ONE MINOR bump for the re-kind (a DATA-born move): OUTSIDE-3 landed 1.50.0, one minor above
+        # its base 1.49.0. This reads the LIVE pack, so it is a §A57 family-3 live-version pin (same
+        # class as the pack-sha pin): C6 P8 (the campaign's sole founding move) took the live version
+        # to 1.51.0, so the pin is re-pinned forward mechanically (mgr §A57 completion at P8's close).
+        # C6a VT-2 (CREATE-RELATIONSHIP MINTED live) moved it 1.51.0 -> 1.52.0.
+        # C6a VT-3 (THE TREE SEEDED AS ROWS — 35 view rows) moved it 1.52.0 -> 1.53.0 BY NAME (§A57).
+        # C6a VT-6d (THE STAMP FOUNDING — the required-stamps policy rule) moved it 1.53.0 -> 1.54.0 BY NAME (§A57).
+        # C7 P3 (THE KERNEL FROM THE RECORD — the twelve act-kind rows) moved it 1.54.0 -> 1.55.0 BY NAME (§A57).
+        self.assertEqual(_pack()["founding_version"], "1.55.0")
 
     def test_the_one_param_is_re_kinded_quantity(self):
         # EXACTLY the one re-kind: FILE-READ-AGGREGATE.bytes -> quantity; FILE-XATTR-SET.value stays
@@ -227,13 +242,19 @@ class TestFoundingBump(unittest.TestCase):
 
     def test_no_op_added_op_population_unchanged(self):
         # §A57 family 2 — op-population: a re-kind adds no op.
-        self.assertEqual(_op_population(_pack()), 93)
+        # C6a VT-2 (CREATE-RELATIONSHIP MINTED live, 1.51.0 -> 1.52.0) moved the live base 93 -> 94 BY NAME (§A57).
+        self.assertEqual(_op_population(_pack()), 94)
 
     def test_the_founding_version_moved_family_3(self):
         # §A57 family 3 — the whole-file version/hash MOVED (the pack changed): the version is above the
         # base. (The pack sha is attested in BUILD-PROGRESS_v3.md and pinned in test_ep51; the
         # bump-attestation guard test_founding_is_logged binds version+sha in one entry.)
-        self.assertEqual(_pack()["founding_version"], "1.50.0")
+        # LIVE-version pin, re-pinned forward at C6 P8's founding move (mgr §A57 completion): 1.50.0 -> 1.51.0.
+        # C6a VT-2 (CREATE-RELATIONSHIP MINTED live) moved it 1.51.0 -> 1.52.0.
+        # C6a VT-3 (THE TREE SEEDED AS ROWS — 35 view rows) moved it 1.52.0 -> 1.53.0 BY NAME (§A57).
+        # C6a VT-6d (THE STAMP FOUNDING — the required-stamps policy rule) moved it 1.53.0 -> 1.54.0 BY NAME (§A57).
+        # C7 P3 (THE KERNEL FROM THE RECORD — the twelve act-kind rows) moved it 1.54.0 -> 1.55.0 BY NAME (§A57).
+        self.assertEqual(_pack()["founding_version"], "1.55.0")
 
 
 if __name__ == "__main__":

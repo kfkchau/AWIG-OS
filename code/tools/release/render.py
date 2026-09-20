@@ -76,6 +76,17 @@ FORBIDDEN_OUTPUT = [b"<HOME>", b"<PROJECTS>"]
 # live in the shipped map tools/release/placeholder-map.json.
 MAP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "placeholder-map.json")
 
+# RELEASE-4 round 3 (owner :4656, NARROWING round 2's blanket tests/ exemption at :4642): the
+# loopback_port rewrite is ON for tests/ and EXEMPTS EXACTLY ONE FILE, keyed by basename —
+# tests/test_p17_honest_state.py, the honest-state test whose three loopback literals (:69/:285/:321)
+# are its OWN DATA (the transport address the socket ops record) and must not be rewritten. Every
+# other tests/ file's loopback-with-port IS rewritten, as tools/ always was. THE SAME EXEMPTION IS
+# ENCODED IN THREE ENFORCERS, or the release refuses itself: (a) the rewrite in render_extra_tree
+# reads THIS tuple; (b) pushscan.py's CONTENT_RULE_FILE_EXEMPT mirrors it (asserted equal by
+# tests/test_release_loopback_exemption.py); (c) the shipped check's _REFUSE_EXEMPT is SUBSTITUTED
+# from THIS tuple at inject time (inject_refusal_battery), so (a) and (c) cannot drift.
+LOOPBACK_PORT_EXEMPT_BASENAMES = ("test_p17_honest_state.py",)
+
 # Directories/files NEVER shipped (RELEASE-C4-PLAN §8 / EP §5). A tool that READS planning/
 # is excluded too; the one such tool is tools/brief/briefcheck.py (named), and a render-time
 # guard below refuses to ship any tool whose bytes open a planning/ path, so a new one cannot
@@ -171,6 +182,11 @@ def render_extra_tree(subdir, src_root, out_root, patterns, tokens):
     base = os.path.join(src_root, subdir)
     files = {}
     total_hits = {}
+    # RELEASE-4 round 3 (owner :4656, narrowing round 2's :4642 blanket): the loopback_port rewrite runs
+    # over tests/ like every other rule. EXACTLY ONE file keeps its loopback literals raw — a basename in
+    # LOOPBACK_PORT_EXEMPT_BASENAMES (the honest-state test's own data). Every OTHER rule still applies
+    # to that file; every other file gets every rule; tools/ is unchanged.
+    exempt_patterns = [p for p in patterns if p[0] != "loopback_port"]
     for root, dirs, names in os.walk(base):
         dirs[:] = sorted(d for d in dirs if d != "__pycache__")
         for name in sorted(names):
@@ -186,7 +202,8 @@ def render_extra_tree(subdir, src_root, out_root, patterns, tokens):
             if subdir == "tools" and rel not in EXCLUDE_TOOL_FILES:
                 if re.search(rb'(?:open|Path|read_text|read_bytes|glob|check_output|run)\([^)\n]{0,60}planning/', data):
                     fail("%s reads planning/ but is not excluded — add it to EXCLUDE_TOOL_FILES" % rel)
-            out, hits = rewrite_private(data, patterns, tokens)
+            file_patterns = exempt_patterns if name in LOOPBACK_PORT_EXEMPT_BASENAMES else patterns
+            out, hits = rewrite_private(data, file_patterns, tokens)
             for k, v in hits.items():
                 total_hits[k] = total_hits.get(k, 0) + v
             for bad in FORBIDDEN_OUTPUT:  # defence: the rewrite must have removed these
@@ -221,6 +238,8 @@ SKIP_TABLE = [
     ('test_ep28_w8.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/vm/govosfs/govosfs.c'),
     ('test_ep28c_w4b.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/vm/govosfs/govosfs.c'),
     ('test_ep28c_w4d.py', 'asserts an estate-host property (the runner kernel differs from the pinned guest)', 'the pinned guest kernel'),
+    # RELEASE-3 re-open (ruled :4166): one more estate-host-property skip; census 63 -> 64. Double-quoted (the reason/dep carry apostrophes; archi's single-quoted verbatim would not parse).
+    ("test_ep28c_w7.py", "asserts an estate-host property (the store's barrier amortisation across a batch — a timing relation of this host's storage; a virtual disk never amortises)", "this host's storage timing"),
     ('test_ep28c_w4e.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/vm/govosfs/govosfs.c'),
     ('test_ep28c_w4e_c.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/vm/govosfs/govosfs.c'),
     ('test_ep28c_w4e_c2.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/vm/govosfs/govosfs.c'),
@@ -258,6 +277,24 @@ SKIP_TABLE = [
     ('test_ep37.py', 'reads the estate git history (the public tree carries no .git)', 'the estate .git history'),
     ('test_ep39.py', 'reads the estate git history (the public tree carries no .git)', 'the estate .git history'),
     ('test_founding_is_logged.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    # RELEASE-3 (the C5 code) — the fifteen the stranger run at the C5 pin found (ruled :4155, built by mtr on the owner's word :4156); census 48 -> 63, no past test edited.
+    ('test_ep48.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep48g.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep49a.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep49b.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep49c.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep49d.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep50.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_ep52.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/build/BUILD-PROGRESS_v3.md'),
+    ('test_instr_boundary_sweep.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/evidence/EP-INSTRUMENTS-1/'),
+    ('test_instr_effect_order.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/evidence/EP-INSTRUMENTS-1/'),
+    ('test_instr_refusal_census.py', 'reads a private estate file outside the shipped src/tests/tools', 'planning/evidence/EP-INSTRUMENTS-1/'),
+    ('test_instr_public_claims.py', 'reads a private estate file outside the shipped src/tests/tools', '../awig-os and awig-deploy pages'),
+    ('test_maint_outside_2.py', 'needs the fusepy adapter, a third-party package outside the shipped stdlib core', 'fusepy (third-party adapter, not shipped)'),
+    ('test_maint_outside_3.py', 'needs the fusepy adapter, a third-party package outside the shipped stdlib core', 'fusepy (third-party adapter, not shipped)'),
+    ("test_keymat.py", "pins the estate source's exact bytes (a byte-freeze guard); the shipped rendering carries a header and public wording", 'the estate vault source bytes (the byte-freeze pin)'),
+    # RELEASE 3.1 (ruled :4172): the flaky probe skipped at the pin until its estate repair ships at the next pin; census 64 -> 65.
+    ("test_ep47b.py", "a probe that can fail by chance (a substring assertion over the record's text collides with timestamp and hash digits); repaired in the estate at 9a3f08b2, ships at the next pin", "the repair commit"),
 ]
 
 # The refusal battery injected into the shipped check.py (EP §2 B3): one planted row per class. Each
@@ -277,10 +314,15 @@ _REFUSE = [
     ("key_path", _re.compile(rb"~?/?\.ssh/[A-Za-z0-9_.-]+"), (b"~/.ssh/", b"example_key")),
     ("loopback_port", _re.compile(rb"127\.0\.0\.1:\d+"), (b"127.0.0.1:", b"8080")),
     ("guest_user", _re.compile(rb"[a-z][a-z0-9_-]*@127\.0\.0\.1"), (b"exampleuser@", b"127.0.0.1")),
-    ("repository_url", _re.compile(rb"(?:git@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+|github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)"), (b"git@", b"github.com:example/private.git")),
+    ("repository_url", _re.compile(rb"(?:git@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+|github\.com/kfkchau/gov-os)"), (b"git@", b"github.com:example/private.git")),
     ("claude_projects_path", _re.compile(rb"\.claude/" rb"projects[A-Za-z0-9_./-]*"), (b".claude/", b"projects/example")),
     ("private_email", _re.compile(rb"[A-Za-z0-9._%+-]+@gmail\.com"), (b"someone@", b"gmail.com")),
 ]
+# THE ONE FILE-SCOPED EXEMPTION, per class (RELEASE-4 round 3, owner :4656): SUBSTITUTED AT RENDER from
+# render.py's LOOPBACK_PORT_EXEMPT_BASENAMES -- the very tuple the rewrite applied -- so this check and
+# the renderer cannot disagree. A file named here keeps its loopback literals raw (its own test data);
+# every other file's were scrubbed at render, and any raw one left is a leak this battery refuses.
+_REFUSE_EXEMPT = {"loopback_port": __LOOPBACK_PORT_EXEMPT_BASENAMES__}
 
 
 def _refuse_scan_bytes(data):
@@ -299,6 +341,8 @@ def _refuse_scan_trees():
                 if n.endswith((".pyc", ".pyo")):
                     continue
                 for name in _refuse_scan_bytes(open(os.path.join(r, n), "rb").read()):
+                    if n in _REFUSE_EXEMPT.get(name, ()):
+                        continue                      # the exempt file's own data, by basename
                     hits.setdefault(name, []).append(os.path.relpath(os.path.join(r, n), HERE))
     return hits
 
@@ -349,7 +393,14 @@ def inject_refusal_battery(data):
     anchor = b'\nif __name__ == "__main__":'
     if anchor not in data:
         fail("check.py: cannot find the __main__ anchor to inject the refusal battery")
-    data = data.replace(anchor, REFUSAL_BATTERY + anchor, 1)
+    # the exemption travels INTO the shipped check from the renderer's own tuple (owner :4656): one
+    # slot, filled with repr(LOOPBACK_PORT_EXEMPT_BASENAMES), refused if the slot is missing or doubled.
+    slot = b"__LOOPBACK_PORT_EXEMPT_BASENAMES__"
+    if REFUSAL_BATTERY.count(slot) != 1:
+        fail("check.py: the refusal battery must carry exactly one exemption slot, found %d"
+             % REFUSAL_BATTERY.count(slot))
+    battery = REFUSAL_BATTERY.replace(slot, repr(tuple(LOOPBACK_PORT_EXEMPT_BASENAMES)).encode("ascii"))
+    data = data.replace(anchor, battery + anchor, 1)
     old = b'    suite = unittest.defaultTestLoader.loadTestsFromTestCase(SeedCheck)\n'
     new = (b'    suite = unittest.TestSuite()\n'
            b'    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(SeedCheck))\n'
@@ -363,52 +414,214 @@ def inject_refusal_battery(data):
 
 
 RUNNER_SRC = r'''#!/usr/bin/env python3
-"""Run the AWIG OS public test suite over this folder. Modules that need private estate context
-(files outside src/tests/tools, the estate git history, or the guest/conformance fixtures reached by
-an absolute estate path) are SKIPPED with a stated reason naming what they need; every other module
-runs and MUST be green. It names its world: the three tree checksums it ran against are printed."""
+"""Run the AWIG OS public test suite over this folder, and PROVE what it prints.
+
+Before any module runs, an integrity gate recomputes the release's own pins from the bytes on disk,
+so a green result cannot be a vacuous one:
+  - INVENTORY: the set of files in each rendered tree (src, tests, tools) must equal the set the
+    stamp recorded. A file added to a tree, or missing from it, is a refusal (exit 2, named).
+  - CHECKSUMS: the three tree checksums are RECOMPUTED from the on-disk bytes -- not read from the
+    stamp and reprinted -- and must equal both RENDER-STAMP.json and RELEASE-TESTS-MANIFEST.json.
+    A single changed byte moves a recomputed checksum and is a refusal.
+  - a run with no discovered module, or an empty skip list, is a refusal -- never a silent pass.
+Then every discovered test_*.py runs (helpers such as era_pin.py are NOT modules); each module's
+stdout and stderr are kept in a per-module log beside the run (public-suite-logs/), not discarded;
+and the summary reports test CASES and within-module skips APART from module exit codes.
+Modules that need private estate context (files outside src/tests/tools, the estate git history, or
+the guest/conformance fixtures reached by an absolute estate path) are SKIPPED with a stated reason
+naming what they need; every other module runs and MUST be green. It names its world: the three tree
+checksums it RECOMPUTED and CONFIRMED against this folder are printed."""
+import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SKIP = {}
-with open(os.path.join(HERE, "tests", "RELEASE-SKIP-LIST.txt"), encoding="utf-8") as fh:
-    for line in fh:
-        line = line.rstrip("\n")
-        if not line or line.startswith("#"):
+BYTECODE = ("__pycache__",)
+# release scaffolding emitted INTO tests/ after the tree checksums were taken (so it is excluded
+# from those checksums and from the inventory the stamp recorded):
+TESTS_SCAFFOLDING = {"RELEASE-SKIP-LIST.txt", "test_release_census.py"}
+LOGDIR = os.path.join(HERE, "public-suite-logs")
+
+
+def _refuse(reason):
+    """A named, non-zero refusal. Exit 2 marks an integrity refusal, distinct from a module failure."""
+    print("REFUSED: " + reason)
+    sys.exit(2)
+
+
+def _tree_checksum(files):
+    """The renderer's own tree checksum, byte for byte: sha256 over sorted per-file lines, each line
+    being the relpath, then a NUL, then the file's sha256 hex, then a newline. `files` is
+    {relpath: sha256hex}; order-independent, content-bound."""
+    h = hashlib.sha256()
+    for rel in sorted(files):
+        h.update(rel.encode("utf-8"))
+        h.update(bytes([0]))
+        h.update(files[rel].encode("ascii"))
+        h.update(b"\n")
+    return h.hexdigest()
+
+
+def _walk_tree(subdir, key_prefix):
+    """{key: fullpath} over the on-disk subdir, keyed exactly as the renderer keyed that tree
+    (src has no prefix; tests/ and tools/ carry theirs), bytecode excluded."""
+    base = os.path.join(HERE, subdir)
+    out = {}
+    for root, dirs, names in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in BYTECODE]
+        for name in names:
+            if name.endswith((".pyc", ".pyo")):
+                continue
+            path = os.path.join(root, name)
+            rel = os.path.relpath(path, base).replace(os.sep, "/")
+            out[(key_prefix + rel) if key_prefix else rel] = path
+    return out
+
+
+def _integrity_gate():
+    """Recompute the release's own pins from the bytes on disk; refuse on any drift. Returns the
+    confirmed tree checksums for the summary line."""
+    try:
+        with open(os.path.join(HERE, "RENDER-STAMP.json"), encoding="utf-8") as fh:
+            stamp = json.load(fh)
+    except Exception as exc:
+        _refuse("RENDER-STAMP.json is unreadable (%s)" % exc)
+    try:
+        with open(os.path.join(HERE, "RELEASE-TESTS-MANIFEST.json"), encoding="utf-8") as fh:
+            manifest = json.load(fh)
+    except Exception as exc:
+        _refuse("RELEASE-TESTS-MANIFEST.json is unreadable (%s)" % exc)
+    stamp_tc = stamp.get("tree_checksums", {})
+    if set(stamp_tc) != {"src", "tests", "tools"}:
+        _refuse("stamp tree_checksums are not the three trees (src, tests, tools)")
+    if manifest.get("tree_checksums", {}) != stamp_tc:
+        _refuse("manifest tree_checksums disagree with the stamp")
+    # the stamp's per-file inventory, keyed as the renderer keyed each tree (src: no prefix and the
+    # root '../' extras dropped; tests/ and tools/ carry their prefix):
+    src_map = {k: v for k, v in stamp.get("files", {}).items() if not k.startswith("../")}
+    trees = (
+        ("src", src_map, _walk_tree("src", ""), set()),
+        ("tests", stamp.get("tests_files", {}), _walk_tree("tests", "tests/"),
+         {"tests/" + n for n in TESTS_SCAFFOLDING}),
+        ("tools", stamp.get("tools_files", {}), _walk_tree("tools", "tools/"), set()),
+    )
+    for tree, stamp_map, disk_paths, scaffolding in trees:
+        disk_keys = set(disk_paths) - scaffolding
+        stamp_keys = set(stamp_map)
+        added = disk_keys - stamp_keys
+        missing = stamp_keys - disk_keys
+        if added:
+            _refuse("%s tree carries files absent from the release inventory: %s"
+                    % (tree, ", ".join(sorted(added))))
+        if missing:
+            _refuse("%s tree is missing files the release inventory names: %s"
+                    % (tree, ", ".join(sorted(missing))))
+        recomputed = {}
+        for key in stamp_map:
+            with open(disk_paths[key], "rb") as fh:
+                got = hashlib.sha256(fh.read()).hexdigest()
+            if got != stamp_map[key]:
+                _refuse("%s/%s differs from the release inventory -- a byte was changed" % (tree, key))
+            recomputed[key] = got
+        rolled = _tree_checksum(recomputed)
+        if rolled != stamp_tc[tree]:
+            _refuse("%s tree checksum recomputed %s but the stamp pins %s"
+                    % (tree, rolled[:12], stamp_tc[tree][:12]))
+    return stamp_tc
+
+
+def main():
+    stamp_tc = _integrity_gate()
+    skip = {}
+    try:
+        with open(os.path.join(HERE, "tests", "RELEASE-SKIP-LIST.txt"), encoding="utf-8") as fh:
+            for line in fh:
+                line = line.rstrip("\n")
+                if not line or line.startswith("#"):
+                    continue
+                mod, reason, dep = line.split("\t")
+                skip[mod] = (reason, dep)
+    except FileNotFoundError:
+        _refuse("tests/RELEASE-SKIP-LIST.txt is absent -- the runner cannot state what it skipped")
+    if not skip:
+        _refuse("the skip list is empty -- a public run with no stated skips certifies nothing")
+    tests_dir = os.path.join(HERE, "tests")
+    # DISCOVERY: test_*.py only. Helpers (era_pin.py, differential drivers) are not modules.
+    mods = sorted(f for f in os.listdir(tests_dir)
+                  if f.startswith("test_") and f.endswith(".py"))
+    if not mods:
+        _refuse("no test_*.py module discovered -- an empty collection cannot certify a release")
+    os.makedirs(LOGDIR, exist_ok=True)
+    ran_re = re.compile(r"^Ran (\d+) test", re.M)
+    # A module that raises unittest.SkipTest AT IMPORT (before any test runs) exits non-zero with a
+    # bare traceback ending in SkipTest and NO "Ran N tests" line. That is a stated skip, not a crash:
+    # read it as a SKIP row naming its reason, never a FAILED row (RELEASE-4 round 2, board :4642 (3)).
+    import_skip_re = re.compile(r"^(?:[\w.]+\.)?SkipTest: (.*)$", re.M)
+    # THE TREE ROOT ON THE CHILD IMPORT PATH: each module runs as its OWN process, so a stranger's plain
+    # run must find tools/ (and the tests package) without an environment incantation. HERE is the tree
+    # root that holds src/ tests/ tools/; put it on PYTHONPATH for every child (board :4642 (3)).
+    child_env = dict(os.environ)
+    child_env["PYTHONPATH"] = (
+        HERE + (os.pathsep + child_env["PYTHONPATH"] if child_env.get("PYTHONPATH") else ""))
+    mod_passed = mod_failed = 0
+    cases = case_fail = case_err = case_skip = 0
+    skipped = []
+    import_skipped = []
+    failed_mods = []
+    for f in mods:
+        if f in skip:
+            skipped.append((f,) + skip[f])
             continue
-        mod, reason, dep = line.split("\t")
-        SKIP[mod] = (reason, dep)
-try:
-    tc = json.load(open(os.path.join(HERE, "RENDER-STAMP.json"))).get("tree_checksums", {})
-except Exception:
-    tc = {}
-tests_dir = os.path.join(HERE, "tests")
-mods = sorted(f for f in os.listdir(tests_dir) if f.endswith(".py"))
-passed = failed = 0
-skipped = []
-for f in mods:
-    if f in SKIP:
-        skipped.append((f,) + SKIP[f])
-        continue
-    rc = subprocess.call([sys.executable, os.path.join(tests_dir, f)],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if rc == 0:
-        passed += 1
-    else:
-        failed += 1
-        print("FAILED  %s (rc %s)" % (f, rc))
-print()
-print("AWIG OS public suite ran against: src %s  tests %s  tools %s"
-      % (tc.get("src", "?")[:12], tc.get("tests", "?")[:12], tc.get("tools", "?")[:12]))
-for f, reason, dep in skipped:
-    print("SKIP    %s -- %s (%s)" % (f, reason, dep))
-print()
-print("modules: %d ran (%d passed, %d failed), %d skipped naming their private dependency"
-      % (passed + failed, passed, failed, len(skipped)))
-sys.exit(0 if failed == 0 else 1)
+        logpath = os.path.join(LOGDIR, f + ".log")
+        with open(logpath, "wb") as log:
+            rc = subprocess.call([sys.executable, os.path.join(tests_dir, f)],
+                                 stdout=log, stderr=subprocess.STDOUT, env=child_env)
+        with open(logpath, encoding="utf-8", errors="replace") as log:
+            text = log.read()
+        match = ran_re.search(text)
+        # import-time SkipTest: non-zero, no "Ran N" line, a SkipTest traceback -> a stated skip row.
+        if rc != 0 and match is None:
+            m_skip = import_skip_re.search(text)
+            if m_skip:
+                import_skipped.append((f, m_skip.group(1).strip()))
+                continue
+        cases += int(match.group(1)) if match else 0
+        for kind, count in re.findall(r"(failures|errors|skipped)=(\d+)", text):
+            if kind == "failures":
+                case_fail += int(count)
+            elif kind == "errors":
+                case_err += int(count)
+            else:
+                case_skip += int(count)
+        if rc == 0:
+            mod_passed += 1
+        else:
+            mod_failed += 1
+            failed_mods.append((f, rc))
+    print()
+    for f, rc in failed_mods:
+        print("FAILED  %s (rc %s) -- output in public-suite-logs/%s.log" % (f, rc, f))
+    print("AWIG OS public suite ran against (RECOMPUTED & CONFIRMED): src %s  tests %s  tools %s"
+          % (stamp_tc["src"][:12], stamp_tc["tests"][:12], stamp_tc["tools"][:12]))
+    for f, reason, dep in skipped:
+        print("SKIP    %s -- %s (%s)" % (f, reason, dep))
+    for f, reason in import_skipped:
+        print("SKIP    %s -- %s (SkipTest at import)" % (f, reason))
+    print()
+    print("modules: %d ran (%d passed, %d failed), %d skipped naming their private dependency, "
+          "%d skipped at import"
+          % (mod_passed + mod_failed, mod_passed, mod_failed, len(skipped), len(import_skipped)))
+    print("cases:   %d ran, %d failed, %d errored, %d skipped within modules"
+          % (cases, case_fail, case_err, case_skip))
+    print("per-module logs kept in public-suite-logs/")
+    sys.exit(0 if mod_failed == 0 else 1)
+
+
+if __name__ == "__main__":
+    main()
 '''
 
 CENSUS_SRC = r'''#!/usr/bin/env python3

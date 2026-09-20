@@ -9,36 +9,42 @@
 """AWIG OS kernel — the secrets vault (design/31 J8; EP-19): verify, never reveal.
 
 The impossibility here is CLOSURE, not encryption. A secret VALUE crosses the boundary
-exactly once, is hashed, and its bytes are stored write-once in this store keyed by
-their own hash — OUTSIDE the record. The record ever holds only the hash and the usage
-decision (MATCH / NO-MATCH). There is NO read operation for a stored secret value: not a
-refused one, an ABSENT one (the bank has no counter, P3). Reading a secret back through
-the system is a Closure Hit — the op does not exist.
+exactly once, is hashed, and NOTHING of it is kept but that hash — its bytes are stored
+nowhere, on disk or off. The record ever holds only the hash and the usage decision
+(MATCH / NO-MATCH). There is NO read operation for a secret value: not a refused one, an
+ABSENT one (the bank has no counter, P3), and now nothing to read even if one existed.
+Reading a secret back through the system is a Closure Hit — the op does not exist.
 
 That is why the guarantee reads "unreadable by every actor including the chain-end":
-there is no lawful path to a secret value because the path was never built. The
-impossibility is ARCHITECTURAL, not cryptographic.
+there is no lawful path to a secret value because the path was never built and no value
+is stored. The impossibility is ARCHITECTURAL, not cryptographic.
 
 THE WRONG REFERENCE THIS MODULE REFUSES: the password-manager / encryption-at-rest
 template. There is no decrypt-with-a-master-key path — that would be exactly the
 apex-actor-above-the-law shape the constitution forbids (CONST-SECRETS). The value is
-not encrypted-so-only-the-owner-can-read; it is unreadable because NO read op exists.
+not encrypted-so-only-the-owner-can-read; it is unreadable because it is not stored and
+NO read op exists.
 
-HONEST CAP (design/31 §7; the EP names it): this store closes the SYSTEM path, not the
-disk path. An actor with raw disk access could read the sealed bytes off the vault
-files; sealing those bytes cryptographically (signing/crypto so on-disk custody is also
-closed) is CAMPAIGN 4's work, not improvised here.
+HONEST CAP (design/31 §7): the on-disk-bytes fact is DISCHARGED — the value's bytes are
+no longer written to disk, so raw disk access reads no sealed value off the vault (there
+is none; only the hash ever survives). ONE separate question remains, named not closed
+(design/31 J8): the stored hash is an unsalted sha256, so a low-entropy secret's hash is
+guessable offline; salting/strengthening the hash home is that home's later decision, not
+improvised here.
 
-The surface is exactly two operations: `seal` (value in -> hash out; value stored
-write-once, keyed by hash) and `compare` (candidate + a sealed hash -> is it a match?;
-the comparison is by hash, and NEVER returns or exposes a value). There is deliberately
-no `get`, no `read`, no `reveal`, no `open`, no `has` — the absence is the guarantee.
+The surface is exactly two operations: `seal` (value in -> hash out; nothing stored) and
+`compare` (candidate + a sealed hash -> is it a match?; the comparison is by hash, and
+NEVER returns or exposes a value). There is deliberately no `get`, no `read`, no
+`reveal`, no `open`, no `has` — the absence is the guarantee.
 `secret_hash` is the one hash home the verify-never-reveal family shares (design/31 J8
 re-home: account verification was the vault SEED — one mechanism, no parallel hashing).
 """
 
 import hashlib
 from pathlib import Path
+
+from bridge.host_seam import host   # C7 P2 (:3930/:3952) — the vault's one disk act, creating its home
+                                    # dir, routed through the host seam like every other core file
 
 
 def secret_hash(value):
@@ -53,39 +59,30 @@ def secret_hash(value):
 
 
 class VaultStore:
-    """A write-once, hash-keyed store for secret VALUES — like the content-addressed blob
-    store, MINUS every read path. `seal` writes; there is NO `get`/`read`/`reveal`.
-    `compare` answers a hash-equality question and never reads a stored value back out. The
-    sealed bytes exist only so the value crossed once into a write-once home
-    (campaign-4-protectable); no code path reads them back — that ABSENCE is the closure."""
+    """A hash-only store for secret VALUES — the surface is exactly `seal` and `compare`, with
+    NO `get`/`read`/`reveal`. `seal` computes a value's hash and stores NOTHING; `compare`
+    answers a hash-equality question and reads no stored value (there is none). A secret value
+    crosses the boundary once, is hashed, and only the hash survives — nothing of it is on disk
+    but its hash. There is no stored value to read back, and that ABSENCE is the closure."""
 
     def __init__(self, dir_path):
         self.dir = Path(dir_path)
-        self.dir.mkdir(parents=True, exist_ok=True)
+        host().mkdir_p(self.dir)   # the vault's home dir — routed (portable host primitive)
 
     def seal(self, value):
-        """Value in -> its hash out. The value is hashed and its bytes stored write-once
-        keyed by that hash (identical values coincide, like blobs). Returns the
-        "sha256:<hex>" hash — the ONLY thing that leaves this call and the only thing the
-        record ever records (content_params-style: the value never lands in a payload). The
-        value never leaves the vault; there is no read path to get it back."""
-        h = secret_hash(value)
-        p = self._path(h)
-        if not p.exists():
-            p.parent.mkdir(parents=True, exist_ok=True)
-            data = value.encode("utf-8") if isinstance(value, str) else value
-            p.write_bytes(data)  # write-once; never mutated, never read back
-        return h
+        """Value in -> its hash out, and NOTHING is stored: no file, no directory, no byte
+        write. The value is hashed and the "sha256:<hex>" hash is returned — the ONLY thing
+        that leaves this call and the only thing the record ever records (content_params-style:
+        the value never lands in a payload). The value's bytes have no home on disk because no
+        path ever reads them back and the surface has no read op; keeping them would be storing
+        what cannot be derived and cannot be used. Nothing of a secret is on disk but its hash."""
+        return secret_hash(value)
 
     def compare(self, candidate, sealed_hash):
         """Does `candidate` match the secret sealed under `sealed_hash`? Answered BY HASH:
         hash the candidate and test equality against the sealed hash. Returns a bool ONLY —
         never the value, never the candidate. This is the whole of "verify": a MATCH /
-        NO-MATCH question that reveals nothing. It does not read the vault's stored bytes;
-        the sealed hash is supplied by the caller (resolved from the record's latest SEAL
-        for the name)."""
+        NO-MATCH question that reveals nothing. It reads no stored bytes (there are none); the
+        sealed hash is supplied by the caller (resolved from the record's latest SEAL for the
+        name)."""
         return sealed_hash is not None and secret_hash(candidate) == sealed_hash
-
-    def _path(self, h):
-        digest = h.split(":", 1)[1]
-        return self.dir / digest[:2] / digest[2:]  # fanout by first byte

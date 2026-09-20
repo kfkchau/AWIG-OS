@@ -48,9 +48,10 @@ would move the call sequence the acceptance set pins.
 """
 
 import hashlib
-import os
 from collections.abc import Mapping
 from pathlib import Path
+
+from bridge.host_seam import host   # C7 P2 — the atomic write-once / barrier / remove / reads routed through the seam
 
 #: THE GUARANTEE, AS A VALUE A CALLER CAN READ. A test asks the store what it promises
 #: instead of asking what class it is: the defect being cured is that a composition
@@ -83,7 +84,7 @@ class BlobStore:
 
     def __init__(self, dir_path):
         self.dir = Path(dir_path)
-        self.dir.mkdir(parents=True, exist_ok=True)
+        host().mkdir_p(self.dir)
         # R3 (EP-MAINT-OUTSIDE-4): the DURABILITY MARK. The paths whose directory barrier THIS process
         # has completed. A `put` on an existing path re-runs the barrier UNLESS it is marked, so a
         # retry after a directory-sync failure (the rename landed, the parent fsync did not) re-runs
@@ -94,11 +95,7 @@ class BlobStore:
     def _barrier(self, p):
         """Make the NAME durable: fsync the parent directory (idempotent). Marks the path so a later
         dedup put does not re-fsync a name this process already made durable (R3)."""
-        dfd = os.open(str(p.parent), os.O_RDONLY)
-        try:
-            os.fsync(dfd)
-        finally:
-            os.close(dfd)
+        host().fsync_dir(str(p.parent))
         self._barriered.add(str(p))
 
     def put(self, data):
@@ -117,9 +114,9 @@ class BlobStore:
             data = data.encode("utf-8")
         h = "sha256:" + hashlib.sha256(data).hexdigest()
         p = self._path(h)
-        if p.exists():
+        if host().path_exists(p):
             # DEDUP — but verify first (never serve a name whose bytes were lost or corrupted).
-            stored = p.read_bytes()
+            stored = host().read_bytes(p)
             if "sha256:" + hashlib.sha256(stored).hexdigest() != h:
                 raise ValueError(
                     "blob %s exists but its bytes do not hash to it — the stored content is missing "
@@ -127,19 +124,14 @@ class BlobStore:
             if str(p) not in self._barriered:
                 self._barrier(p)           # IDEMPOTENT durability: re-run the barrier a retry may owe
             return h
-        p.parent.mkdir(parents=True, exist_ok=True)
+        host().mkdir_p(p.parent)
         tmp = p.with_name(p.name + ".part")
-        fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())           # the BYTES are durable
-        os.replace(str(tmp), str(p))       # write-once, and atomically visible
+        host().write_file_durably(str(tmp), str(p), data)  # the BYTES durable, then atomically visible
         self._barrier(p)                   # the NAME is durable too, not only the bytes
         return h
 
     def get(self, h):
-        return self._path(h).read_bytes()
+        return host().read_bytes(self._path(h))
 
     def has(self, h):
         # An existence CHECK answers False for a malformed address rather than raising (R4 keeps
@@ -148,7 +140,7 @@ class BlobStore:
         # refuse a malformed address through `_path`; only this boolean read is lenient, so a caller
         # probing an absent-or-sentinel hash ("sha256:absent") gets "not present", not a crash.
         try:
-            return self._path(h).exists()
+            return host().path_exists(self._path(h))
         except ValueError:
             return False
 
@@ -207,14 +199,10 @@ class BlobStore:
                 "the removal tail operates on a content hash ('sha256:<hex>') only — the blob "
                 "store's keyspace is content addresses, so it can never reach a record (cannot orphan)")
         p = self._path(h)
-        if not p.exists():
+        if not host().path_exists(p):
             return False                        # already gone: idempotent, the re-run completes the transfer
-        os.remove(str(p))                        # THE BYTES LEAVE THE STORE
-        dfd = os.open(str(p.parent), os.O_RDONLY)
-        try:
-            os.fsync(dfd)                        # the removal of the NAME is durable, not only the bytes
-        finally:
-            os.close(dfd)
+        host().remove(str(p))                    # THE BYTES LEAVE THE STORE
+        host().fsync_dir(str(p.parent))          # the removal of the NAME is durable, not only the bytes
         return True
 
     def _path(self, h):

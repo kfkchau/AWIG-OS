@@ -177,6 +177,10 @@ class RecoverWorld(unittest.TestCase):
         """Replay the (possibly damaged) record file into a fresh kernel and re-register the recover
         op (a CODE registration; the recover LAW replays from the file). build_full_kernel's boot
         attestation is idempotent over an unchanged tree, so replay appends nothing — seqs are stable."""
+        # EP-MAINT-OUTSIDE-5 (re-spec C): a rebuild that then RECOVERS (appends) is a true two-writer
+        # site; close the live writer first so the rebuilt kernel is a WRITER (release-on-close). A
+        # rebuild that only READS was never refused, and closing first is harmless for it too.
+        self.store.close()
         self.store, self.gate, self.views, self.blobs, _subs = build_full_kernel(self.path, self.blobdir)
         self.owner = self.views.chain_end()
 

@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from kernel import gate as gate_mod                              # noqa: E402
 from kernel import store as store_mod                            # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                     # noqa: E402
 from kernel.errors import OpError                                # noqa: E402
 
@@ -111,7 +112,7 @@ class VisibilityCase(unittest.TestCase):
         seen = {}
         entered = threading.Event()
         read = threading.Event()
-        real_sync = store_mod.os.fdatasync
+        real_sync = seam_mod.os.fdatasync
 
         def at_the_barrier(fd):
             if not entered.is_set():
@@ -137,11 +138,11 @@ class VisibilityCase(unittest.TestCase):
             read.set()
         t = threading.Thread(target=second, daemon=True)
         t.start()
-        store_mod.os.fdatasync = at_the_barrier
+        seam_mod.os.fdatasync = at_the_barrier
         try:
             gate.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
             read.set()
         t.join(timeout=WEDGE_S)
         self.assertFalse(t.is_alive(), "the second decide never returned")
@@ -163,7 +164,7 @@ class VisibilityCase(unittest.TestCase):
         so the record it saw is by construction appended-and-not-yet-covered."""
         store, gate, _ = self.build()
         at_barrier = {}
-        real_sync = store_mod.os.fdatasync
+        real_sync = seam_mod.os.fdatasync
         entered = threading.Event()
         read = threading.Event()
 
@@ -175,11 +176,11 @@ class VisibilityCase(unittest.TestCase):
                                          for e in store.by_action("CREATE-OP")]
                 read.set()
             return real_sync(fd)
-        store_mod.os.fdatasync = at_the_barrier
+        seam_mod.os.fdatasync = at_the_barrier
         try:
             gate.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
         self.assertTrue(read.is_set(), "the act issued no barrier")
         self.assertIn("FIRST", at_barrier["in_fold"],
                       "the record was not in the fold at the instant its barrier ran")
@@ -198,17 +199,17 @@ class VisibilityCase(unittest.TestCase):
         caller actually waits on."""
         store, gate, _ = self.build()
         order = []
-        real_sync = store_mod.os.fdatasync
+        real_sync = seam_mod.os.fdatasync
 
         def spy(fd):
             order.append("sync")
             return real_sync(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             gate.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
             order.append("reply")
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
         self.assertEqual(order[-2:], ["sync", "reply"],
                          "the act replied before its covering sync: %r" % (order,))
 
@@ -241,7 +242,7 @@ class VisibilityCase(unittest.TestCase):
         makes and this is it as a measurement."""
         store, gate, _ = self.build(defer=True)
         blind = {}
-        real_sync = store_mod.os.fdatasync
+        real_sync = seam_mod.os.fdatasync
         done = threading.Event()
 
         def at_the_barrier(fd):
@@ -251,11 +252,11 @@ class VisibilityCase(unittest.TestCase):
                 blind["fold"] = [(e.get("payload") or {}).get("name")
                                  for e in store.by_action("CREATE-OP")]
             return real_sync(fd)
-        store_mod.os.fdatasync = at_the_barrier
+        seam_mod.os.fdatasync = at_the_barrier
         try:
             gate.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
         self.assertNotIn("FIRST", blind["fold"],
                          "the deferring store did not hide the record from the fold")
         # AND THE CONTROL, on the real store: the same probe sees it.
@@ -269,11 +270,11 @@ class VisibilityCase(unittest.TestCase):
                 control["fold"] = [(e.get("payload") or {}).get("name")
                                    for e in store2.by_action("CREATE-OP")]
             return real_sync(fd)
-        store_mod.os.fdatasync = control_barrier
+        seam_mod.os.fdatasync = control_barrier
         try:
             gate2.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
         self.assertIn("FIRST", control["fold"],
                       "the real store hid the record too — then the double is not the "
                       "variable this row varies")
@@ -283,19 +284,19 @@ class VisibilityCase(unittest.TestCase):
         clause: at the instant the barrier runs, no thread holds the region."""
         store, gate, _ = self.build()
         held = []
-        real_sync = store_mod.os.fdatasync
+        real_sync = seam_mod.os.fdatasync
 
         def spy(fd):
             held.append(gate_mod.decide_region_held())
             return real_sync(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             gate.execute("CREATE-OP", "owner", {"name": "FIRST", "definition": ORDINARY_DEF})
             with self.assertRaises(OpError):
                 gate.execute("CREATE-OP", "owner", {"name": "FIRST",
                                                     "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real_sync
+            seam_mod.os.fdatasync = real_sync
         self.assertGreaterEqual(len(held), 2)
         self.assertEqual(set(held), {False})
 

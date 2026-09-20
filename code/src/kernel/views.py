@@ -22,7 +22,8 @@ from collections.abc import Mapping
 
 from . import authority
 from . import keys as keys_mod
-from .canonical import canonical_hash
+from .canonical import canonical_hash, strip_derivation
+from .errors import OpError
 from .store import PROJECTIONS, frozen_default
 
 # Closed trigger vocabulary for view definitions (design/27 §4; adopted-definitives, B09):
@@ -30,13 +31,42 @@ from .store import PROJECTIONS, frozen_default
 # creation — an unknown filter does not exist (the closure discipline on view triggers).
 VIEW_FILTER_DIMENSIONS = ("action", "actor", "object", "rule_cited", "refused", "payload_kind")
 
+# C6a VT-3 (design/25 v2 ruling "the third view form"; design/53 L16; board :3817/:3825): the closed
+# grow-only vocabulary a DERIVED view row may narrow its parent by. A derived view row is
+# `derive = {from: <parent view>, where: {<dimension>: <value>}}` — design/28's system view given a
+# row form; it names its parent view and exactly ONE closed dimension. A dimension outside this set is
+# refused at CREATE-VIEW (boot.create_view's inline door, mirroring the bind/trigger closure
+# discipline) — an unknown derived dimension does not exist. GROW-ONLY, like FOLD_NAMES: adding a
+# dimension is a deliberate edit here; a removal is a RAISE (a shrink reds the pinned five-name
+# baseline). The values a dimension may take live with the design's derived_dimensions, not here; the
+# door closes the DIMENSION, the serving (VT-3b) closes the narrowing.
+DERIVE_DIMENSIONS = ("actor_class", "scope_class", "item_kind", "liveness", "tree_kind")
+
 # The S-plane FOLD LIBRARY (design 28 §6, §I4; EP-08): the named engine folds a MASTER view
 # definition may BIND to. A master is a RECORD that names a fold; the fold FUNCTIONS stay code
 # (mechanism, zero governance value — the S-plane). This closes the loop of §I4: masters are
 # derived AND defined-as-records. A definition naming a fold outside this set is refused at
 # creation (CREATE-VIEW) — the closure discipline on binds, mirroring the trigger vocabulary.
 FOLD_NAMES = ("active_rules", "actors", "resources", "permissions", "relationships",
-              "op_definitions", "view_definitions")
+              "op_definitions", "view_definitions",
+              # C6a VT-1 (design/25 v2.1 ruling 19; design/53 B3/B4/I4): the level-2 OLD bands — the
+              # latest-wins COMPLEMENTS of the three derived masters (rules 2.2, items 3.2,
+              # relationships 4.2), each a SEPARATE bindable master beside the seven above. ONLY
+              # these three join the library: events do not split active/old and the events master
+              # is not bindable (I1, ruling 11), and the level-4 filters compute in memory (ruling
+              # 10) — neither is an S-plane bindable master. The fold_set() pin moves ONCE, grow-only.
+              "old_rules", "old_items", "old_relationships",
+              # C6a VT-3 (design/25 v2 seed_form oracle; design/53 L14 "the promotion happens in the
+              # unit that binds", ruling :3781): the six folds the base-view-tree seed's 12 bind rows
+              # name that were not yet library members. Promotion = fold-set MEMBERSHIP so the seed's
+              # binds are admitted at create_view (a bind outside FOLD_NAMES stays refused AR-2); the
+              # SERVING of a bound master — its master read — is VT-3b (design/53 L16). Each is a
+              # SEPARATE memoised projection, never a key on an existing one (I7): rule_changing_acts /
+              # acts_under_rules are VT-1's events-split KEYS today and get their own projection when
+              # served (VT-3b), never reshaping events_by_effect; static_composite is already its own.
+              # The fold_set pin moves ONCE, grow-only: baseline 10 -> 16 (test_ep50:207-209).
+              "rule_changing_acts", "acts_under_rules", "rules", "items", "active_items",
+              "static_composite")
 
 
 def fold_set():
@@ -67,6 +97,17 @@ def _matches(e, when):
         elif got != want:
             return False
     return True
+
+
+def _scope_class(scope):
+    """The actor CLASS a rule's scope names, or `all` when it names none (C6a VT-3b; design/25 v2
+    nodes 2.1.x / 2.2.x: "scope names class S / S+U / U" vs "scope names no class — the root and the
+    constitution"). A scope follows the estate's existing `kind:value` grammar (space:root); a
+    `class:<c>` scope names class c; every other scope — a space scope, the root, or none — narrows
+    to `all`. Reads the EXISTING `scope` field only; no new field (STOP a/b hold)."""
+    if isinstance(scope, str) and scope.startswith("class:"):
+        return scope.split(":", 1)[1]
+    return "all"
 
 
 def digest_of(e, algo="json"):
@@ -119,12 +160,24 @@ class Views:
         self._memo = {}
         self._memo_gen = 0          # the append generation: EVERY append moves it (undeclared memos)
         self._subset_gens = {}      # per-fold generation for the folds with a declared subset
+        # C6a VT-6a: THE CLIMB'S IN-MEMORY PENDING-STAMP BUFFER (design/25 v2.4 ruling 13 — the
+        # finalised time is a change in the view's own pipeline, NEVER a record row). The stamp
+        # step (gate._stage_stamps) records an act's staged stamps here, keyed by the act's
+        # content-hash echo; the sixth on-append listener (_retire_pending_stamp) retires the
+        # matching copy when the act's row appends. Pipeline state ONLY: NEVER read as a truth by
+        # any view/check/reply (archi :3885), and a restart empties it (the durable stamps remain
+        # in the appended rows — no silent loss).
+        self._pending_stamps = {}
         # The listener resolves `self._bump` AT CALL TIME, deliberately. Registering the bound
         # method directly would be equivalent in behaviour and would silently disable
         # `tests/test_ep24c.py`'s control, which neuters `_bump` to prove that a memo outliving
         # its head really does serve a stale answer. A guard that can no longer fail is worse
         # than the tidier line is better.
         store.on_append(lambda e: self._bump(e))
+        # C6a VT-6a: THE SIXTH on-append listener (beside `_bump`) — the record's echo retiring the
+        # view's pending stamp copy (ruling 13). It never mutates the record and never appends (the
+        # gate is the sole pen, ruling 14/17); a retire failure must not take the append down.
+        store.on_append(self._retire_pending_stamp)
 
     def _bump(self, e=None):
         """The store's on-append listener. `e` is the committed record, which is what makes the
@@ -146,6 +199,73 @@ class Views:
         if name in self.PER_ACT_FOLDS:
             return self._subset_gens.get(name, 0)
         return self._memo_gen
+
+    # ---- C6a VT-6a: THE CLIMB'S RELEVANCE, THE STAMP SHAPE, THE PENDING BUFFER + ITS ECHO ----
+    # design/25 v2.4 rulings 12/13/15 (the stamp each master view puts on the act as it climbs — its
+    # identity, the hash of what it saw, the version it saw it at; the echo retiring the pending copy;
+    # detection never legitimacy); design/53 B10; the pipeline core VT-6a (board :3888). The gate's
+    # stamp step (gate._stage_stamps) reads `relevant_folds`/`build_stamps` and records the pending
+    # copy via `record_pending_stamps`; the sixth on-append listener `_retire_pending_stamp` retires
+    # it by the content-hash echo. VT-6c reuses `relevant_folds` to know which master is relevant to
+    # a row. The buffer is NEVER read as a truth by anything — a stamp exists only in a row (:3885).
+
+    def relevant_folds(self, draft):
+        """The per-act-path master views a record TOUCHES (ruling 15, "the master views its reach
+        touches") — computed PER FOLD from the record itself, the SAME per-fold selection `_bump`
+        uses to invalidate memos (`PROJECTIONS[projection]._selects`). A fold appears AT MOST ONCE
+        (the iteration is keyed on PER_ACT_FOLDS), so a fold carrying two master definitions counts
+        once, never twice; NO declared op-def field is read (VT-6b collapsed, archi :3800/:3846)."""
+        return [fold for fold, projection in self.PER_ACT_FOLDS.items()
+                if PROJECTIONS[projection]._selects(draft)]
+
+    def _stamp_of_fold(self, fold):
+        """One master's stamp (ruling 13): the VIEW identity (the fold it stamps for), the HASH of
+        what it saw (the fold's own content at the head, through the estate's one canonical hash),
+        and the VERSION = the seq the master was folded at (the current head — a record seq, so a
+        positive int, the shape VT-6d's `_well_formed_stamp` requires)."""
+        return {"view": fold,
+                "hash": canonical_hash(self.view_fold(fold)),
+                "version": len(self.store.events)}
+
+    def build_stamps(self, draft):
+        """The relevant masters' stamps for an act as it climbs — ONE per RELEVANT fold (per fold,
+        never per master name). Empty when the act touches no master's reach (ruling 15 then has
+        nothing to stamp, and a stamped class still lacking a required stamp is refused by VT-6d)."""
+        return [self._stamp_of_fold(fold) for fold in self.relevant_folds(draft)]
+
+    def _act_content_hash(self, rec):
+        """The act's content-hash ECHO — over the CALLER-CONTROLLED content ONLY (action / object /
+        target / payload, payload normalised `or {}` to match the store's own normalisation), so the
+        hash the stamp step computes over the DRAFT equals the one this listener recomputes over the
+        COMMITTED record: the round-trip identity (design/38 §1). The gate-added fields (provenance
+        and its stamps, seq, prev_hash, recording_time) are EXCLUDED — exactly as they are from what
+        the invoker signs — so a mutated or partial append never silently satisfies a pending copy."""
+        return canonical_hash({"action": rec.get("action"), "object": rec.get("object"),
+                               "target": rec.get("target"), "payload": rec.get("payload") or {}})
+
+    def record_pending_stamps(self, draft, stamps):
+        """Hold an act's staged stamps as the in-flight PENDING copy, keyed by the content-hash echo.
+        Pipeline state ONLY (ruling 13), retired by `_retire_pending_stamp` when the act's row
+        appends; a restart empties it and the durable stamps remain in the appended rows (no silent
+        loss). Keyed to a LIST so two identical in-flight acts each retire on their own echo. NEVER
+        read as a truth by any view/check/reply (archi :3885)."""
+        self._pending_stamps.setdefault(self._act_content_hash(draft), []).append(stamps)
+
+    def _retire_pending_stamp(self, record):
+        """THE SIXTH on-append listener (beside `_bump`): when an act's row appends, retire the
+        matching pending copy by the content-hash echo (ruling 13's finalised time — a change in the
+        view's own pipeline, never a record row). The listener NEVER mutates the record and NEVER
+        appends (the gate is the sole pen, ruling 14/17); a retire failure must not take the primary
+        append path down (store.py:809 — the mirror discipline)."""
+        try:
+            h = self._act_content_hash(record)
+            entries = self._pending_stamps.get(h)
+            if entries:
+                entries.pop()
+                if not entries:
+                    del self._pending_stamps[h]
+        except Exception:
+            pass
 
     def cached(self, name, as_of, fn):
         """Head-only memo. asOf bypasses the cache (a historical view is never head).
@@ -342,9 +462,17 @@ class Views:
     # standing push/worker tree is the later depth stage).
 
     def view_definitions(self, as_of=None):
-        """Every named view, latest definition per name (re-defining = a new event). A view is either
-        a FILTER view (`when`->`then.move_to`, DICT trigger) or a MASTER (`bind` names an S-plane fold,
-        EP-08). `tier` and `refresh` (a refresh mandate, design 28 §6) ride along where present."""
+        """Every named view, latest definition per name (re-defining = a new event). A view is one of
+        THREE forms: a FILTER view (`when`->`then.move_to`, DICT trigger); a MASTER (`bind` names an
+        S-plane fold, EP-08); or a DERIVED view row (`derive = {from, where}` — a parent view narrowed
+        by one closed dimension, C6a VT-3, design/25 v2). `tier` and `refresh` (a refresh mandate,
+        design 28 §6) ride along where present.
+
+        THIS PROJECTION'S SHAPE IS PINNED (campaign-1, test_ep16's differential oracle) and stays
+        BYTE-IDENTICAL through VT-3: it does NOT carry the derive form. By I7 (design/53) a new form
+        is read through a SEPARATE memoised projection, NEVER a shape change to a pinned one — so the
+        derive form (the VT-3 round-trip, A3) reads back through `view_derivations` below, not here.
+        The SERVING of a derived row — narrowing the parent's output — is VT-3b."""
         defs = {}
         for e in self.store.by_action("CREATE-VIEW", as_of):
             p = e.get("payload") or {}
@@ -364,14 +492,144 @@ class Views:
                               "refresh": p.get("refresh"), "seq": e["seq"]}
         return defs
 
+    def view_derivations(self, as_of=None):
+        """THE THIRD FORM read back, as its OWN projection (C6a VT-3, A3 round-trip; design/25 v2).
+        {view name -> {from, where}} for every view definition carrying a `derive`, latest per name.
+
+        A SEPARATE projection by I7 (design/53): the derive form does NOT ride on view_definitions,
+        whose shape is a pinned campaign-1 answer (test_ep16's differential oracle) — a new form is a
+        new separate projection, never a shape change to a pinned one. Reading the seed's 23 derived
+        rows back HERE proves the round-trip without touching that pinned shape. This only READS the
+        recorded form; the SERVING — narrowing the parent view's output by the one dimension — is
+        VT-3b (execute_view is untouched). A view: kill it, replay the record, identical (P2)."""
+        out = {}
+        for e in self.store.by_action("CREATE-VIEW", as_of):
+            p = e.get("payload") or {}
+            if p.get("kind") == "view_definition" and p.get("name") and p.get("derive") is not None:
+                out[p["name"]] = p["derive"]
+        return out
+
     def execute_view(self, name, as_of=None):
-        """Run one view: filter the record per its trigger; return the matched rows and
-        the outcome template (where matches are to move). None if no such view."""
+        """Run one view. A FILTER view filters the record per its trigger and returns the matched
+        rows plus the outcome template (where matches are to move). A DERIVED view row (C6a VT-3b,
+        design/53 L16, board :3831) returns its PARENT view's output NARROWED by the one closed
+        dimension — the parent resolved BY ITS FORM (a bind is the master read; a filter is the
+        matched rows; a derive is resolved recursively), never the raw record scan; the narrowing
+        keeps exactly the parent rows whose derived value equals the derive's value, IN THE PARENT'S
+        OWN SHAPE (a dict-shaped fold narrows to a sub-dict; a list-shaped fold to a sub-list). An
+        UNSEEDED parent, or a dimension the parent's output shape carries no source for, is REFUSED
+        at read (do not flatten — STOP b), as create_view refuses at write. None if no such view."""
+        derivs = self.view_derivations(as_of)
+        if name in derivs:                                              # a DERIVED view row (VT-3b)
+            parent = derivs[name].get("from")
+            narrowed = self._serve_derive(name, as_of)                  # raises: unseeded / un-derivable
+            return {"name": name, "derive": dict(derivs[name]), "parent": parent,
+                    "rows": narrowed, "count": len(narrowed)}
         d = self.view_definitions(as_of).get(name)
         if d is None:
             return None
         rows = [e for e in self.store.all(as_of) if _matches(e, d["when"])]
         return {"name": name, "rows": rows, "count": len(rows), "then": d["then"]}
+
+    # ---- C6a VT-3b: THE DERIVED VIEW SERVED (design/53 L16; board :3831) --------------------
+    # execute_view above narrows a derive row's PARENT output by the one closed dimension. The
+    # parent's output is resolved by its FORM (archi's binding precision, board :3831): a BIND
+    # parent is the master READ (master(name).value — the fold's own output in its own shape, a
+    # dict for the accounts fold, a list for the others); a FILTER parent is execute_view's matched
+    # rows; a DERIVE parent is resolved RECURSIVELY up to a bind or a filter; it is NEVER the raw
+    # record scan (a bind master carries an empty `when`, so execute_view over it would return every
+    # row — that is not the master's output). The five derivations compute, per parent row, that
+    # row's value along the dimension; the serving keeps the rows whose value equals the derive's.
+
+    def _serve_derive(self, name, as_of=None):
+        """Serve one derive row: its parent's output narrowed by the one closed dimension, kept IN
+        THE PARENT'S OWN SHAPE (a dict fold -> a sub-dict, a list fold -> a sub-list)."""
+        dv = self.view_derivations(as_of)[name]
+        parent = dv.get("from")
+        where = dict(dv.get("where") or {})
+        (dim, value), = where.items()                                   # exactly one move (the door closed this)
+        out = self._parent_output(parent, as_of)
+        if isinstance(out, Mapping):
+            return {k: v for k, v in out.items() if self._derive_value(dim, v, as_of) == value}
+        return [r for r in out if self._derive_value(dim, r, as_of) == value]
+
+    def _parent_output(self, parent, as_of=None):
+        """A derive parent's OUTPUT, resolved BY ITS FORM (archi :3831). A DERIVE parent recurses; a
+        BIND parent is the master read (its own shape); a FILTER parent is execute_view's matched
+        rows. An UNSEEDED parent — or a bind whose fold does not resolve to a served master — is
+        REFUSED at read, mirroring create_view's write-time refusal (A3). Never the raw record."""
+        derivs = self.view_derivations(as_of)
+        if parent in derivs:                                            # DERIVE parent -> recurse
+            return self._serve_derive(parent, as_of)
+        d = self.view_definitions(as_of).get(parent)
+        if d is None:                                                   # UNSEEDED parent -> refuse at read
+            raise OpError("AR-2", f'derived-view parent "{parent}" names no view definition at head '
+                                  "— refused at read, as create_view refuses at write")
+        if d.get("bind"):                                               # BIND parent -> the master READ
+            m = self.master(parent, as_of)
+            if m is None:                                               # a bind the master read cannot serve
+                raise OpError("AR-2", f'derived-view parent "{parent}" binds "{d.get("bind")}", '
+                                      "whose master read does not serve — refused at read")
+            return m["value"]
+        return self.execute_view(parent, as_of)["rows"]                 # FILTER parent -> its matched rows
+
+    def _old_relationship_seqs(self, as_of=None):
+        """The seqs in the OLD relationship band (superseded or withdrawn) — the liveness complement,
+        read off the old_relationships fold (VT-1), never re-derived here."""
+        return {r["seq"] for r in self.old_relationships(as_of)}
+
+    def _derive_value(self, dim, row, as_of=None):
+        """The value of ONE parent row along the closed dimension `dim`, DERIVED IN CODE from an
+        existing source (design/25 v2 the third view form; the five derivations). Raises OpError
+        when the row's shape carries no source for `dim` — the serving REFUSES rather than flattening
+        a wrong bucket over it (STOP b). Every source is READ, none re-authored."""
+        if not isinstance(row, Mapping):
+            raise OpError("AR-2", f"derive {dim}: parent row is not a record shape")
+        if dim == "actor_class":
+            # the ACTING actor's DECLARED class, read AT READ TIME off the account surface (never
+            # stored on the row). An event row carries `actor`; a row without one cannot carry it.
+            if "actor" not in row:
+                raise OpError("AR-2", "derive actor_class: parent output carries no actor — "
+                                      "the dimension cannot be derived over it (STOP b)")
+            return (self.accounts(as_of).get(row.get("actor")) or {}).get("actor_class")
+        if dim == "scope_class":
+            # from the rule's SCOPE, or `all` when it names no class (design/25 v2 2.1.4/2.2.4: "scope
+            # names no class — the root and the constitution"). A rule that carries no scope, or a
+            # space scope, binds ALL — that is the KNOWABLE default, not an un-derivable shape (a rule
+            # row is recognised by self-declaration, `rule_id`, never by op name — the active_rules
+            # recognition rule). Refuse only a row that is not a rule row at all.
+            if "rule_id" not in row:
+                raise OpError("AR-2", "derive scope_class: parent output is not a rule row — "
+                                      "the dimension cannot be derived over it (STOP b)")
+            return _scope_class(row.get("scope"))
+        if dim == "item_kind":
+            # actor | static. An item row carries `kind` (actor, or a static resource kind).
+            if "kind" not in row:
+                raise OpError("AR-2", "derive item_kind: parent output carries no kind — "
+                                      "the dimension cannot be derived over it (STOP b)")
+            return "actor" if row.get("kind") == "actor" else "static"
+        if dim == "liveness":
+            # active | old, latest-wins. A relationship row is OLD iff its seq is in the old band
+            # (superseded / withdrawn), else ACTIVE — read off the old_relationships complement.
+            if "seq" not in row:
+                raise OpError("AR-2", "derive liveness: parent output carries no seq — "
+                                      "the dimension cannot be derived over it (STOP b)")
+            return "old" if row.get("seq") in self._old_relationship_seqs(as_of) else "active"
+        if dim == "tree_kind":
+            # actor_tree | item_tree | non_tree, from the venn2 GEOMETRY and both ENDS (VT-2's
+            # relation row). NS/EM (directional containment) between two established actors is the
+            # ACTOR tree; NS/EM otherwise is the ITEM tree; the symmetric AD/IN is NON-tree. A row
+            # whose shape carries no geometry (e.g. the retired {from,to,rel_kind} old-band shape)
+            # is refused — the dimension cannot be derived over it (STOP b, do not flatten).
+            if "geometry" not in row:
+                raise OpError("AR-2", "derive tree_kind: parent output carries no geometry — "
+                                      "the dimension cannot be derived over it (STOP b)")
+            if row.get("geometry") not in authority.CONTAINMENT_GEOMETRIES:
+                return "non_tree"
+            both_actors = authority.is_established(self.store, row.get("subject"), as_of) and \
+                authority.is_established(self.store, row.get("object"), as_of)
+            return "actor_tree" if both_actors else "item_tree"
+        raise OpError("AR-2", f"unknown derived dimension {dim}")       # the door closes the set upstream
 
     def coverage_statement(self, name, as_of=None):
         """Derived from the definition ALONE: what this view looks at, what it excludes,
@@ -524,6 +782,37 @@ class Views:
         (design/31 J1). A founding anchor returns False here — it is ANCHORED, a third state
         (founding-asserted, not system-verified); read its state through accounts()."""
         return account_id in self._verified_accounts(as_of)
+
+    def _grounded_actors(self, as_of=None):
+        """The actors GROUNDED in the constitution's root group (design/25 v2.1 ruling 23; C6a
+        VT-2) — the ACTOR mirror of `_verified_accounts`, riding the SAME anchor least-fixpoint.
+        The founding anchors are the recursion floor: the constitution's root IS the founding, so
+        an anchor grounds by being the founding (the mother space's counterpart for actors). Every
+        other actor grounds iff a containment (NS/EM) edge names it as SUBJECT with an OBJECT (its
+        group) that is ITSELF already grounded — an anchor, or an already-grounded actor. A group
+        chain that never reaches an anchor never grounds, so an orphan never enters and a loop never
+        manufactures grounding (the exact shape of `_verified_accounts`, and of the space tree's
+        'every chain terminates at the mother space'). Many parents lawful: ANY grounded parent
+        grounds the child, so a node with three chains grounds if even one reaches the root."""
+        ground = self._anchor_ids(as_of)
+        edges = authority.actor_containment_edges(self.store, as_of)
+        grounded = set()
+        changed = True
+        while changed:
+            changed = False
+            for subj, obj in edges:
+                if subj and subj not in ground and subj not in grounded \
+                        and (obj in ground or obj in grounded):
+                    grounded.add(subj)
+                    changed = True
+        return grounded
+
+    def actor_grounded(self, actor, as_of=None):
+        """Does `actor` reach the constitution's root group through at least one containment chain
+        (ruling 23)? A founding anchor grounds by being the founding; every other actor grounds via
+        a chain to one. DERIVED per check, never a stored boolean — the space-tree grounding's shape
+        (`space_reaches(mother, sp)`), for actors. The gate reads this to refuse an orphan edge."""
+        return actor in self._anchor_ids(as_of) or actor in self._grounded_actors(as_of)
 
     def accounts(self, as_of=None):
         return self.cached("accounts", as_of, lambda: self._accounts(as_of))
@@ -808,11 +1097,20 @@ class Views:
         return False
 
     def _relationships(self, as_of=None):
-        """Relationship master (tree 3): the derived graph from CREATE-RELATIONSHIP records,
-        frame-scoped. Empty until relationships are minted (the op is named-pending in
-        BOOTSTRAP_OPS) — the master is DEFINED as a record now, its fold ready (RAISED)."""
-        return [{"from": (e.get("payload") or {}).get("from"), "to": (e.get("payload") or {}).get("to"),
-                 "rel_kind": (e.get("payload") or {}).get("rel_kind"), "seq": e["seq"]}
+        """Relationship master (tree 4, venn2 rows): the derived graph from CREATE-RELATIONSHIP
+        records — ONE venn2 row per record, the C6a VT-2 shape {subject, object, geometry, zone}
+        (design/25 v2.1; 25-view-tree-v2.json). GEOMETRY is the closed venn2 value {AD, IN, NS, EM}
+        — `unrelated` is never stored, so a row always carries one of the four. ZONE is {edge, core,
+        unknown} or None (optional, asserted). NO rel_kind is stored (ruling 7): the FRAME is the
+        act's cited rule (surfaced here as `frame`), the READING is that rule's text, the ROLES are
+        the record's actor/object/target — all DERIVED at read, never a stored kind. The old
+        first-mint shape {from, to, rel_kind} is retired; the erased-band fold `old_relationships`
+        (VT-1) keeps reading the record's own carried fields and is untouched."""
+        return [{"subject": (e.get("payload") or {}).get("subject"),
+                 "object": (e.get("payload") or {}).get("object"),
+                 "geometry": (e.get("payload") or {}).get("geometry"),
+                 "zone": (e.get("payload") or {}).get("zone"),
+                 "frame": e.get("rule_cited"), "seq": e["seq"]}
                 for e in self.store.by_action("CREATE-RELATIONSHIP", as_of)]
 
     def _resources(self, as_of=None):
@@ -936,6 +1234,93 @@ class Views:
         return [{"a": a, "b": b, "frame": frame, "verdicts": sorted(v)}
                 for (a, b, frame), v in by_key.items() if len(v) > 1]
 
+    # ---- C6a VT-6c: THE TWO CHECKS — the sideways bounce, the unseen flag (record folds) ----
+    # design/25 v2.4 rulings 12 (neighbour against neighbour — the sideways check), 15 (the rogue-chief
+    # / unseen test), 14 (detection never legitimacy); design/53 B10. Both fold the DURABLE stamps in the
+    # committed act rows (provenance["stamps"], VT-6d) — the SAME family as `contradictions` (group by a
+    # shared key, flag a key holding more than one distinct value) and `paper_tigers` (for each mandated
+    # thing, flag the one the record shows was never serviced). Each is a pure derivation on the owner
+    # queue that APPENDS NOTHING. NEITHER reads the in-memory pending buffer — a stamp exists only in a
+    # row (archi :3885): the checks read `store.all()` and the rows' durable stamps, never
+    # `_pending_stamps`. Detection never legitimacy (ruling 14): the checks FLAG, they never bless — a
+    # refused act stays refused carrying its stamps, and no number of agreeing stamps outvotes the record.
+    _REQUIRED_STAMPS_POLICY = "required-stamps"   # gate.REQUIRED_STAMPS_POLICY; the literal avoids the
+    #                                               gate->views import direction (gate imports views).
+
+    def _rows_with_stamps(self, as_of=None):
+        """Committed act rows carrying a durable stamps list (provenance["stamps"], VT-6d), each paired
+        with its stamps as a plain list. A RECORD fold — reads store rows only, never the in-memory
+        pending buffer (a stamp exists only in a row, :3885)."""
+        rows = []
+        for e in self.store.all(as_of):
+            prov = e.get("provenance")
+            stamps = prov.get("stamps") if isinstance(prov, Mapping) else None
+            if isinstance(stamps, (list, tuple)):
+                rows.append((e, list(stamps)))
+        return rows
+
+    def stamp_divergences(self, as_of=None):
+        """THE SIDEWAYS BOUNCE (design/25 ruling 12/13, design/53 B10 clause a). Every master that
+        co-stamped one act witnessed the record at ONE head, so an honest row's stamps AGREE on the
+        record version they saw; a master stamped at an OLDER record version saw a stale world and
+        DIVERGES from its neighbours (its hash is the hash of that older world). The fold groups the
+        stamps touching one FACT (the act's own row) and flags any fact whose relevant masters' stamps
+        hold more than one distinct version — NAMING the stale master(s), the view(s) below the row's
+        head version. Same shape as `contradictions`: group by a shared key (the fact), flag a key
+        holding more than one distinct value (the version the neighbours saw). A pure RECORD fold over
+        the durable stamps; it appends nothing and reads no buffer (:3885). Detection never legitimacy
+        (ruling 14): it flags, never blesses — a divergence found here overturns no record."""
+        out = []
+        for e, stamps in self._rows_with_stamps(as_of):
+            witnesses = [s for s in stamps if isinstance(s, Mapping)]
+            versions = {s.get("version") for s in witnesses}
+            if len(versions) <= 1:
+                continue                                    # neighbours agree on what they saw — no flag
+            ints = [v for v in versions if isinstance(v, int) and not isinstance(v, bool)]
+            head = max(ints) if ints else None
+            stale = sorted(v for v in {s.get("view") for s in witnesses
+                                       if s.get("version") != head} if v is not None)
+            out.append({"seq": e.get("seq"),
+                        "versions": sorted(v for v in versions if v is not None),
+                        "stale_masters": stale,
+                        "saw": [{"view": s.get("view"), "version": s.get("version"),
+                                 "hash": s.get("hash")} for s in witnesses],
+                        "reason": "a master co-stamping this act saw an older record version than its "
+                                  "neighbours — a stale master (ruling 12, neighbour against neighbour); "
+                                  "the stamp adds no legitimacy (14)"})
+        return out
+
+    def unseen_rows(self, as_of=None):
+        """THE UNSEEN FLAG — the rogue-chief test (design/25 ruling 15, design/53 B10). A committed row
+        of a STAMPED class (a class the required-stamps policy names) that a RELEVANT master — the
+        master views its reach touches, computed by `relevant_folds` — never stamped is flagged as
+        UNSEEN: the organisation never saw it, a row written past the views. The fold reads the committed
+        rows and their durable stamps only (never the pending buffer, :3885); it appends nothing. A
+        fully-stamped row (every relevant master present in provenance["stamps"]) is not flagged. Same
+        shape as `paper_tigers`: for each mandated thing, flag the one the record shows was never
+        serviced. Detection never legitimacy (ruling 14): the flag blesses nothing and refuses nothing —
+        it is a finding on the owner queue."""
+        required_by_class = self.policy_value(self._REQUIRED_STAMPS_POLICY, as_of) or {}
+        if not isinstance(required_by_class, Mapping):
+            return []                                       # a malformed policy names no stamped class
+        out = []
+        for e in self.store.all(as_of):
+            action = e.get("action")
+            if action not in required_by_class:
+                continue                                    # not a stamped class — nothing owed (ruling 15)
+            prov = e.get("provenance")
+            raw = prov.get("stamps") if isinstance(prov, Mapping) else None
+            stamped = ({s.get("view") for s in raw if isinstance(s, Mapping)}
+                       if isinstance(raw, (list, tuple)) else set())
+            relevant = self.relevant_folds(e)               # the masters this row's reach touches
+            unseen = sorted(v for v in relevant if v not in stamped)
+            if unseen:
+                out.append({"seq": e.get("seq"), "action": action, "unseen_masters": unseen,
+                            "reason": "a master whose reach this act touched never stamped it — a row "
+                                      "written past the views (ruling 15, the rogue-chief test); the "
+                                      "missing stamp adds no legitimacy either way (14)"})
+        return out
+
     # ---- the kernel dictionary (EP-12; cgl-app pattern lowered) — pure folds, append NOTHING ----
 
     def _disputed_entry_seqs(self, as_of=None):
@@ -990,7 +1375,17 @@ class Views:
                 "actors": self._actors, "resources": self._resources,
                 "permissions": self.grants, "relationships": self._relationships,
                 "op_definitions": lambda as_of=None: self.view_fold("op_definitions", as_of=as_of),
-                "view_definitions": self.view_definitions}.get(name)
+                "view_definitions": self.view_definitions,
+                # C6a VT-1: the three new S-plane OLD-band masters (design/25 v2.1 ruling 19). A
+                # master may now bind the old band beside the active one; the closure at CREATE-VIEW
+                # (boot.py) admits them since they are FOLD_NAMES members.
+                "old_rules": self.old_rules, "old_items": self.old_items,
+                "old_relationships": self.old_relationships,
+                # C6a VT-3b (design/53 L14/L16): the two events-split bands as bound folds, so the
+                # derive parents 1.1 / 1.2 SERVE their master read and their actor_class derives can
+                # be narrowed (the SERVING of a bound master is VT-3b). Their own projections above.
+                "rule_changing_acts": self.rule_changing_acts,
+                "acts_under_rules": self.acts_under_rules}.get(name)
 
     def master(self, name, as_of=None):
         """Execute a MASTER view (design 28 §I4): resolve its `bind` against the fold library and run
@@ -1151,3 +1546,904 @@ class Views:
         (an acceleration drifting from its derivation) arriving from the other side. One
         derivation, read two ways."""
         return self.lane_report(as_of)["channels"]
+
+    # ---- C6 P16: paths and ceilings over flows (B19, B20; design/52) -----------------------
+    # COMPUTED VIEWS over the record as it stands — no new row kind, no new field, no founding
+    # (stop conditions (b)/(d) of the plan). What the record does NOT yet carry — the actor
+    # classes' declared domain (K12), the boundary/reach axis values, the classify act that
+    # computes a content class — lands with C6 P8; these views NAME those attributes and read
+    # the one signal the record holds today (the `actor_class` free string), stating the rest as
+    # the cap. That is exactly the shape the architect countersigned (board :3650, precisions 1-3):
+    # the fold is real, its population arrives with P8, and A3 is re-driven then.
+
+    #: The five path families — design/52 B19:68, L19:117 ("channels; sockets and tunnels; shared
+    #: memory; custody handover; sight"). Held here as design/52's own closed vocabulary. It is NOT
+    #: a second copy of P4's CLASSIFIER: P4 (tools/conformance/five_families_census.py) READS an op
+    #: into a family and stays the instrument of record; `path_view` NAMES the family P4 read and
+    #: only validates it against this list. A sixth entry is a paper change in design/52 (L19), which
+    #: this view and P4 both then read — the single source of truth is the paper, not either tool.
+    FIVE_FAMILIES = ("channels", "sockets-and-tunnels", "shared-memory", "custody-handover", "sight")
+    #: not-a-path is P4's positive reading for an op that moves no bytes across a boundary; a path
+    #: view may name it (the op opens no conduit), but sixth-way / unknown (P4's two reds) are NOT
+    #: lawful paths and `path_view` refuses them.
+    _PATH_FAMILY_SET = FIVE_FAMILIES + ("not-a-path",)
+    #: The three axes an endpoint sits on — D08.56 F2 (design/52): PROCESSING (the human/AI/program
+    #: cut, D08.49), BOUNDARY (glassboxed / border entity / external, design/43 §5), REACH (which
+    #: path families and counterpart positions the endpoint may open). Today only PROCESSING has a
+    #: record signal (the `actor_class` free string, K12); BOUNDARY and REACH are named-not-populated
+    #: until P8's attest amendment and the vocabulary rule land. Nothing composes across frames — a
+    #: ceiling reads any one axis, never a fold of two (design/52's anti-bleed rule, design/43).
+    THREE_AXES = ("processing", "boundary", "reach")
+    #: The two class tokens B20 folds occupancy into names for. `HUMAN_ACTOR_CLASS` already exists
+    #: above (the succession law reads it); `AI_ACTOR_CLASS` is the AI token the record uses today.
+    #: Both are read from the free-string `actor_class` field as it stands (K12: no declared domain
+    #: until P8) — the cap A3's test states in words.
+    AI_ACTOR_CLASS = "ai"
+    PROGRAM_ACTOR_CLASS = "program"   # C6 P8 (B16): the third declared class, the arm of a structured rule only
+    ORG_CLASSES = ("human-only", "AI-only", "mixed")
+
+    def path_axis_positions(self, endpoint, as_of=None):
+        """B19: an ENDPOINT's positions on the THREE AXES (design/52 D08.56 F2). Names all three;
+        populates PROCESSING from the endpoint's `actor_class` as it stands today (the account
+        surface), leaving BOUNDARY and REACH None — the record carries no signal for them until P8
+        (K12). A view that named only the populated axis would hide that the other two are owed; a
+        view that omitted them would read as if the endpoint had no boundary or reach, which is a
+        stronger and false claim. So all three are named, two as the honest cap."""
+        cls = (self.accounts(as_of).get(endpoint) or {}).get("actor_class") if endpoint is not None else None
+        return {"processing": cls, "boundary": None, "reach": None}
+
+    def path_view(self, op, family, permits=(), actor=None, target=None,
+                  cited_rule=None, frame="content-class", as_of=None):
+        """B19: an opened PATH read as a VIEW over the FIVE FAMILIES (design/52 B19; D08.51).
+
+        A path is not the datum; it is the opened conduit, and governing it means naming — for the
+        op that opens it — its FAMILY (P4's reading, passed in and validated here against design/52's
+        closed vocabulary, never re-classified), its two ENDPOINTS, each endpoint's POSITIONS ON THE
+        THREE AXES, the CONTENT BANDS it permits, and the RULE it cites. A CEILING (the permitted
+        band set, B18's content-class ceiling — distinct from the numeric budget `ceiling` check)
+        ATTACHES to the path, and along the path the content's class only TIGHTENS (`content_tightens_
+        along`), a comparison read in ONE frame (`frame`; design/43's same-frame rule, the
+        architect's precision 3) so two frames never read as one contradiction.
+
+        `family` MUST be one of the five families or `not-a-path`; P4's two red readings (sixth-way,
+        unknown) are not lawful paths and are refused here. `cited_rule` and the target endpoint are
+        read from the op's own definition when not supplied, so the view is grounded in the record."""
+        if family not in self._PATH_FAMILY_SET:
+            raise ValueError(
+                "%r is not a lawful path family — a path is a view over %s (or not-a-path); "
+                "P4's sixth-way/unknown are census reds, not paths" % (family, ", ".join(self.FIVE_FAMILIES)))
+        entry = self.op_definitions(as_of).get(op) or {}
+        d = entry.get("definition", entry)
+        if cited_rule is None:
+            cited_rule = d.get("law_cited")
+        if target is None:
+            target = d.get("target_param")   # the target endpoint the op declares (a param today)
+        source = actor if actor is not None else "$actor"   # the source endpoint is the engine's fact
+        bands = frozenset(permits)
+        return {
+            "op": op,
+            "family": family,
+            "endpoints": {"source": source, "target": target},
+            "axis_positions": {
+                "source": self.path_axis_positions(actor, as_of),
+                "target": self.path_axis_positions(target, as_of),
+            },
+            "content_bands": bands,     # the classes the path permits
+            "cited_rule": cited_rule,
+            "ceiling": bands,           # the content ceiling attached to the path (B18: only shrinks)
+            "frame": frame,             # the one frame the tightening is read under (precision 3)
+        }
+
+    @staticmethod
+    def content_tightens_along(bands_sequence, frame="content-class"):
+        """B19/L19: along a path the content's class only TIGHTENS, never widens. `bands_sequence`
+        is the ordered content-band SETS at successive positions on ONE path, read in ONE `frame`.
+        Returns True iff each successive set is a subset (equal or narrower) of the one before it;
+        a later position permitting a band an earlier one did not is a WIDENING and returns False —
+        the planted-widening control A1 drives. Comparison is subset in a single frame; a caller
+        mixing two frames is comparing incomparable verdicts (design/43's anti-bleed rule) and must
+        not, which is why the frame is named on the path, not inferred here."""
+        prev = None
+        for step in bands_sequence:
+            cur = frozenset(step)
+            if prev is not None and not cur <= prev:
+                return False
+            prev = cur
+        return True
+
+    @staticmethod
+    def compose_ceilings(*ceilings):
+        """B18/L18: ceilings compose by INTERSECTION — a class adds a ceiling, never a power, so
+        nesting can only TIGHTEN. Returns the intersection of the permitted-band sets; the empty
+        composition permits everything (no ceiling), matching `_ceiling_check`'s 'no policy = None =
+        unlimited'. This is the one operation on ceilings that is always safe under B18: it can only
+        shrink the permitted set, never grow it."""
+        sets = [frozenset(c) for c in ceilings]
+        if not sets:
+            return None   # no ceiling composed -> unbounded (the pre-ceiling reading, stated)
+        out = sets[0]
+        for s in sets[1:]:
+            out = out & s
+        return out
+
+    @staticmethod
+    def ceiling_widens(existing, proposed):
+        """B18/L18: does `proposed` WIDEN what `existing` permits — permit a band `existing` did
+        not? Returns True iff `proposed - existing` is non-empty. A ceiling only shrinks, so a
+        widening proposal is refused (the refuse-to-loosen guard, A2's planted-widening control);
+        a proposal that is equal or narrower widens nothing and returns False."""
+        return bool(frozenset(proposed) - frozenset(existing))
+
+    @staticmethod
+    def held_within_envelopes(held, class_max, structural_max):
+        """I21 (design/52 :93): HELD sits inside CLASS MAX and STRUCTURAL MAX at every moment.
+        The three envelopes of B18 are views: CLASS MAX (the intersection of the class ceilings),
+        STRUCTURAL MAX (what the structure/grants confer), HELD (what is actually held). Returns
+        True iff HELD is a subset of BOTH; held outside either is the invariant refusing (I21's own
+        red world). None for an envelope means unbounded (that side imposes no ceiling)."""
+        h = frozenset(held)
+        if class_max is not None and not h <= frozenset(class_max):
+            return False
+        if structural_max is not None and not h <= frozenset(structural_max):
+            return False
+        return True
+
+    def org_occupants(self, org, as_of=None):
+        """B20: the LIVE occupancy of an organisation — a fold over live membership rows, never a
+        stored label. An org is a founded node (a space); its occupants are the accounts holding a
+        LIVE grant at that node, read from `grants()` (revoke-superseded, so a revoked member drops
+        out and the fold changes — the live-fold precedent compose.py's `system_key_bound` sets:
+        a supersession fold over the record, never a flag). The wildcard grantee `*` (the founding-
+        openness grant) is not an account and is skipped. Returns the frozenset of occupant account
+        ids."""
+        accounts = self.accounts(as_of)
+        return frozenset(
+            g["grantee"] for g in self.grants(as_of).values()
+            if g.get("space") == org and g.get("grantee") in accounts)
+
+    def org_class(self, org, as_of=None):
+        """B20: an organisation's CLASS (human-only / AI-only / mixed) is a FOLD over live
+        occupancy, never a declared or stored label (D08.49 'orgs are not declared a class').
+        Each occupant's class is read from the `actor_class` field AS IT STANDS today (K12: no
+        declared domain until P8's attest amendment and the vocabulary rule land — the cap A3
+        states in words; the computed class by classify act arrives with P8 and A3 is re-driven
+        then). Human-only iff every occupant is the human class, AI-only iff every occupant is the
+        AI class, mixed otherwise (occupants span more than one class, or carry a class outside
+        {human, AI}). None for an empty org (no live occupant to fold)."""
+        classes = {(self.accounts(as_of).get(a) or {}).get("actor_class") for a in self.org_occupants(org, as_of)}
+        if not classes:
+            return None
+        if classes == {self.HUMAN_ACTOR_CLASS}:
+            return "human-only"
+        if classes == {self.AI_ACTOR_CLASS}:
+            return "AI-only"
+        return "mixed"
+
+    def mixed_org_countersign_ok(self, org, countersigners=(), as_of=None):
+        """B20: a rule at rule level for a MIXED organisation may require a HUMAN OCCUPANT's
+        countersign, and its absence REFUSES. Returns True iff the requirement is met: for a non-
+        mixed org the rule does not bind (True); for a mixed org, True iff at least one of
+        `countersigners` is a HUMAN occupant of the org (its class read from `actor_class` today).
+        A mixed org with no human-occupant countersign returns False — the refusal A3 drives. The
+        countersign identity is checked against LIVE occupancy, so a countersigner who is not (or no
+        longer) a human occupant of this org does not satisfy it."""
+        if self.org_class(org, as_of) != "mixed":
+            return True
+        occupants = self.org_occupants(org, as_of)
+        accounts = self.accounts(as_of)
+        return any(
+            c in occupants and (accounts.get(c) or {}).get("actor_class") == self.HUMAN_ACTOR_CLASS
+            for c in countersigners)
+
+    # ---- C6 P8: ACTOR CLASSES AS BANDS, THE (CLASS, CELL) PAIRING, THE DRY-RUN CENSUS ----------
+    # B16 (classes as bands over two declared capabilities), B17 (classify is attest generalised — a
+    # class is the LATEST LIVE classify act, computed AT READ), B18/I21 (a class is a ceiling that
+    # only shrinks), L28 (the cell per operation; the required capability read OFF the cell; the
+    # pairing through the existing ceiling machinery). ENFORCEMENT OF THE PAIRING IS LIVE (P8b, board
+    # :3731; supersedes the HELD state of archi precision 2 / :3688): gate._pairing_step refuses a
+    # governed act by a DECLARED-class actor whose class lacks the arm the op's cell requires. Everything
+    # in THIS class is the READ-SIDE derivation that live door reads (pair / class_band /
+    # class_capabilities / required_capability) plus the DRY-RUN CENSUS (pairing_census, which still only
+    # REPORTS and refuses no act). admitted_level and the band are DERIVED AT READ, NEVER stored (I10; stop (d)).
+
+    CELL_SET = ("S", "U", "U{s}", "S{u}")
+    STRUCTURED_ARM = "structured-arm"
+    UNSTRUCTURED_ARM = "unstructured-arm"
+    #: The recorder's own SYSTEM (the founding runtime / SYSTEM) — OUTSIDE the pairing (L28; archi
+    #: precision 3: the recorder's own mechanics, form-fill/validate/route, are not a judge's step).
+    #: The census excludes their acts and counts them separately; the door checks the ACTING actor.
+    RECORDER_SYSTEM_ACTORS = ("PC_RUNTIME", "SYSTEM")
+
+    def class_capabilities(self, as_of=None):
+        """B16: the {class: (arms...)} map, FOUNDING DATA read from the latest `actor-classes`
+        category_pack record's `capabilities` (never hardcoded — re-cutting the classes is an
+        AMEND-PACK, not a code change). Latest-wins by record order. Empty for a world before P8 (no
+        such pack) or one whose latest actor-classes record carries no capabilities map.
+
+        HEAD-MEMOISED ON THE category_packs SUBSET GENERATION (archi Resolution A, board :3735):
+        `_class_capabilities` folds the map through the category_packs record projection (a SUBSET of the
+        record, not the whole of it), and the memo is keyed on the SAME generation category_packs() rides
+        — so the map re-folds ONLY when a category_pack record is appended (a governance-rate amendment),
+        never on an ordinary governed act, and the LIVE (class, cell) pairing's per-act read no longer
+        walks store.all(). category_packs() itself is UNTOUCHED (its projection gains no capabilities key
+        — Resolution A's load-bearing point, the campaign-1 oracle test_ep16). It is DELIBERATELY NOT a
+        PER_ACT_FOLDS member: that family is OBSERVED being called during an act, but this read fires at
+        the PRE-WRITE gate chokepoint (before the act's own append) and so is always cache-served and
+        invisible to test_ep24c's per-act observer — riding the subset generation gives the identical
+        invalidation without a false 'declared-but-unobserved fold'. A regression to a raw store.all()
+        walk would still surface in that observer as an undeclared whole-record read. The record-walk
+        oracle below is the standing equivalence baseline (EP-24B one-implementation-two-sources idiom)."""
+        proj = self.store.record_projection("category_packs")
+        if as_of is not None:
+            return self._class_capabilities(as_of, proj)          # a historical view is never head
+        key = "class_capabilities:%d" % self._subset_gens.get("category_packs", 0)
+        if key in self._memo:
+            return self._memo[key]
+        v = self._class_capabilities(None, proj)
+        for stale in [k for k in self._memo if k.startswith("class_capabilities:")]:
+            del self._memo[stale]
+        self._memo[key] = v
+        return v
+
+    def _class_capabilities(self, as_of=None, source=None):
+        # THE FOLD: the {class: (arms...)} map, latest actor-classes record with a VALID capabilities
+        # Mapping wins. A levels-only AMEND-PACK carries no capabilities map (its op strips to
+        # name/levels), so it is SKIPPED and the last valid map carries forward — the founding map
+        # persists across a levels re-cut. Reads through `source` (the category_packs projection when
+        # accelerated); identical to the whole-record walk because the projection holds every pack record.
+        caps = {}
+        for e in (source or self.store).all(as_of):
+            p = e.get("payload") or {}
+            cap = p.get("capabilities")
+            if p.get("kind") == "category_pack" and p.get("name") == "actor-classes" \
+                    and isinstance(cap, Mapping):   # the store freezes payload dicts to mappingproxy
+                caps = {k: tuple(v) for k, v in cap.items()}   # latest-valid-caps wins == carry-forward
+        return caps
+
+    def _class_capabilities_record_walk(self, as_of=None):
+        """RETAINED ORACLE (archi Resolution A; EP-24B differential idiom): the pre-memoisation
+        whole-record walk over store.all(), kept so the memoised projection read has a standing
+        equal-answers baseline. `class_capabilities` reads the memoised fold; this reads the raw record."""
+        caps = {}
+        for e in self.store.all(as_of):
+            p = e.get("payload") or {}
+            cap = p.get("capabilities")
+            if p.get("kind") == "category_pack" and p.get("name") == "actor-classes" \
+                    and isinstance(cap, Mapping):   # the store freezes payload dicts to mappingproxy
+                caps = {k: tuple(v) for k, v in cap.items()}   # latest-valid-caps wins
+        return caps
+
+    def class_domain(self, as_of=None):
+        """K12: the CLOSED actor-class domain — the declared class list, read from the actor-classes
+        pack `levels` (the one home; latest-wins via category_packs). A class NOT in it is not a
+        valid band, which is the domain closing at read."""
+        pack = self.category_packs(as_of).get("actor-classes")
+        return tuple(pack["levels"]) if pack else ()
+
+    def latest_classify(self, subject, as_of=None):
+        """B17 CLASSIFY IS ATTEST GENERALISED — the LATEST LIVE classify act on `subject`, computed
+        AT READ (never a stored band). A classify act is the amended VERIFY-ACCOUNT (account =
+        the subject) carrying a `target` (the band it assigns) and an `evidence_kind`; latest-by-seq
+        wins, so re-classifying changes the answer AT READ with nothing stored. Returns the payload
+        of the latest classify act on `subject`, or None (no classify act names it)."""
+        latest, latest_seq = None, -1
+        for e in self.store.by_action("VERIFY-ACCOUNT", as_of):
+            p = e.get("payload") or {}
+            if p.get("account") == subject and p.get("target") is not None \
+                    and e.get("seq", -1) > latest_seq:
+                latest, latest_seq = p, e.get("seq", -1)
+        return latest
+
+    def class_band(self, actor, as_of=None):
+        """The actor's BAND for the pairing (B16/B17), computed AT READ and never stored: the band
+        assigned by the LATEST LIVE classify act on the actor (the amended VERIFY-ACCOUNT's `target`),
+        falling back to the actor's `actor_class` field when no classify act names it. VALIDATED
+        against the closed domain (K12): a band outside the declared class list is not valid and
+        returns None (a class not in the list cannot be validly classified — the domain closes)."""
+        domain = self.class_domain(as_of)
+        classify = self.latest_classify(actor, as_of)
+        band = classify.get("target") if classify else \
+            (self.accounts(as_of).get(actor) or {}).get("actor_class")
+        return band if band in domain else None
+
+    @classmethod
+    def required_capability(cls, cell):
+        """L28: the capability a task's CELL requires, READ OFF THE CELL with no table — the arm of
+        an UNSTRUCTURED rule if ANY side has judgment (a cell other than S), else the arm of a
+        STRUCTURED rule. Returns None for a cell outside the closed set, so no capability is silently
+        met by an unrecognised cell (the op-META door keeps a declared cell well-formed)."""
+        if cell == "S":
+            return cls.STRUCTURED_ARM
+        if cell in cls.CELL_SET:
+            return cls.UNSTRUCTURED_ARM
+        return None
+
+    def pair(self, actor_class, cell, as_of=None):
+        """L28: the (actor class, task cell) PAIRING through the capability declarations. Returns
+        (admit: bool, reason). ADMIT iff the actor's class holds the capability the cell requires: a
+        PROGRAM at any judgment cell is refused (it holds no unstructured arm), an AI at a pure-S cell
+        is refused (it holds no structured arm — an AI is not its arm), a HUMAN holds any. An
+        actor_class outside the declared domain, or an unrecognised cell, REFUSES fail-closed —
+        nothing is admitted by an unknown class or an unrecognised cell, and no cell is defaulted."""
+        need = self.required_capability(cell)
+        if need is None:
+            return False, "cell %r is not one of %s" % (cell, ", ".join(self.CELL_SET))
+        held = self.class_capabilities(as_of).get(actor_class)
+        if held is None:
+            return False, "actor class %r is not a declared class (the domain is closed: %s)" \
+                          % (actor_class, ", ".join(self.class_domain(as_of)) or "none")
+        if need not in held:
+            return False, "class %r may not be the arm of cell %r: it holds {%s} but the cell needs %s" \
+                          % (actor_class, cell, ", ".join(held) or "no capability", need)
+        return True, "class %r holds %s, admitted at cell %r" % (actor_class, need, cell)
+
+    def op_replays_to_identity(self, op_name, as_of=None):
+        """L28 THE DECLARED-S GUARD: a declared-STRUCTURED operation must REPLAY TO IDENTITY (the
+        estate's founding property — kill the registry, replay, identical) or satisfy a predicate,
+        or its declaration is a FINDING. A AWIG OS op replays to identity iff its record is a pure
+        function of its inputs; the estate's own guard for that is the FOUNDING ROUNDTRIP (a rebuild
+        adds nothing, test_ep14). Here the read-side finding is DECLARATIONAL: an op declared S whose
+        definition marks it non-replayable (`replays_to_identity: false`, an author's own honest flag)
+        is a finding. Absent the flag, a declared-S op is taken to replay (the estate's default and
+        its founding property); a declared-JUDGMENT op is exempt (never scored by the machine)."""
+        defn = (self.op_definitions(as_of).get(op_name) or {}).get("definition") or {}
+        if defn.get("cell") != "S":
+            return True   # a judgment op is validated to its schema and NEVER scored (L28)
+        return defn.get("replays_to_identity", True) is not False
+
+    def declared_s_findings(self, as_of=None):
+        """L28: the declared-S operations whose declaration is a FINDING — a declared-S op that does
+        NOT replay to identity (nor satisfy a predicate). Returns the op names by name. Empty on the
+        real founding (every AWIG OS op is a structured record-mechanic that replays); a planted
+        declared-S op flagged `replays_to_identity: false` reds it (the finding A3c drives)."""
+        return [n for n, entry in self.op_definitions(as_of).items()
+                if (entry.get("definition") or {}).get("cell") == "S"
+                and not self.op_replays_to_identity(n, as_of)]
+
+    def pairing_census(self, pack_version=None, as_of=None):
+        """L28 / P8 THE DRY-RUN CENSUS (archi precision 2): over the WHOLE RECORD, every act the
+        (actor class, task cell) pairing WOULD refuse, published WITH ITS WORLD (the founding version
+        and the as-of head). ENFORCEMENT IS HELD — this REPORTS, it refuses NO act; turning the door
+        on is the owner's call after reading it. EXCLUDED, counted separately: the recorder's own
+        SYSTEM acts (RECORDER_SYSTEM_ACTORS — the founding runtime; archi precision 3), and acts whose
+        action is not a declared op (a founding primitive / bootstrap append — not a pairing subject).
+        For every remaining act the op's declared CELL and the actor's BAND are read and paired; a
+        refusal is recorded BY NAME with its world (seq, actor, op, cell, class, reason)."""
+        defs = self.op_definitions(as_of)
+        head = len(self.store.all(as_of))
+        would_refuse = []
+        recorder_system = non_op = considered = ops_no_cell = none_band = 0
+        for e in self.store.all(as_of):
+            actor, action = e.get("actor"), e.get("action")
+            if actor in self.RECORDER_SYSTEM_ACTORS:
+                recorder_system += 1
+                continue
+            entry = defs.get(action)
+            if entry is None:
+                non_op += 1
+                continue
+            cell = (entry.get("definition") or {}).get("cell")
+            if cell not in self.CELL_SET:
+                ops_no_cell += 1     # an op with no well-formed cell — never defaulted to S (L28)
+            band = self.class_band(actor, as_of)
+            if band is None:                 # C6 P8b (archi :3726): the None-band population, REPORTED
+                none_band += 1               # beside the other counts (visible, not hidden). The live door
+                                             # ADMITS a None band; this count is what that admission covers.
+            considered += 1
+            admit, reason = self.pair(band, cell, as_of)
+            if not admit:
+                would_refuse.append({"seq": e.get("seq"), "actor": actor, "action": action,
+                                     "cell": cell, "class": band, "reason": reason})
+        return {
+            "world": {"founding_version": pack_version, "as_of_head": head},
+            "counts": {"total_acts": head, "recorder_system_excluded": recorder_system,
+                       "non_op_acts_excluded": non_op, "considered": considered,
+                       "would_refuse": len(would_refuse), "ops_without_wellformed_cell": ops_no_cell,
+                       "none_band_considered": none_band},
+            "would_refuse": would_refuse,
+            "enforcement": "HELD — dry-run census only; NO act was refused (archi precision 2, L25 C6 measures only)",
+        }
+
+    # ---- C6 P7: THE HANDSHAKE RELATION over crossings (B1, I4; design/52 v2.0) --------------
+    # A COMPUTED VIEW over the record as it stands — NO new row kind, NO new field, NO founding
+    # (Reading A, the owner's confirmation :3658; stop conditions (b)/(d) discharged at build). A
+    # child and its parent are two bodies IN A LIVE, WITHDRAWABLE HANDSHAKE RELATION, recorded over
+    # the EXISTING crossing/receipt vocabulary (kernel.border, READ and reused, never re-authored):
+    #   • the child's DECLARE = a BORDER-SUBMIT whose draft names the parent's body-name (key,
+    #     genesis, D08.42); the crossing's CONTENT HASH (border.content_id) is the relation's id;
+    #   • the mutual half = the counterpart's RECEIPT of that crossing (border.record_receipt), the
+    #     counterpart's half landing in each record as INPUT, each by its own pen (one pen per
+    #     record, I1) — the received-back receipt gets ONE receipt and NO loop (RECEIPT idempotence);
+    #   • a WITHDRAW = a later BORDER-SUBMIT whose draft cites the relation's content hash.
+    # This view folds a body's OWN declare/withdraw crossings to the current relation state, NEVER
+    # the peer's record (the architect's precision 1). The relation's KIND is the crossing's
+    # under_rule (its rule_cited — precision 2); the owner's Q5 relation tag (HR / NT / SY) is
+    # ABSENT — not defaulted — until he gives it (read as None here; Q5:182, no tag invented). The
+    # DECLARE and WITHDRAW rows both STAND — no delete; the live view reads the current state from
+    # them (precision 3). Recognition is by self-declaration in the draft (the active_rules rule_id
+    # precedent), so no schema field is added: the marker rides the entity's own free-form draft.
+
+    #: The draft marker a handshake-relation crossing carries (recognition by self-declaration; the
+    #: active_rules `rule_id` precedent, applied to the crossing draft — no new record field).
+    HANDSHAKE_RELATION_MARKER = "handshake_relation"
+
+    def _handshake_marker(self, submit_record):
+        """The `handshake_relation` block in a BORDER-SUBMIT's own draft, or None. Read from THIS
+        body's stored crossing row; a submit carrying no such marker is an ordinary crossing and is
+        not a relation act (the recognition rule, one predicate)."""
+        draft = (submit_record.get("payload") or {}).get("draft")
+        if not isinstance(draft, Mapping):
+            return None
+        hs = draft.get(self.HANDSHAKE_RELATION_MARKER)
+        return hs if isinstance(hs, Mapping) else None
+
+    def handshake_relations(self, as_of=None):
+        """B1 / I4 — THE LIVE-RELATION VIEW (design/52 v2.0): every handshake relation THIS body
+        DECLARED, keyed by the declare crossing's content hash (the relation id), with its state
+        DERIVED `live` | `withdrawn`. Folded from this body's OWN declare/withdraw crossings alone
+        (precision 1: never the peer's record) — kill it, replay, identical (a fold, never a stored
+        status, P2). Each entry carries the parent's body-name (key, genesis), the declarer, the
+        relation's KIND = the declare crossing's `under_rule` (its rule_cited — precision 2), the
+        owner's Q5 `tag` read from the row (None/ABSENT until he gives it — no tag invented), and
+        the declare/withdraw seqs (both rows STAND — no delete, precision 3). A relation never
+        declared is ABSENT from the result; a withdrawn one reads `withdrawn`."""
+        from . import border
+        out = {}
+        for e in self.store.by_action(border.SUBMIT_OP, as_of):
+            hs = self._handshake_marker(e)
+            if hs is not None and hs.get("parent") is not None:      # a DECLARE (names a parent)
+                cid = border.content_id(e)
+                out[cid] = {"relation_id": cid, "parent": hs.get("parent"),
+                            "declared_by": e.get("actor"), "under_rule": e.get("rule_cited"),
+                            "tag": hs.get("tag"),                    # Q5 tag: ABSENT (None) until the owner gives it
+                            "state": "live", "declare_seq": e.get("seq"), "withdraw_seq": None}
+        for e in self.store.by_action(border.SUBMIT_OP, as_of):
+            hs = self._handshake_marker(e)
+            if hs is not None:                                       # a WITHDRAW cites the relation's content hash
+                cited = hs.get("withdraws")
+                if cited in out and out[cited]["state"] == "live":
+                    out[cited]["state"] = "withdrawn"
+                    out[cited]["withdraw_seq"] = e.get("seq")
+        return out
+
+    def handshake_relation_live(self, relation_id, as_of=None):
+        """Is the handshake relation `relation_id` currently LIVE in THIS body's record? DERIVED
+        from the body's own declare/withdraw crossings (precision 1) — a relation never declared, or
+        one withdrawn, returns False; never a stored boolean. The one-line live read the tree's
+        "in a live handshake relation" wording (P10's re-mint) reads."""
+        r = self.handshake_relations(as_of).get(relation_id)
+        return r is not None and r["state"] == "live"
+
+    # ---- C6 P6: THE LIVE-STAGES VIEW AND THE HANDSHAKE CHECK (B8, I8, I16; design/52 v2.0) ------
+    # A COMPUTED VIEW over the record as it stands, plus module-level handshake checks below — NO
+    # founding, NO new op/law/check kind, NO pack edit, NO new row field (L26; Q2 discharged, :3658;
+    # I9). What a machine HOLDS (its stages, per scope) is DERIVED from its LIVE rules, never a
+    # founding declaration (B8, L26 — the owner's "only need to know if rule exist or not, active or
+    # not"). A stage-holding is a LIVE rule (an `active_rules` entry, READ and reused — latest-wins
+    # liveness, so a superseded/withdrawn rule drops out) that SELF-DECLARES it on the EXISTING
+    # accepted CREATE-RULE params — recognition by self-declaration, the `active_rules` `rule_id`
+    # precedent and P7's handshake marker, applied without adding a row field (I9) or a founding
+    # param (Q2): `policy_key` is the marker, `value` the stage, `scope` the scope, and the HOLDER
+    # (the actor the constitution assigns the stage to — I16's "an actor holds a stage") rides the
+    # existing `text` string param. The machine holds a stage only where it has acted (minted such a
+    # rule); a machine that has not acted holds nothing (B8). Each machine folds its OWN record
+    # alone (one pen per record, I1); the handshake check compares two machines' PRESENTATIONS,
+    # never folding two records as one truth (I2 — the checks are module-level functions over
+    # already-computed presentations, the P4/P15 census idiom, not a rule the record checks about
+    # itself).
+
+    #: The self-declared marker a stage-holding rule carries in its own `policy_key` (recognition by
+    #: self-declaration; an EXISTING accepted CREATE-RULE param, no new row field — I9, no founding
+    #: param — Q2). A live rule whose `policy_key` equals this holds `value` (the stage) for `scope`,
+    #: with the HOLDER actor on `text`.
+    HELD_STAGE_KEY = "held_stage"
+
+    def held_stages(self, as_of=None):
+        """B8 / I8 / L26 — THE LIVE-STAGES VIEW: what stages THIS machine holds, per scope, COMPUTED
+        from its LIVE rules (`active_rules`, READ and reused), never a founding declaration. A
+        stage-holding is a live rule self-declaring `HELD_STAGE_KEY` in its own `policy_key`: `value`
+        is the stage, `scope` the scope, and the HOLDER (I16's actor) rides the existing `text`
+        param. The machine holds a stage only where it acted (a claim is an act — a machine that has
+        not acted holds nothing, B8). A stage held under a live rule appears; one whose rule is
+        ABSENT (never created) or WITHDRAWN (superseded so the latest version of its rule_id no
+        longer declares the marker) does NOT (A1). Folded over THIS record's rows alone (one pen per
+        record, I1); kill it, replay, identical (a fold, never a stored status, P2). Returns a list
+        of {actor, stage, scope, rule_id, seq} — `actor` the HOLDER the rule assigns the stage to."""
+        live = self.active_rules(as_of)                          # reuse the view fold: latest-wins liveness
+        out = []
+        for e in self.store.by_action("CREATE-RULE", as_of):
+            p = e.get("payload") or {}
+            rid = p.get("rule_id")
+            if p.get("policy_key") != self.HELD_STAGE_KEY:       # a self-declared stage-holding only
+                continue
+            if rid is None or rid not in live or live[rid].get("seq") != e.get("seq"):
+                continue                                         # absent / superseded / withdrawn -> not live
+            out.append({"actor": p.get("text"), "stage": p.get("value"),
+                        "scope": p.get("scope"), "rule_id": rid, "seq": e.get("seq")})
+        return out
+
+    def held_stage_scopes(self, as_of=None):
+        """The set of (stage, scope) pairs THIS machine holds — the PRESENTATION a machine brings TO
+        a handshake. The one-machine-per-stage-per-scope check (I8) runs over BOTH machines'
+        presentations; each is folded by its own machine over its OWN record (I1), and the module-
+        level check compares the two (I2: two records are never folded as one truth)."""
+        return {(h["stage"], h["scope"]) for h in self.held_stages(as_of)}
+
+    # ---- C6a VT-1: THE NEW FOLDS (design/25 v2.1; design/53 B3/B4; the view tree beside the active) --
+    # COMPUTED VIEWS over the append-only record, added BESIDE the existing folds — NO founding, NO
+    # new op/law/check kind, NO new field, NO pack edit (VT-1 is GREEN). Every OLD band is a
+    # latest-wins VIEW: nothing is erased (the record is append-only; ruling 19). Each new fold is
+    # its OWN memoised projection through the existing head-memo (I7 / the delta-1 Resolution A
+    # principle, board :3735) — its own memo key, NEVER a key added onto an existing projection (the
+    # P8b lesson: the campaign-1 oracle test_ep16 and category_packs stay byte-identical). Three of
+    # these are new S-plane MASTERS (old_rules/old_items/old_relationships, in FOLD_NAMES + _fold);
+    # events_by_effect is a level-2 split that is not bindable (I1, ruling 11) and the level-4 views
+    # compute in memory (ruling 10), so they are methods, not library members.
+
+    def old_rules(self, as_of=None):
+        """design/25 v2.1 node 2.2 / rulings 3 & 19 / B3 — OLD RULES: the rule versions the active
+        fold DROPPED by latest-wins, never erased. A rule record is OLD iff its rule_id's ACTIVE
+        (latest-wins, tier-aware) version is a DIFFERENT record — so active_rules and old_rules
+        PARTITION the rule population (B3). Recognition is by SELF-DECLARATION (payload.rule_id — the
+        act wrote to the law), NEVER by op name (the active_rules recognition rule, read for its
+        complement). A separate memoised projection (I7). Kill it, replay, identical (P2)."""
+        return self.cached("old_rules", as_of, lambda: self._old_rules(as_of))
+
+    def _old_rules(self, as_of=None):
+        active = self.active_rules(as_of)              # latest-wins, READ and reused — the active band
+        old = []
+        for e in self.store.all(as_of):
+            p = e.get("payload") or {}
+            rid = p.get("rule_id")
+            if rid is None:
+                continue                               # not a rule record (recognition by self-declaration)
+            cur = active.get(rid)
+            if cur is not None and e["seq"] != cur["seq"]:
+                old.append({**p, "seq": e["seq"]})     # a superseded version — dropped by latest-wins, not erased
+        return old
+
+    def old_items(self, as_of=None):
+        """design/25 v2.1 node 3.2 / ruling 19 / B4 — OLD ITEMS: previous versions and removed items,
+        the latest-wins COMPLEMENT of the active item view, nothing erased. Items are the actor and
+        resource masters (ruling 1): an item is OLD iff a LATER record of its kind superseded its
+        identity (actor_id for actors, object for resources). Each master READ and reused. CAP
+        (design/25 §caps; the _resources honest-cap precedent): static kinds without a live latest-
+        wins fold today (spaces/keys/tunnels/devices as items) fold in as those masters become rows
+        (VT-3); the fold is ready. A separate memoised projection (I7)."""
+        return self.cached("old_items", as_of, lambda: self._old_items(as_of))
+
+    def _old_items(self, as_of=None):
+        out = []
+        # old actors: the non-latest CREATE-ACTOR versions per actor_id
+        latest, hist = {}, {}
+        for e in self.store.by_action("CREATE-ACTOR", as_of):
+            aid = (e.get("payload") or {}).get("actor_id") or e.get("object")
+            hist.setdefault(aid, []).append(e)
+            latest[aid] = e["seq"]
+        for aid, evs in hist.items():
+            for e in evs:
+                if e["seq"] != latest[aid]:
+                    out.append({"kind": "actor", "id": aid, "seq": e["seq"]})
+        # old resources: the non-latest CREATE-INFO versions per object
+        latest, hist = {}, {}
+        for e in self.store.by_action("CREATE-INFO", as_of):
+            obj = e.get("object")
+            hist.setdefault(obj, []).append(e)
+            latest[obj] = e["seq"]
+        for obj, evs in hist.items():
+            for e in evs:
+                if e["seq"] != latest[obj]:
+                    out.append({"kind": "resource", "id": obj, "seq": e["seq"]})
+        return out
+
+    def old_relationships(self, as_of=None):
+        """design/25 v2.1 node 4.2 / ruling 19 / B4 — OLD RELATIONSHIPS: ended, withdrawn, or
+        superseded by a LATER version of the same relation — the latest-wins COMPLEMENT, nothing
+        erased. Identity is SELF-DECLARED (payload `rel_id`, else (from, to, rel_kind)); an
+        end/withdraw is a self-declared marker on the EXISTING free-form payload (`ended` / `state` —
+        the P7 handshake & active_rules `rule_id` precedent: NO new row field, I9). The relation op
+        is named-pending today (_relationships); the fold is READY and reads what the record carries
+        — VT-2 makes the op live. A separate memoised projection (I7)."""
+        return self.cached("old_relationships", as_of, lambda: self._old_relationships(as_of))
+
+    def _old_relationships(self, as_of=None):
+        rows = list(self.store.by_action("CREATE-RELATIONSHIP", as_of))
+
+        def identity(e):
+            p = e.get("payload") or {}
+            return p.get("rel_id") if p.get("rel_id") is not None \
+                else (p.get("from"), p.get("to"), p.get("rel_kind"))
+
+        latest = {}
+        for e in rows:
+            latest[identity(e)] = e["seq"]              # by seq order — last wins
+        old = []
+        for e in rows:
+            p = e.get("payload") or {}
+            is_latest = e["seq"] == latest[identity(e)]
+            ended = p.get("ended") is True or p.get("state") in ("ended", "withdrawn")
+            if not is_latest:
+                old.append({"from": p.get("from"), "to": p.get("to"), "rel_kind": p.get("rel_kind"),
+                            "rel_id": p.get("rel_id"), "state": "superseded", "seq": e["seq"]})
+            elif ended:
+                old.append({"from": p.get("from"), "to": p.get("to"), "rel_kind": p.get("rel_kind"),
+                            "rel_id": p.get("rel_id"), "state": "withdrawn", "seq": e["seq"]})
+        return old
+
+    def events_by_effect(self, as_of=None):
+        """design/25 v2.1 node 1 (§1.1 / §1.2) / ruling 2 / L2 — the LEVEL-2 split of EVENTS by the
+        row's EFFECT FIELD: an act that created / amended / superseded / withdrew a RULE is a
+        RULE-CHANGING ACT; every other happening is an ACT UNDER RULES. The effect is read from the
+        row's SELF-DECLARATION (payload.rule_id — the act wrote to the law), NEVER inferred from the
+        operation name (the active_rules recognition rule: "not a hard-coded action-name list"). The
+        split is PERMANENT. EVENTS DO NOT SPLIT ACTIVE/OLD — a happening is never old (ruling 19):
+        this fold names NO old band and every event lands in EXACTLY ONE of the two. A separate
+        memoised projection (I7)."""
+        return self.cached("events_by_effect", as_of, lambda: self._events_by_effect(as_of))
+
+    def _events_by_effect(self, as_of=None):
+        rule_changing, under_rules = [], []
+        for e in self.store.all(as_of):
+            p = e.get("payload") or {}
+            row = {"seq": e["seq"], "actor": e.get("actor"), "action": e.get("action")}
+            (rule_changing if p.get("rule_id") is not None else under_rules).append(row)
+        return {"rule_changing_acts": rule_changing, "acts_under_rules": under_rules}
+
+    def rule_changing_acts(self, as_of=None):
+        """C6a VT-3b (design/53 L14/L16, I7): the events-split RULE-CHANGING band as ITS OWN
+        projection — the bound fold behind seed node 1.1, so master("1.1") serves and a derive over
+        it (1.1.x, actor_class) can be narrowed. Reads the memoised events_by_effect band; it does
+        NOT reshape it (VT-3 A6 holds: events_by_effect still returns its two keys)."""
+        return self.events_by_effect(as_of)["rule_changing_acts"]
+
+    def acts_under_rules(self, as_of=None):
+        """C6a VT-3b (design/53 L14/L16, I7): the events-split ACTS-UNDER-RULES band as its own
+        projection — the bound fold behind seed node 1.2, so master("1.2") serves and a derive over
+        it (1.2.x, actor_class) can be narrowed. Reads the memoised events_by_effect band without
+        reshaping it (VT-3 A6 holds)."""
+        return self.events_by_effect(as_of)["acts_under_rules"]
+
+    def chains_of_effect(self, as_of=None):
+        """design/25 v2.1 ruling 8 — CHAINS OF EFFECT: paths computed over the record's OWN causation
+        (level 4, computed — ruling 10). The record's native causal refs are the crossing lineage
+        (kernel.crossing): a crossing-answer CITES its handout (handout_seq); a re-judge / sub-crossing
+        NAMES its parent (parent_handout_seq). This walks those cause->effect edges into maximal
+        chains. A fold: kill it, replay, identical (P2). CAP (path_axis_positions precedent): the
+        causation read is the crossing lineage the record carries today; a rule change causing the
+        acts under it is named by events_by_effect + the seeded tree (VT-3), not here. A separate
+        memoised projection (I7); the head-memo is in-memory (ruling-10 compatible)."""
+        return self.cached("chains_of_effect", as_of, lambda: self._chains_of_effect(as_of))
+
+    def _chains_of_effect(self, as_of=None):
+        from . import crossing
+        succ, has_pred = {}, set()
+        for e in self.store.all(as_of):
+            p = e.get("payload") or {}
+            k = p.get("kind")
+            cause = p.get("handout_seq") if k == crossing.ANSWER_KIND else \
+                (p.get("parent_handout_seq") if k == crossing.HANDOUT_KIND else None)
+            if cause is not None:
+                succ.setdefault(cause, []).append(e["seq"])
+                has_pred.add(e["seq"])
+        chains = []
+
+        def walk(node, path):
+            nxt = succ.get(node)
+            if not nxt:
+                chains.append(path)
+                return
+            for n in sorted(nxt):
+                walk(n, path + [n])
+
+        for root in sorted(c for c in succ if c not in has_pred):
+            walk(root, [root])
+        return chains
+
+    #: design/25 v2.1 node 3.1.2 — the static item kinds (content, spaces, keys, tunnels, devices).
+    STATIC_KINDS = ("content", "spaces", "keys", "tunnels", "devices")
+    #: design/25 §caps — a static kind's CELL, DERIVED from its creating operation (blobs U-involved;
+    #: keys/spaces/tunnels/devices S), never a new field.
+    STATIC_KIND_CELL = {"content": "U-involved", "spaces": "S", "keys": "S",
+                        "tunnels": "S", "devices": "S"}
+
+    def static_composite(self, as_of=None):
+        """design/25 v2.1 node 3.1.2 / ruling 21 — the STATIC composite over the record: content,
+        spaces, keys, tunnels, devices. Populated from the LIVE reads (content via _resources, spaces
+        via the space fold); kinds whose master is not a live fold today are NAMED but empty (the
+        path_axis_positions honest-cap: name all, populate what the record carries) — VT-3 seeds
+        them. A separate memoised projection (I7)."""
+        return self.cached("static_composite", as_of, lambda: self._static_composite(as_of))
+
+    def _static_composite(self, as_of=None):
+        return {"content": self._resources(as_of), "spaces": self.spaces(as_of),
+                "keys": {}, "tunnels": {}, "devices": {}}   # CAP: keys/tunnels/devices masters mature in VT-3
+
+    def actors_by_class(self, as_of=None):
+        """design/25 v2.1 node 3.1.1 level 4 / ruling 21 — the ACTORS-BY-CLASS filter (a level-4
+        filter, read per act, not a permanent node). Groups the actor master by actor_class (read off
+        the actor row). An actor with NO class is counted under the None key (B4: "an actor with no
+        class counted and named"), never dropped. A separate memoised projection (I7)."""
+        return self.cached("actors_by_class", as_of, lambda: self._actors_by_class(as_of))
+
+    def _actors_by_class(self, as_of=None):
+        by = {}
+        for aid, a in self._actors(as_of).items():
+            by.setdefault(a.get("actor_class"), []).append(aid)
+        return by
+
+    def static_by_kind(self, as_of=None):
+        """design/25 v2.1 node 3.1.2 level 4 / ruling 21 — STATIC-BY-KIND (a level-4 filter): the
+        static composite indexed by kind (the ids per static kind). A FILTER over static_composite,
+        never a new node. A separate memoised projection (I7)."""
+        return self.cached("static_by_kind", as_of, lambda: self._static_by_kind(as_of))
+
+    def _static_by_kind(self, as_of=None):
+        return {kind: sorted(v.keys()) for kind, v in self.static_composite(as_of).items()}
+
+    def static_by_cell(self, cell=None, as_of=None):
+        """design/25 v2.1 node 3.1.2.5 / ruling 21 / design/25 §caps — the BY-CELL filter over static
+        items (a level-4 FILTER, not a node). A static item's cell is DERIVED from its kind's creating
+        operation as design/25 states — content (blobs) U-involved; spaces, keys, tunnels, devices S
+        — NEVER a new field. `cell` filters to one band (its kinds); None returns {cell: [kinds]}.
+        Not memoised: it takes a `cell` arg (the head-memo keys on name only) and is a constant-time
+        derivation over the closed kind set."""
+        bands = {}
+        for kind in self.STATIC_KINDS:
+            bands.setdefault(self.STATIC_KIND_CELL[kind], []).append(kind)
+        return bands if cell is None else bands.get(cell, [])
+
+    # =============================================================================================
+    # C6a VT-7 · THE LOCAL SLICE (design/25 v2.1 ruling 17 / ruling 16 / ruling 10; design/53 B11)
+    # =============================================================================================
+    # A LOCAL SLICE (ruling 17) is a session's cut of the top three levels — the rules binding this
+    # session's actor and its space — carrying the record VERSION (border.chain_head, the chain
+    # tip) and a content HASH (canonical_hash over the cut, seq-stripped: the design/34 §3 content
+    # seal, so an identical law re-minted at a new seq is the SAME content — the version witnesses
+    # position, the hash witnesses content) it was cut from. On RECONNECT the slice reads STALE BY
+    # DERIVATION (the P17 pattern, the class note above: a cut outliving its head serves a stale
+    # answer) — re-cut for the same session over the current head and compare the carried
+    # (version, hash); NEVER a stored stale flag (stop b). While the session is CUT OFF the brake is
+    # a FROZEN view of ONLY the must-nots (the polarity '-' don'ts the online gate already enforces,
+    # gate.py's pass-triggered don't) and it FAILS CLOSED: the offline slice has NO allow path — a
+    # must-not fires REFUSED, everything else DEFERs (a may-do is not decided locally; it waits for
+    # a fresh record read — ruling 16, "only the must-nots act offline"). NO new field, NO founding:
+    # polarity, when, scope, chain_head, canonical_hash and strip_derivation are read and reused.
+
+    def _slice_binding_scope(self, rule, as_of=None):
+        """A rule's BINDING SPACE, resolved exactly as the gate's don't-firing resolves it
+        (gate.py: scope, else space, else the mother) — the one resolution, reused, never a second
+        opinion about where a law reaches."""
+        scope = rule.get("scope")
+        if scope is None:
+            scope = rule.get("space")
+        if scope is None:
+            scope = self.mother_space(as_of)
+        return scope
+
+    def local_slice(self, session, as_of=None):
+        """CUT a session's LOCAL SLICE of the top three levels (ruling 17). The binding rules are the
+        active rules whose scope REACHES this session's space (the gate's own `space_reaches`: a rule
+        binds the session iff its scope's subtree covers the session's space — never wider than the
+        actor's own reach, I1), split into the MUST-NOTS (polarity '-', the don'ts) and the MAY-DOS
+        (polarity '+', the dos; op/view definitions excluded, the toothless_musts precedent — they
+        are declarations, not permissions). The cut CARRIES the record VERSION (`chain_head`) and a
+        content HASH (`canonical_hash` over the seq-stripped binding — design/34 §3) it was cut from.
+        `session` is {actor, space}; space defaults to the mother. A DIFFERENT session (a different
+        binding space) is a DIFFERENT cut — a subspace-scoped don't binds a session in that subspace
+        and not a sibling's. Pure derivation; appends nothing (a permanent tier would be one
+        view-definition row, never a change to the masters or the founding — ruling 16)."""
+        from . import border
+        space = session.get("space") or self.mother_space(as_of)
+        binding = {rid: r for rid, r in self.active_rules(as_of).items()
+                   if self.space_reaches(self._slice_binding_scope(r, as_of), space, as_of=as_of)}
+        must_nots = {rid: r for rid, r in binding.items() if r.get("polarity") == "-"}
+        may_dos = {rid: r for rid, r in binding.items()
+                   if r.get("polarity") == "+"
+                   and r.get("kind") not in ("op_definition", "view_definition")}
+        return {"session": session.get("actor"), "space": space, "as_of": as_of,
+                "must_nots": must_nots, "may_dos": may_dos,
+                "cut_version": border.chain_head(self.store, as_of),
+                "cut_hash": canonical_hash(strip_derivation(binding))}
+
+    def slice_stale(self, cut, as_of=None):
+        """RECONNECT (ruling 17): the slice reads STALE BY DERIVATION when the CURRENT record has
+        moved past the (version, hash) it was cut from — the P17 pattern (the class note: a cut
+        outliving its head serves a stale answer), NEVER a stored flag (stop b). Re-cut for the SAME
+        session over the current head and compare the carried (version, hash): STALE iff EITHER
+        witness differs (chain_head advances on any append — the safe direction; the seq-stripped
+        content hash is the second witness, ruling 17 'witnesses, not walls', catching a content
+        tamper). A cut re-checked against the head it was cut from reads LIVE — the check can fail,
+        which is A2's live control."""
+        fresh = self.local_slice({"actor": cut["session"], "space": cut["space"]}, as_of)
+        return (cut["cut_version"], cut["cut_hash"]) != (fresh["cut_version"], fresh["cut_hash"])
+
+    def slice_offline_decision(self, cut, draft):
+        """THE OFFLINE BRAKE (ruling 16): while the session is CUT OFF, only the MUST-NOTS act. The
+        FROZEN view of only the must-nots carried in the cut stays live and FAILS CLOSED — the
+        offline slice has NO allow path. Returns 'REFUSED' (with the rule and its cited law) when a
+        frozen must-not FIRES on the draft — the gate's own matcher (`_draft_matches` + `space_reaches`,
+        reused, the same trigger the online gate refuses on). Otherwise 'DEFER': a may-do is NOT
+        decided locally (a laptop acts on its local answer only for the must-nots; a permission waits
+        for a fresh record read). NEVER 'ALLOWED' — the local NO is safe and final, the local YES is
+        not given offline. A must-not with an empty `when` (machinery-enforced) is not locally
+        evaluable, so the act DEFERs rather than proceeding — still no allow path (fail-closed)."""
+        from .gate import _draft_matches
+        pdict = draft.get("payload") if isinstance(draft.get("payload"), dict) else None
+        act_space = (pdict.get("scope") if pdict and pdict.get("scope") is not None else None) \
+            or (pdict.get("space") if pdict else None) or cut["space"]
+        for rid in sorted(cut["must_nots"]):
+            r = cut["must_nots"][rid]
+            when = r.get("when")
+            if not isinstance(when, (list, tuple)) or not when:
+                continue                                  # machinery-enforced don't — not locally evaluable
+            if not _draft_matches(draft, when):
+                continue
+            if not self.space_reaches(self._slice_binding_scope(r), act_space):
+                continue                                  # the act is outside this don't's reach
+            cite = next((step["refuse"] for step in (r.get("then") or []) if step.get("refuse")), None)
+            return {"decision": "REFUSED", "rule": rid, "under": cite or rid}
+        return {"decision": "DEFER"}
+
+
+# =================================================================================================
+# C6 P6 · THE HANDSHAKE CHECKS (I8 the double-claim; I16 separation of powers) — module-level.
+# =================================================================================================
+# These run AT a handshake (P7's relation over the crossing/receipt, consumed — the occasion two
+# machines meet) OVER BOTH records' live rules. They take ALREADY-COMPUTED presentations (each
+# machine folds its OWN record via Views.held_stages / held_stage_scopes — one pen per record, I1),
+# so no view here folds two records as one truth (I2). They are plain instruments — the P4/P15
+# census idiom — NOT gate ops and NOT registered check kinds (no OP_CHECKS member added, A4): the
+# "refused and recorded" of B8/I8 rides P7's own handshake record; these name the refusal.
+
+#: The three powers I16 forbids one actor to hold together for one scope: decision + enforcement +
+#: monitoring (B7 — decision rows, refusal/enforcement rows, the monitoring view). Separation of
+#: powers RIDES protection.SOP (the existing mechanism, reused, never re-authored).
+THREE_POWERS = ("decision", "enforcement", "monitoring")
+
+
+def handshake_double_claim(held_here, held_there):
+    """I8 / B8 — the one-machine-per-stage-per-scope conflict set: the (stage, scope) pairs BOTH
+    machines hold. `held_here` / `held_there` are (stage, scope) presentations (Views.
+    held_stage_scopes), each computed by its machine over its OWN record. Empty => no double-claim
+    (disjoint scopes, or only one holder, pass). This is the pure comparison; refuse_double_claim
+    turns it into the named refusal."""
+    return set(held_here) & set(held_there)
+
+
+def refuse_double_claim(held_here, held_there):
+    """I8 — REFUSE a second machine claiming a stage another already holds for the SAME scope, BY
+    NAME, at the handshake. Raises OpError('I8') naming every conflicting (stage, scope); no
+    conflict => returns (the handshake proceeds). Able-to-fail: a planted double-claim raises, and
+    disjoint scopes / a single holder do not."""
+    conflicts = handshake_double_claim(held_here, held_there)
+    if conflicts:
+        from .errors import OpError
+        named = ", ".join(f"{s} @ {sc}" for (s, sc)
+                          in sorted(conflicts, key=lambda x: (str(x[0]), str(x[1]))))
+        raise OpError("I8", "a second machine claims a stage another machine already holds for the "
+                            f"same scope (one machine per stage per scope): {named}")
+
+
+def separation_of_powers_conflicts(held):
+    """I16 — the (actor, scope) pairs where ONE actor holds ALL THREE powers (decision + enforcement
+    + monitoring) for ONE scope. `held` is a Views.held_stages list (a machine's own presentation).
+    Empty => no actor concentrates all three (holding any two of the three is not a conflict)."""
+    by_actor_scope = {}
+    for h in held:
+        by_actor_scope.setdefault((h["actor"], h["scope"]), set()).add(h["stage"])
+    return {k for k, stages in by_actor_scope.items() if set(THREE_POWERS) <= stages}
+
+
+def refuse_separation_of_powers(held):
+    """I16 — REFUSE a declared stage set that puts decision, enforcement AND monitoring on one actor
+    for one scope. RIDES protection.SOP (reused). Raises OpError(SOP) naming the actor and scope; no
+    such actor => returns. Able-to-fail: all three on one actor raises, any two of the three do
+    not."""
+    conflicts = separation_of_powers_conflicts(held)
+    if conflicts:
+        from .errors import OpError
+        from .protection import SOP
+        named = ", ".join(f"{a} @ {sc}" for (a, sc)
+                          in sorted(conflicts, key=lambda x: (str(x[0]), str(x[1]))))
+        raise OpError(SOP, "one actor may not hold decision, enforcement and monitoring together "
+                           f"for one scope (separation of powers): {named}")

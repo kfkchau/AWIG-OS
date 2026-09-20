@@ -307,6 +307,7 @@ class TheRedWorldForTheIntermediateState(unittest.TestCase):
                     "object_param": "device",
                     "payload_from": ["device"],
                     "structural_params": ["device"],   # device id, object_param, read inline (vocab door — design/46 member 2; mirrors the production op)
+                    "cell": "S",   # C6 P8 (L28): a probe op founded against the CELL-LAW pack must declare a cell (structured record-mechanic, S) or the founding door refuses it
                     "checks": [],
                 },
             },
@@ -918,20 +919,20 @@ def _guest_layer(case, cmd, timeout=90, _input=None):
     it is an AUTH fact and evidence that carrier AND guest are both up."""
     ok, why = _carrier_up()
     if not ok:
-        case.skipTest("%s — the tunnel to the lab is not open, so this row cannot reach its "
+        case.skipTest("SKIP LONG-BOOT: %s — the tunnel to the lab is not open, so this row cannot reach its "
                       "subject and declines to state a fact about it" % why)
     try:
         r = subprocess.run(SSH + [cmd], capture_output=True, text=True, timeout=timeout,
                            input=_input)
     except (OSError, subprocess.SubprocessError) as exc:          # noqa: BLE001
-        case.skipTest("GUEST: the ssh client could not complete (%s)" % exc)
+        case.skipTest("SKIP LONG-BOOT: GUEST: the ssh client could not complete (%s)" % exc)
     if r.returncode != 0:
         err = (r.stderr or "").strip()
         if "Permission denied" in err or "denied" in err.lower():
-            case.skipTest("AUTH: the guest's daemon ANSWERED and refused the key (%s) — "
+            case.skipTest("SKIP LONG-BOOT: AUTH: the guest's daemon ANSWERED and refused the key (%s) — "
                           "carrier and guest are both up and this is the auth layer"
                           % err[:120])
-        case.skipTest("GUEST: reached the carrier but the guest did not answer (%s)"
+        case.skipTest("SKIP LONG-BOOT: GUEST: reached the carrier but the guest did not answer (%s)"
                       % (err[:160] or "rc=%d" % r.returncode))
     return r.stdout
 
@@ -1033,16 +1034,16 @@ def _run_guest_probe(case, digest):
         case.fail("could not pack the observe package: %r" % tar.stderr[:200])
     ok, why = _carrier_up()
     if not ok:
-        case.skipTest("%s — the surface establishment cannot reach the guest" % why)
+        case.skipTest("SKIP LONG-BOOT: %s — the surface establishment cannot reach the guest" % why)
     try:
         ship = subprocess.run(SSH + ["mkdir -p %s && tar -xz -C %s" % (gdir, gdir)],
                               input=tar.stdout, capture_output=True, timeout=120)
     except (OSError, subprocess.SubprocessError) as exc:          # noqa: BLE001
-        case.skipTest("GUEST: could not ship the probe (%s)" % exc)
+        case.skipTest("SKIP LONG-BOOT: GUEST: could not ship the probe (%s)" % exc)
     if ship.returncode != 0:
         err = (ship.stderr or b"").decode("utf-8", "replace").strip()
         layer = "AUTH" if "denied" in err.lower() else "GUEST"
-        case.skipTest("%s: could not ship the probe (%s)" % (layer, err[:160]))
+        case.skipTest("SKIP LONG-BOOT: %s: could not ship the probe (%s)" % (layer, err[:160]))
     out = _guest_layer(case, "cat > %s/_driver.py && cd %s && python3 _driver.py"
                        % (gdir, gdir), _input=_PROBE_DRIVER)
     line = [ln for ln in out.splitlines() if ln.startswith("PROBE-JSON:")]
@@ -2669,7 +2670,7 @@ class TheW1bRowsCanBeMadeToFail(unittest.TestCase):
         finally:
             live_pack = original
         if res.skipped:
-            self.skipTest("GUEST: the row this red world drives could not reach the guest "
+            self.skipTest("SKIP LONG-BOOT: GUEST: the row this red world drives could not reach the guest "
                           "(%s)" % res.skipped[0][1][:120])
         self.assertRowFAILED(res, "a window declaring a granularity passes")
 
@@ -3712,12 +3713,12 @@ def calibration(case, profile="retake"):
 
     ok, why = _carrier_up()
     if not ok:
-        _skip("%s — the calibration cannot reach its subject" % why)
+        _skip("SKIP LONG-BOOT: %s — the calibration cannot reach its subject" % why)
     try:
         r = subprocess.run(SSH + [cmd], input=_CALIB_DRIVER, capture_output=True,
                            text=True, timeout=900)
     except (OSError, subprocess.SubprocessError) as exc:              # noqa: BLE001
-        _skip("GUEST: the ssh client could not complete (%s)" % exc)
+        _skip("SKIP LONG-BOOT: GUEST: the ssh client could not complete (%s)" % exc)
     if r.returncode == 255:
         # ssh's OWN failure code. THE LAYER SPLIT IS THE POINT: 255 is the carrier, the
         # auth or the daemon, and a row that cannot reach its subject declines to state a
@@ -3726,7 +3727,7 @@ def calibration(case, profile="retake"):
         # leave every row below green with no subject, which is the check that cannot fail.
         err = (r.stderr or "").strip()
         layer = "AUTH" if "denied" in err.lower() else "CARRIER/GUEST"
-        _skip("%s: ssh itself refused (%s)" % (layer, err[:160]))
+        _skip("SKIP LONG-BOOT: %s: ssh itself refused (%s)" % (layer, err[:160]))
     if r.returncode != 0:
         case.fail("THE CALIBRATION OBSERVER FAILED ON THE GUEST (rc=%d). This is the "
                   "instrument, not the lab: stderr=%r stdout=%r"
@@ -7081,7 +7082,7 @@ def exhibition(case, profile="retake"):
 
     ok, why = _carrier_up()
     if not ok:
-        _skip("%s — the exhibition cannot reach its subject" % why)
+        _skip("SKIP LONG-BOOT: %s — the exhibition cannot reach its subject" % why)
 
     gdir = "/tmp/govos-w2c-%s-%s" % (calib_d[:8], census_d[:8])
 
@@ -7099,7 +7100,7 @@ def exhibition(case, profile="retake"):
         if r.returncode == 255:
             err = (r.stderr or "").strip()
             layer = "AUTH" if "denied" in err.lower() else "CARRIER/GUEST"
-            _skip("%s: ssh itself refused (%s)" % (layer, err[:160]))
+            _skip("SKIP LONG-BOOT: %s: ssh itself refused (%s)" % (layer, err[:160]))
         if r.returncode != 0:
             case.fail("THE %s FAILED ON THE GUEST (rc=%d). This is the instrument, not the "
                       "lab: stderr=%r stdout=%r"
@@ -10725,6 +10726,10 @@ def _mint_candidate(pack, params, checks, extra_records=()):
                     "name": _PROBE, "tier": "owner",
                     "text": "an expressibility candidate, minted in memory for W3a2's walk",
                     "definition": {"description": "W3a2 expressibility candidate",
+                                   # C6 P8 (L28): a candidate minted into the CELL-LAW pack must declare
+                                   # a cell (structured record-mechanic, S) or the founding door refuses
+                                   # it — this candidate tests check-kind expressibility, cell orthogonal.
+                                   "cell": "S",
                                    "params": params, "law_cited": "DEV-LAW-INTAKE",
                                    "payload_from": sorted(params),
                                    # the candidate records EVERY param inline (payload_from == all
@@ -12192,7 +12197,11 @@ class TheIntakeOperationCoversWhatItsLawDescribes(unittest.TestCase):
         # equally orthogonal to that pass. Both are normalized out of both sides so this row still proves
         # the substantive definition is byte-unmoved across the pass, without demanding the op predate a
         # law that postdates it. Any OTHER drift still reds. Conform the test to the live door, never the door.
-        _later_law_fields = ("structural_params", "param_kinds")
+        # C6 P8 (L28, 2026-09-09): `cell` is the SAME shape of later-law field — the CELL declaration
+        # added estate-wide to EVERY production op (S|U|U{s}|S{u}), a landing well AFTER W3a3 and equally
+        # orthogonal to whether that pass smuggled anything into DECLARE-INTAKE. Normalized out of both
+        # sides so this row still proves the substantive definition is byte-unmoved across the pass.
+        _later_law_fields = ("structural_params", "param_kinds", "cell")
         era = {k: v for k, v in era.items() if k not in _later_law_fields}
         now = {k: v for k, v in now.items() if k not in _later_law_fields}
         self.assertEqual(json.dumps(era, sort_keys=True), json.dumps(now, sort_keys=True),
@@ -13127,7 +13136,7 @@ def _ship(case, path, payload, gdir):
                        input=payload, capture_output=True,
                        text=isinstance(payload, str), timeout=180)
     if r.returncode != 0:
-        case.skipTest("GUEST: could not place %s (rc=%d)" % (path, r.returncode))
+        case.skipTest("SKIP LONG-BOOT: GUEST: could not place %s (rc=%d)" % (path, r.returncode))
 
 
 def _guest(case, cmd, timeout=600, what="step", _input=None, allow_fail=False):
@@ -13135,7 +13144,7 @@ def _guest(case, cmd, timeout=600, what="step", _input=None, allow_fail=False):
                        input=_input)
     if r.returncode == 255:
         err = (r.stderr or "").strip()
-        case.skipTest("%s: ssh itself refused (%s)"
+        case.skipTest("SKIP LONG-BOOT: %s: ssh itself refused (%s)"
                       % ("AUTH" if "denied" in err.lower() else "CARRIER/GUEST", err[:160]))
     if r.returncode != 0 and not allow_fail:
         case.fail("THE %s FAILED ON THE GUEST (rc=%d): stderr=%r stdout=%r"
@@ -13177,6 +13186,23 @@ def _snapshot_before_load(case, tag):
     return tag
 
 
+def _delete_snapshot(case, tag):
+    """DELVM, AND ABSENCE IS ASSERTED. The mirror of `_snapshot_before_load`: the row that
+    minted the pre-load snapshot retires it once the load is green, through the same
+    instrument (`planning/vm/lab/m3-monitor.py delete`). Asserted AFTER acting rather than
+    trusted from rc=0, because a `delvm` that reports success and leaves the tag in `info
+    snapshots` is exactly the accumulation that grew the image to 339G (archi :4151)."""
+    r = _monitor(case, ["delete", tag])
+    if r.returncode != 0:
+        case.fail("SNAPSHOT DELETE REFUSED (rc=%d): %r / %r"
+                  % (r.returncode, (r.stdout or "")[-300:], (r.stderr or "")[-300:]))
+    listing = _monitor(case, ["list"], timeout=300)
+    if tag in (listing.stdout or ""):
+        case.fail("`delvm %s` returned 0 but the tag is STILL in `info snapshots` — the "
+                  "accumulation this unit exists to stop: %r"
+                  % (tag, (listing.stdout or "")[-400:]))
+
+
 def shim_exhibition(case):
     """THE BRACKETED SEQUENCE AT THE GUEST, MEMOIZED ON THE INSTRUMENT DIGEST.
 
@@ -13205,7 +13231,7 @@ def shim_exhibition(case):
 
     ok, why = _carrier_up()
     if not ok:
-        _skip("%s — the shim exhibition cannot reach its subject" % why)
+        _skip("SKIP LONG-BOOT: %s — the shim exhibition cannot reach its subject" % why)
 
     gdir = "/tmp/govshim-%s" % dig[:12]
     for name, text in shim_sources().items():
@@ -13243,10 +13269,15 @@ def shim_exhibition(case):
     # A vacuous green on this movement's headline claim is worse than the cost of doing
     # the work, so: unload if present, snapshot, load. Every run.
     #
-    # THE COST IS REAL AND IS RAISED RATHER THAN ABSORBED: one `savevm` per process that
-    # runs these rows, so an acceptance pass at two widths mints two. Snapshot
-    # housekeeping is not this unit's to do -- deletions are the owner's -- and the
-    # accumulation is named in this pass's entry.
+    # THE COST WAS REAL AND IS NOW RETIRED BY THE ROW THAT INCURS IT. This once read
+    # "snapshot housekeeping is not this unit's to do -- deletions are the owner's"; that
+    # assignment is SUPERSEDED (archi :4152), because a whole-guest `savevm` per process
+    # with nothing to delete it accumulated to 186 snapshots and a 339G image that filled
+    # the host disk (archi :4151). A test housekeeps the snapshot it mints: on a GREEN load
+    # the tag is deleted through the monitor and its ABSENCE asserted (`_delete_snapshot`
+    # below); on a FAILED load the tag is KEPT as the recovery point and its name printed
+    # in the row output so a `loadvm` can put the guest back. The recurrence guard is
+    # tests/test_environment_guest_image.py.
     resident = _guest(case, "test -d /sys/module/%s && echo RESIDENT" % GOVSHIM_MODULE,
                       allow_fail=True, what="RESIDENCE")
     if "RESIDENT" in resident.stdout:
@@ -13260,28 +13291,59 @@ def shim_exhibition(case):
                                       what="DRIVER ENDPOINT BEFORE").stdout,
                          "DRIVERS-JSON:", "DRIVER ENDPOINT BEFORE")
 
+    # BRACKET-START FINDING (archi :4152): any w3b-preload tag already resident is an
+    # earlier process's pre-load snapshot that its own bracket never retired. Counted and
+    # named rather than deleted here -- a foreign run's tag is not this row's to remove --
+    # so the count is the finding, and tests/test_environment_guest_image.py is the guard
+    # that reds the ledger when they accumulate. Best-effort: silent if the monitor socket
+    # is unreachable, in which case the snapshot step below fails the row anyway.
+    _pre = _monitor(case, ["list"], timeout=300)
+    _pre_tags = [ln for ln in (_pre.stdout or "").splitlines() if "w3b-preload" in ln]
+    if _pre_tags:
+        print("W3B-PRELOAD-PREEXISTING: %d w3b-preload snapshot(s) present at bracket "
+              "start (each an earlier run's undeleted savevm): %r"
+              % (len(_pre_tags), _pre_tags))
+
     snapshot = _snapshot_before_load(
         case, "w3b-preload-%s-%s" % (dig[:8], time.strftime("%m%d%H%M%S")))
-    _guest(case, "sudo -n insmod %s/govshim.ko validation_set=%s"
-                 % (gdir, ",".join(SHIM_VALIDATION_SET)), what="INSMOD")
+    # THE SNAPSHOT IS THIS ROW'S TO RETIRE (archi :4152). It exists to put the guest back
+    # if the load panics it; once the load is GREEN it has done its job and is deleted, and
+    # on a FAILED load it is KEPT and named so a `loadvm` can recover.
+    try:
+        _guest(case, "sudo -n insmod %s/govshim.ko validation_set=%s"
+                     % (gdir, ",".join(SHIM_VALIDATION_SET)), what="INSMOD")
 
-    param = _guest(case, "cat /sys/module/%s/parameters/validation_set" % GOVSHIM_MODULE,
-                   what="PARAM READBACK").stdout.strip()
+        param = _guest(case, "cat /sys/module/%s/parameters/validation_set"
+                             % GOVSHIM_MODULE, what="PARAM READBACK").stdout.strip()
 
-    ex = _marked(case, _guest(
-        case, "rm -rf %s/rec && mkdir -p %s/rec && sudo -n env GOVOS_SRC=%s/src "
-              "timeout 300 python3 %s/govshimd.py exhibit %s/rec/record.jsonl "
-              "%s/rec/served.jsonl %s:block,%s:net"
-              % (gdir, gdir, gdir, gdir, gdir, gdir, SHIM_BLOCK_DEVICE, SHIM_NET_DEVICE),
-        timeout=900, what="SHIM EXHIBITION").stdout, "SHIM-JSON:", "SHIM EXHIBITION")
+        ex = _marked(case, _guest(
+            case, "rm -rf %s/rec && mkdir -p %s/rec && sudo -n env GOVOS_SRC=%s/src "
+                  "timeout 300 python3 %s/govshimd.py exhibit %s/rec/record.jsonl "
+                  "%s/rec/served.jsonl %s:block,%s:net"
+                  % (gdir, gdir, gdir, gdir, gdir, gdir, SHIM_BLOCK_DEVICE,
+                     SHIM_NET_DEVICE),
+            timeout=900, what="SHIM EXHIBITION").stdout, "SHIM-JSON:", "SHIM EXHIBITION")
 
-    after_census = _marked(case, _guest(case, "echo '[]' | sudo -n python3 %s/census.py "
-                                              "vda,vdb ens3" % gdir, timeout=600,
-                                        what="CENSUS AFTER").stdout,
-                           "CENSUS-JSON:", "CENSUS AFTER")
-    after_drv = _marked(case, _guest(case, "sudo -n python3 %s/drivers.py" % gdir,
-                                     what="DRIVER ENDPOINT AFTER").stdout,
-                        "DRIVERS-JSON:", "DRIVER ENDPOINT AFTER")
+        after_census = _marked(case, _guest(case, "echo '[]' | sudo -n python3 "
+                                                  "%s/census.py vda,vdb ens3" % gdir,
+                                            timeout=600, what="CENSUS AFTER").stdout,
+                               "CENSUS-JSON:", "CENSUS AFTER")
+        after_drv = _marked(case, _guest(case, "sudo -n python3 %s/drivers.py" % gdir,
+                                         what="DRIVER ENDPOINT AFTER").stdout,
+                            "DRIVERS-JSON:", "DRIVER ENDPOINT AFTER")
+    except BaseException:
+        # FAILED load, or a failure/skip while the module was resident: the pre-load
+        # snapshot is the recovery point. KEEP it and NAME it in the row output --
+        # `m3-monitor.py load <tag>` puts the guest back -- then let the outcome
+        # (failure or skip) propagate unchanged.
+        print("W3B-PRELOAD-KEPT: load/bracket did not complete green; snapshot RETAINED "
+              "for recovery via `planning/vm/lab/m3-monitor.py load %s`: %s"
+              % (snapshot, snapshot))
+        raise
+    else:
+        # GREEN load: the guest came up and stayed up through exhibition, so the snapshot
+        # has done its job. Delete it through the monitor and ASSERT ITS ABSENCE.
+        _delete_snapshot(case, snapshot)
 
     out = {"digest": dig, "gdir": gdir, "snapshot": snapshot, "param": param,
            "exhibition": ex, "census": (before_census, after_census),

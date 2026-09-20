@@ -46,7 +46,8 @@ reference: configurability is the door to an ungoverned founding).
 import json
 import os
 
-from kernel.opdefs import validate_definition_shape, VOCAB_DOOR_LAW
+from bridge.host_seam import host   # C7 P2 — the pack READ is a declared host act (the pack itself is untouched DATA)
+from kernel.opdefs import validate_definition_shape, VOCAB_DOOR_LAW, CELL_LAW, CELL, CELL_SET
 
 PACK_PATH = os.path.join(os.path.dirname(__file__), "founding-pack.json")
 
@@ -77,7 +78,7 @@ class _FoundingDoor:
 
 def load_pack(path=PACK_PATH):
     """Read the founding pack document. The pack is DATA — this is the only reader."""
-    with open(path, encoding="utf-8") as f:
+    with host().open_read_text(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -170,6 +171,28 @@ def _validate(recs):
     # before the MOVER-4 create + census sweep) classifies nothing and founds exactly as before —
     # the wire-at-birth gate that keeps the held founding-move inert until the owner's word.
     classify_law_live = any((r.get("payload") or {}).get("rule_id") == VOCAB_DOOR_LAW for r in recs)
+    # C6 P8 (design/52 L28): the CELL-PRESENCE requirement engages at the FOUNDING door only where THIS
+    # founding declares CELL-LAW — read from the pack's OWN rule records (the wire-at-birth idiom,
+    # VOCAB_DOOR_LAW's precedent). Every op the founding declares must carry a well-formed cell or the
+    # WHOLE founding is refused. This lives HERE, not at the runtime CREATE-OP / AMEND-OP doors,
+    # because the cell is FOUNDING DATA (a pack-scope declaration) — a runtime extension op is not the
+    # pack the law binds, and refusing one over the record's own history is exactly the enforcement the
+    # law HOLDS. A pack that does not declare CELL-LAW (every world before P8) requires no cell and
+    # founds exactly as before. The cell is NEVER defaulted (a silent default of S is a program holding
+    # judgment, which L28 forbids), so an op with no cell REFUSES rather than being assigned one.
+    cell_law_live = any((r.get("payload") or {}).get("rule_id") == CELL_LAW for r in recs)
+    # C6 P8 / K12 (design/52 L28; archi :3731 C): the ACTOR-CLASS DOMAIN check at the founding door — the
+    # wire-at-birth companion to the runtime write-refusal (P8b A6). A genesis CREATE-ACTOR whose
+    # actor_class is outside the pack's OWN declared class domain refuses the WHOLE founding: the
+    # cell-presence idiom above applied to the class field. It differs from `cell_law_live` in ONE way and
+    # the difference is load-bearing. cell_law_live is a WHOLE-PACK flag because every op must carry a cell
+    # WHATEVER its position; a class domain closes only over actors founded AFTER it is declared — the
+    # recorder-system SYSTEM (actor_class "system") is founded at the pack's head, long before the
+    # {human,ai,program} domain goes live, and cannot be judged against a domain that did not yet exist
+    # (the same reason the pairing census re-judges no past act). So the domain is tracked POSITIONALLY as
+    # the walk proceeds (like `actors`/`spaces`), live only for the records that follow it, and INERT where
+    # absent — every world before P8 (no actor-classes pack) founds exactly as before.
+    class_domain = None
     for i, r in enumerate(recs):
         action = r.get("action")
         pl = r.get("payload") or {}
@@ -196,15 +219,41 @@ def _validate(recs):
                     f"the whole founding is refused (nothing appended)")
         elif action == "CREATE-OP" and pl.get("kind") == "op_definition":
             name = pl.get("name")
+            definition = pl.get("definition") or {}
             validate_definition_shape(_FoundingDoor(where, name), "FOUNDING",
-                                      "SYSTEM", name, pl.get("definition") or {}, peers,
+                                      "SYSTEM", name, definition, peers,
                                       classify_law_live=classify_law_live)
+            # C6 P8 / L28: the cell-presence requirement, engaged only under a live CELL-LAW founding.
+            # A well-formed cell (value in the set) is validated by validate_definition_shape above; here
+            # the founding door additionally requires the cell to be PRESENT — every op declares one, or
+            # the whole founding is refused (never defaulted). A missing cell is the founding data gap the
+            # law closes; a malformed one already refused above.
+            if cell_law_live and definition.get(CELL) not in CELL_SET:
+                raise FoundingIntegrityError(
+                    f"{where}: operation {name!r} declares no cell (design/52 L28: every operation "
+                    f"declares its cell as founding data, one of {CELL_SET}, never derived from field "
+                    f"shapes and never defaulted) — the whole founding is refused (nothing appended)")
+        elif action == "CREATE-ACTOR":
+            # K12 wire-at-birth: a genesis actor founded AFTER the class domain goes live must declare a
+            # class WITHIN it; INERT while no domain is live yet (SYSTEM/owner at the pack head), so the
+            # production founding still founds. The domain is `class_domain`, tracked positionally below.
+            actor_class = pl.get("actor_class")
+            if class_domain is not None and actor_class not in class_domain:
+                raise FoundingIntegrityError(
+                    f"{where}: actor {pl.get('actor_id') or r.get('object')!r} declares actor_class "
+                    f"{actor_class!r}, outside the live class domain {class_domain} (K12: the class "
+                    f"field's domain closes; design/52 L28) — the whole founding is refused (nothing appended)")
 
         # having validated this record's references, it now founds its own entity
         if action == "CREATE-ACTOR":
             actors.add(pl.get("actor_id") or r.get("object"))
         elif action == "CREATE-INFO" and pl.get("kind") == "info_space":
             spaces.add(r.get("object"))
+        # the actor-class domain goes live (or re-cuts) here, so it binds only the actors that FOLLOW it
+        # in founding order — the wire-at-birth ordering that keeps the pack-head SYSTEM actor inert.
+        if pl.get("kind") == "category_pack" and pl.get("name") == "actor-classes" \
+                and isinstance(pl.get("levels"), (list, tuple)):
+            class_domain = tuple(pl["levels"])
 
 
 def install(store):
@@ -213,6 +262,24 @@ def install(store):
     old genesis signature; compose re-exports boot.genesis which delegates here)."""
     pack = load_pack()
     recs = records(pack)
+    # VT-3c (archi :3846): READ THE WORLD'S OWN FOUNDING VERSION BEFORE THE LAST-RECORD IDEMPOTENCY.
+    # A world's own version is its FIRST FOUND-STORE record's stamped founding_version —
+    # store.by_action("FOUND-STORE")[0], the founding designation, first in the pack, where F4 stamps it
+    # (:273-276). A version DIFFERENT from the pack's is a COMPLETE OLDER WORLD: opening it appends NOTHING
+    # and returns byte-identical. Bringing an older world forward is a MIGRATION — an EXPLICIT act, NEVER an
+    # open side-effect. Without this read, VT-3's seed (which appended a founding step at the END, moving the
+    # pack's terminal record) leaves every pre-1.53.0 world's last record absent, so the last-record check
+    # below would re-found the WHOLE pack on open — a second founding under a new-version FOUND-STORE
+    # (govos-w4), which is forward-amend by accident and the genesis law forbids (:2901). A world already
+    # holding TWO FOUND-STOREs (an already-migrated world) is judged by its FIRST ([0]), so it returns
+    # byte-identical under every future pack. An UNSTAMPED FOUND-STORE (version None — pre-F4, or a raw-record
+    # test fixture) declares no older version: it falls through to the last-record idempotency, which keeps
+    # the :2901 partial-prefix re-land exactly as before (STOP-condition (d): the re-land is never lost).
+    found_store = store.by_action("FOUND-STORE")
+    if found_store:
+        world_version = (found_store[0].get("payload") or {}).get("founding_version")
+        if world_version is not None and world_version != pack.get("founding_version"):
+            return
     # IDEMPOTENCY READS THE PACK'S OWN LAST RECORD (EP-MAINT-OUTSIDE-1 B9). The old guard keyed on
     # "a SYSTEM actor exists", which is the SECOND record of the pack — so a founding that stopped
     # after CREATE-ACTOR SYSTEM (or any early record) was taken as already founded, and the genesis-
@@ -220,7 +287,8 @@ def install(store):
     # the pack's LAST record — by the pack's OWN order (records(pack)[-1]) — is present: a complete
     # founding has it and founds nothing twice, while a partial PREFIX (its last record absent) re-
     # lands cleanly. Keyed on the last record's action+object, not on the FOUND-STORE designation,
-    # which is FIRST in the pack (views.py:442) and can never be the completion marker.
+    # which is FIRST in the pack (views.py:442) and can never be the completion marker. VT-3c adds the
+    # version read ABOVE, for the SAME-version fall-through this handles (older worlds returned already).
     last = recs[-1]
     if any(e.get("object") == last.get("object") for e in store.by_action(last.get("action"))):
         return

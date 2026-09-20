@@ -274,7 +274,7 @@ class TestOneCanonicaliser(unittest.TestCase):
         try:
             with open(CUSTODY_PATH, encoding="utf-8") as fh:
                 body = fh.read()
-            shutil.copy(CUSTODY_PATH, os.path.join(tmp, "custody.py"))
+            shutil.copyfile(CUSTODY_PATH, os.path.join(tmp, "custody.py"))   # C7 P3b-5c: content only, no file-mode (I7)
             with open(os.path.join(tmp, "second.py"), "w", encoding="utf-8") as fh:
                 fh.write('def _defensive(p):\n    return "/" + p.strip("/")\n')
             self.assertEqual(len(_count_over((tmp,), CANONICAL_FORM)), 2)
@@ -815,6 +815,11 @@ class TestAWorldThatSPANSTheChange(_Tmp):
             old.act("FILE-MKDIR", path="/a/")
         with open(old.record, encoding="utf-8") as fh:
             self.before_bytes = fh.read()
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the first world's writer before reopening the same
+        # record, so the reopened world is a WRITER able to act across the change (release-on-close).
+        # The reopen still appends nothing (boot attestation is idempotent over an unchanged tree),
+        # so `before_bytes` and the no-rewrite check hold.
+        old.store.close()
         return old, _World(tmp)
 
     def test_a_pre_fix_key_cannot_be_reached_by_ANY_spelling_a_caller_can_supply(self):
@@ -852,6 +857,9 @@ class TestAWorldThatSPANSTheChange(_Tmp):
         with canonicalisation_removed():
             w = _World(clean)
             w.act("FILE-MKDIR", path="/a")
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the first writer before reopening, so `reopened`
+        # is a WRITER able to act across the change (release-on-close).
+        w.store.close()
         reopened = _World(clean)
         self.assertEqual([k for k in reopened.recorded("FILE-MKDIR")
                           if k != custody._norm(k)], [],

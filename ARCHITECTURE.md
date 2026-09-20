@@ -6,9 +6,9 @@ This document holds the technical design of AWIG OS. The philosophy it implement
 
 ## 0. How to read this work
 
-The code you can run is a reference model of the governing layer: an executable specification, built first so that the rules, the record and the gate run and can be tested before the kernel underneath them exists. Read it as that, not as a finished product. seL4 was built the same way, a running model before the real kernel, and the model is what the kernel is checked against. The line the model draws runs between the unstructured and the structured, what is said and what is done: prose, an AI's included, never moves the system; a structured row that passed a rule does, and the crossing is the gate.
+Two things run in this repository. The governing layer, in Python: the record, the gate, the rules and the views, built first so that they ran and could be tested before any kernel existed. And our own kernel beneath it, in C and assembly under `code/src/body`, which boots in a virtual machine with no Linux under it. The governing layer is the executable specification: the kernel is checked against it, act for act, the same acts under both. seL4 was built the same way, a running model before the real kernel. Neither is a finished product, and the pages say exactly how far each goes. The line the model draws runs between the unstructured and the structured, what is said and what is done: prose, an AI's included, never moves the system; a structured row that passed a rule does, and the crossing is the gate.
 
-The design papers in `design/` are the contracts that model implements; the map at `design/README.md` names the ten contracts in force, each with its paper and its code, and the note at `design/00-RENDER-NOTE.md` lists every paper with its status. `STATUS.md` says what is true today, machine by machine. The kernel is being built underneath the same contracts, in the private repository, and arrives here when a stranger can boot it.
+The design papers in `design/` are the contracts that model implements; the map at `design/README.md` names the ten contracts in force, each with its paper and its code, and the note at `design/00-RENDER-NOTE.md` lists every paper with its status. `STATUS.md` says what is true today, machine by machine, with the numbers for the same acts under Linux and under our kernel side by side.
 
 A defect in a mechanism is not a defect in its contract, and the pages say which is which: a test that fails is listed with what it needs; a promise the code does not yet keep is listed under what is not true yet.
 
@@ -16,38 +16,51 @@ The fence and the two openings. An agent behind a fence holds one permission set
 
 ## 0a. What the rules cannot change
 
-Every act crosses the gate, and the rules decide it. Four kinds of row reach the record without being decided at the gate, and they are named here, each with the file that writes it, so that "one gate" is read exactly. The founding rows, written when a system is born: the gate cannot decide its own birth (`src/kernel/gate.py`, the constitution guard). The two audit streams, each a copy of what was just appended, written blind to each other (`src/kernel/protection.py`). The chain anchor, one row that seals the hash of everything before it, written by a ceremony and never by an act (`src/kernel/store.py`). And the gate's own rows: a refusal, and the failure of an effect that was allowed and then did not complete, written by the gate itself under the rule the act cited (`src/kernel/gate.py`, `refuse` and `_record_effect_failure`). Below the rules there is also a floor the rules do not reach: how a row is written and that no row is ever changed or removed; how each row names the one before it; how the gate itself proceeds, a refusal written before it is raised; which rules are fixed at the founding and cannot be amended; and how the rows are turned into views. A rule can govern any act. A rule cannot change what a row is.
+Every act reaches the record through one gate, which writes a decision citing its rule, or a refusal citing its rule, as a row. Exactly four kinds of row are written without a gate decision, each named and bounded, and every one passes through the store's single appender: the founding rows that bring a world into existence; the two-stream audit mirror; the chain-anchor ceremony; and the gate's own refusal and effect-failure rows. These four are the floor below the rules: what deciding itself stands on. A rule can change what the gate decides; no rule can remove the appender, the chain, or the founding they rest on.
 
-## 1. Five architectural commitments
+Where each is written, so a reader can check: the founding rows in `src/kernel/gate.py` (the constitution guard); the two audit streams in `src/kernel/protection.py`; the chain anchor in `src/kernel/store.py`; the refusal and effect-failure rows in `src/kernel/gate.py` (`refuse` and `_record_effect_failure`).
 
-**Everything as information.**
-All system state, events, and actions are represented as structured information. Rules are derived from and act upon information. Nothing operationally relevant is opaque.
+## 1. Eight architectural commitments
 
-**One rule format.**
-Every rule in the system, from access control to automation policy, follows the same executable format. There is no privileged rule syntax for privileged actors. Each deployment's complete rule set is its *awig-awig*: self-written, legible, machine-executable.
+Each carries its status in the build side's words: BUILT (running, tested), PROVEN IN TEST WORLDS (running between test machines), DESIGNED (on paper).
 
-**Full permission traceability.**
-No permission executes without leaving a verifiable form. Authorisation, exercise, and outcome are all recorded in the same information layer the rules run on. Power that leaves no trace does not run.
+**Record what happened, compute everything else.**
+One append-only record is the only truth. Every view, index and screen is computed from it and can be thrown away and rebuilt. BUILT.
 
-**A constitutional AI organisation.**
-AI capability is structured as an organisation, not an oracle: multiple perspectives, separated powers over separate concerns, collective decision-making, governed by a modular constitution expressed in the system's own rule format. The AI organisation touches the world through exactly two points: a narrow, default-closed tunnel to the system, and an air-gapped read of user text.
+**Information and actors, kept apart.**
+A thing is either static information or an actor. Information never acts. A program's files are information; a program becomes an actor only when the system loads it, on the record, with its rules sealed, and it cannot ask for more than it declared. An AI model is a file until a program loads it. The sealed half is BUILT: the kernel and the interpreter are pinned in the record and a changed byte stops the start. The birth row for every program is DESIGNED.
 
-**Glass-box containment, owner on top.**
-The AI organisation is inspectable from outside and structurally bounded from inside. Unstructured-data transformation is delegated to the AI organisation; structured-data transformation is always performed by the OS. Automation decomposes tasks into atomic units, routes each to OS or AI as appropriate, and recombines the results, with the human owner above the combined automation, never inside it.
+**One rule format, and a permission is one shape.**
+Every rule, from who may open a file to how the rules change, has the same readable, executable form. There is no privileged rule syntax for privileged actors. Each deployment's complete rule set is its *awig-awig*: self-written, legible, machine-executable. A permission is one actor, one action, one object, one target; changing it reshapes that one rule by recorded edits, never stacks a second rule on top. The format is BUILT; the shaped permission is DESIGNED.
 
-AWIG OS does not prescribe what your rules should say. It guarantees how rules exist: one format, legible, executable, traceable.
+**Views never act.**
+A view is information the system computes. It has no code, no box, no pen. Only the system makes a view; a program's own reading of the record is a private belief. BUILT.
 
-## 2. Build method: reference model first, then a kernel of our own
+**A gate wherever a pen is, and nowhere else.**
+Deciding happens in exactly one place per record, beside the rules in force. Everything else, history, content, views, may live anywhere. On the way to a decision every view a change touches may mark it go or no-go, and the mark stays on the record forever; but a mark is sight, and only the gate has force. No permission executes without leaving a verifiable form: power that leaves no trace does not run. One pen and its gate are BUILT, and run on our own kernel. Many machines are DESIGNED.
 
-The order of work is fixed: the governing layer first, as a running reference model in Python, so that the record, the gate, the rules and the views run and are tested before any kernel exists beneath them; then a kernel written from a blank page beneath a declared seam. The seam names twelve kinds of work. The kernel performs exactly those, and everything above the seam is unchanged. Programs above it see a Linux-compatible surface; the code beneath is ours, written from behaviour and interfaces, not from Linux source. "Linux" is a trademark of Linus Torvalds and is not claimed by this project.
+**Every actor in a box with two openings.**
+One opening faces its user, one faces the system, and there is no third. Actors never talk to each other directly; the system is the only medium, which is why the record is complete. The person holds one opening only, and that is what makes the person the end user. An AI organisation, multiple perspectives with separated powers under its own constitution in the system's rule format, is a tenant of this box, not a special case of it. Unstructured work is delegated to it; structured work is always performed by the system. The two openings are BUILT and PROVEN IN TEST WORLDS; the box for every program at load is DESIGNED; the AI organisation inside it is DESIGNED.
+
+**One handshake for everything outside.**
+Who, by signature; what code, by fingerprint; sane memory, by the record chain; then one signed row and one signed receipt. A device, a foreign program, another organisation, a person: the same mechanics, graded by what each can prove. The border and the receipt are BUILT and PROVEN IN TEST WORLDS; the grading is DESIGNED.
+
+**The machine cannot lie about what it runs.**
+Our own kernel, with no Linux beneath it, checks its body, its record, its constitution and its keys before its first act, witnessed by two bodies, and refuses to start on a mismatch. The kernel's own definition is rows; its code is derived from them. BUILT, in a virtual machine.
+
+AWIG OS does not prescribe what your rules should say. It guarantees how rules exist, who may act, and that nothing acts unseen. The human owner stands above the whole, never inside it.
+
+## 2. Build method: the record first, and two kernels under one definition
+
+AWIG OS is built record-first. The kernel's definition lives as rows in the record; the running code is derived from those rows at build, and at every waking the built code is checked against the rows by hash; if they disagree, the first act is refused. Two kernels can carry one definition. The active route today is the Python kernel under a Linux carrier, which runs the full estate; beside it stands the freestanding C body, which boots with no Linux beneath it and closed campaign 7: the same acts run under both performers, the numbers read side by side. Nothing above the seam knows which performer is beneath it.
 
 An earlier route, replacing a minimal Linux core subsystem by subsystem, is history and is marked as history in `design/16`. The route in force is `design/47` and `design/54`, and the design map at `design/README.md` says which is which.
 
-The reference model is an executable specification in the sense that the kernel is tested against it, act for act. It is not a proof. Nothing here is formally verified; seL4 is the precedent for that and the bar this project has not reached.
+The governing layer is an executable specification in the sense that the kernel is tested against it, act for act. It is not a proof. Nothing here is formally verified; seL4 is the precedent for that and the bar this project has not reached.
 
-## 2a. Why a kernel of our own, and not a layer on seL4 or Linux
+## 2a. Why a kernel of our own, and not seL4 or Linux
 
-The governing layer runs on Linux today, and a pilot runs it that way. It cannot be the whole answer. A kernel we did not write has its own doors to the disk, the network and the devices, and any program it runs can use them; our gate sees none of that. A program in a box with two doors has a third door the moment the box sits on someone else's kernel. The only way to close it is a kernel that opens nothing except through the gate. So the kernel beneath the seam is ours, and it does the twelve kinds of work and nothing else. seL4 is the nearest thing to it: small, authority held as capabilities, proofs of what it does. Its proofs are the bar. What it does not do is what we need beneath the gate: the record under every act, the border at the wire, custody of content, the two doors. That is why the kernel is written and not borrowed.
+Because the claim is about the record, not the scheduler. seL4 proves isolation; Linux provides everything; neither makes the record the only truth. AWIG OS needs a core whose only writable surface is the record's declared acts (append, write-once, one writer) and where every device effect and every device discovery is a row. Carving that out of Linux means carrying millions of lines that can act without becoming rows; proving it on seL4 means the record law living as a guest on someone else's object model. A small core of our own, read whole and signed, keeps the trusted base enumerable: source files a person can read in a sitting. Linux still serves, where it serves best: as an enclosed driver worker, its crossings declared, refused in its own language, and recorded.
 
 ## 3. The theory it runs on
 
@@ -61,17 +74,17 @@ The first runnable milestone is deliberately minimal:
 
 > One rule executes in the standard format; one permission runs and leaves a verifiable trace; a third party can independently verify both.
 
-Everything else, the full rule engine, the AI organisation, the automation splitter, grows from that seed, the one a stranger can run.
+Everything since, the full rule engine, the border, the kernel, grew from that seed, the one a stranger can run.
 
 ## 5. What ships, and the one warning
 
-The runnable code is in the [`code`](./code/) folder, generated from the private source and checked, never edited by hand. [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, and what is only designed.
+The runnable code is in the [`code`](./code/) folder, generated from the private source and checked, never edited by hand: the governing layer, its tests and tools, and the kernel's source under `code/src/body`. No bytes of anyone else's code are included; the two inputs the full kernel build takes from your own machine are named in [`THIRD-PARTY.md`](./THIRD-PARTY.md). [`STATUS.md`](./STATUS.md) says in plain words what you can try today, what exists but is not public yet, and what is only designed.
 
 One warning matters to anyone who runs it on real data. The locks are real only once you install the named library; until then the keys are stand-ins of the right shape, and in both states the disk and the machine's memory are readable by whoever holds them. In the build team's exact words:
 
 > Real cryptography is in this code and is off until you turn it on. Install the one vetted library it names and every key is real: signatures, key wrapping and sealed content are done by that library, never by our own code, and the signing seed never touches the disk. Install nothing, and the code runs exactly as the previous release did, with keys that are stand-ins of the right shape; anything that asks for a real signature is then refused rather than faked, so a real key can never quietly become a stand-in. Two limits stay true in both states: a reader who has the disk can read the sealed bytes of the secrets store, and an administrator of the running machine can read the program's memory, where the keys that open sealed content live. Protect the disk and the machine by other means; this code does not.
 
-Two things about the numbers. The commits named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belong to the private repository and cannot be looked up from here; the tags `milestone-0-seed`, `c4-close` and `c5-close` on this repository are the anchors you can check. And the test suite now ships: `code/run_public_suite.py` runs the tests that can run on a stock machine and prints, for each one it skips, what it would need, so any test count we publish names the machine it ran on.
+Two things about the numbers. The commits named in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belong to the private repository and cannot be looked up from here; the tags `milestone-0-seed`, `c4-close`, `c5-close` and `c7-close` on this repository are the anchors you can check. And the test suite now ships: `code/run_public_suite.py` runs the tests that can run on a stock machine and prints, for each one it skips, what it would need, so any test count we publish names the machine it ran on.
 
 ---
 

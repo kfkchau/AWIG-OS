@@ -610,6 +610,10 @@ class TestRouters(_World):
             self.assertEqual(self.gate.execute(name, "owner",
                                                {"subject": f"x:{name}", "at": WHEN})["occurrence_time"],
                              WHEN)
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the live writer before the rebuild so the replayed
+        # kernel is a WRITER able to invoke the ops again (release-on-close); a second live open
+        # would be demoted to a reader and its append refused by name.
+        self.store.close()
         _s2, gate2, _v2, _b2, _x2 = build_full_kernel(self.path, os.path.join(self.dir, "blobs2"))
         for name in ("ALPHA-OBS", "OMEGA-OBS"):
             self.assertTrue(gate2.has(name))

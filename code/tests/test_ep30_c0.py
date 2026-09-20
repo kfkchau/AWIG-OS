@@ -43,6 +43,7 @@ sys.path.insert(0, os.path.join(REPO, "src"))
 
 from kernel import blobs as blobs_mod                          # noqa: E402
 from kernel.blobs import BlobStore                             # noqa: E402
+from bridge import host_seam as seam_mod                       # C7 P2 (:3927) — the barrier's host calls now issue from the seam  # noqa: E402
 
 
 #: Evidence printing is gated so the two full-suite arms stay quiet; the ASSERTIONS are
@@ -152,16 +153,18 @@ def barrier_verdict(calls):
 def drive_put(store, data, recorder=None):
     """Drive `BlobStore.put` under a recording `os` and return (hash, calls).
 
-    The seam is the module global `kernel.blobs.os`. Patching it means the production
-    code needs no injection point of its own — the store is driven exactly as it ships.
+    The seam is the module global `bridge.host_seam.os` — C7 P2 (:3927) routed the
+    blobs barrier's host calls (write-once, file/parent fsync, replace, remove) into the
+    seam performer, so the recorder is planted there and the store is driven exactly as it
+    ships. Patching it means the production code needs no injection point of its own.
     """
     recorder = recorder if recorder is not None else RecordingOS()
-    real = blobs_mod.os
-    blobs_mod.os = recorder
+    real = seam_mod.os
+    seam_mod.os = recorder
     try:
         h = store.put(data)
     finally:
-        blobs_mod.os = real
+        seam_mod.os = real
     return h, list(recorder.calls)
 
 
@@ -603,12 +606,12 @@ class R1NoParentFsync(_WorldStore):
             return h
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_name(p.name + ".part")
-        fd = blobs_mod.os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-        with blobs_mod.os.fdopen(fd, "wb") as f:
+        fd = seam_mod.os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+        with seam_mod.os.fdopen(fd, "wb") as f:
             f.write(data)
             f.flush()
-            blobs_mod.os.fsync(f.fileno())
-        blobs_mod.os.replace(str(tmp), str(p))
+            seam_mod.os.fsync(f.fileno())
+        seam_mod.os.replace(str(tmp), str(p))
         return h                                    # <- the parent fsync is GONE
 
 
@@ -623,18 +626,18 @@ class R2RenameBeforeFileFsync(_WorldStore):
             return h
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_name(p.name + ".part")
-        fd = blobs_mod.os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-        f = blobs_mod.os.fdopen(fd, "wb")
+        fd = seam_mod.os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+        f = seam_mod.os.fdopen(fd, "wb")
         try:
             f.write(data)
             f.flush()
-            blobs_mod.os.replace(str(tmp), str(p))  # <- RENAME FIRST
-            blobs_mod.os.fsync(f.fileno())          # <- then the file fsync
+            seam_mod.os.replace(str(tmp), str(p))  # <- RENAME FIRST
+            seam_mod.os.fsync(f.fileno())          # <- then the file fsync
         finally:
             f.close()
-        dfd = blobs_mod.os.open(str(p.parent), os.O_RDONLY)
+        dfd = seam_mod.os.open(str(p.parent), os.O_RDONLY)
         try:
-            blobs_mod.os.fsync(dfd)
+            seam_mod.os.fsync(dfd)
         finally:
             os.close(dfd)
         return h

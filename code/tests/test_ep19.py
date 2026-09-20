@@ -87,19 +87,49 @@ class TestVaultModule(unittest.TestCase):
         self.assertEqual(methods, {"seal", "compare"})
 
     def test_code_review_assertion_no_function_returns_a_stored_secret_value(self):
-        # grep the module source: no function reads a stored value back out. `seal` WRITES
-        # (write_bytes); nothing reads (no read_bytes/read_text/open-for-read). This is the V1
-        # code-review assertion — the closure is a property of the SOURCE, not just behaviour.
+        # grep the module source: seal stores NOTHING and nothing reads a value back out. The old
+        # `assertIn("write_bytes", src)` pinned the write itself and is RETIRED (MAINT-VAULT-HASH-ONLY,
+        # owner scan :4435): seal no longer writes the value's bytes (no write-once put), so the
+        # closure is now a property of the SOURCE in BOTH directions — no write path AND no read path.
         with open(os.path.join(os.path.dirname(__file__), "..", "src", "kernel", "vault.py")) as f:
             src = f.read()
-        self.assertIn("write_bytes", src)                                  # seal writes
+        self.assertNotIn("write_bytes", src)                              # seal stores nothing — no byte write
         for reader in ("read_bytes", "read_text", ".read(", "def get", "def read", "def reveal", "def open"):
             self.assertNotIn(reader, src, f"vault.py must not contain `{reader}` — no read path")
 
     def test_write_once_identical_values_coincide(self):
         h1 = self.vault.seal(SECRET)
-        h2 = self.vault.seal(SECRET)   # sealing the same value again is idempotent (write-once)
+        h2 = self.vault.seal(SECRET)   # sealing the same value again is idempotent — seal is a pure hash
         self.assertEqual(h1, h2)
+
+    def test_seal_writes_nothing_to_disk_only_the_hash_travels(self):
+        # A1 (MAINT-VAULT-HASH-ONLY, owner scan :4435): after a seal, nothing of the secret's bytes is
+        # on disk — only the returned hash travels into the record. The vault's home dir exists (it is
+        # constructed) but holds NO file, and the secret's raw bytes appear in no file under it.
+        h = self.vault.seal(SECRET)
+        self.assertEqual(h, secret_hash(SECRET))                 # only the hash leaves the call
+        files = [os.path.join(root, name)
+                 for root, _dirs, names in os.walk(self.vault.dir) for name in names]
+        self.assertEqual(files, [], "seal left a file on disk — nothing of a secret must be on disk but its hash")
+
+    def test_the_no_bytes_on_disk_check_can_fail_a_writing_seal_reds_it(self):
+        # THE CHECK CAN FAIL (the A1 plant): a seal that DID write the value's bytes leaves a file, and
+        # the same no-bytes-on-disk check reds against it — proving the check above pins the property,
+        # not a tautology. The planted write is test-side (pathlib direct), never the audited core.
+        from pathlib import Path as _Path
+        class _WritingVault(VaultStore):
+            def seal(self, value):
+                h = secret_hash(value)
+                data = value.encode("utf-8") if isinstance(value, str) else value
+                (_Path(self.dir) / "leaked").write_bytes(data)   # the planted defect: seal writes the bytes
+                return h
+        v = _WritingVault(tempfile.mkdtemp())
+        v.seal(SECRET)
+        files = [os.path.join(root, name)
+                 for root, _dirs, names in os.walk(v.dir) for name in names]
+        self.assertNotEqual(files, [], "the plant did not write — the no-bytes-on-disk check would be a tautology")
+        with self.assertRaises(AssertionError):
+            self.assertEqual(files, [])                          # the no-bytes check reds against a writing seal
 
 
 # ---- V2: SEAL-SECRET / VERIFY-SECRET — owner-tier, definition-born, through the gate ---------
@@ -185,19 +215,22 @@ class TestVerifyNeverReveal(_Full):
         self.assertIn(b"secret_hash", raw)                  # only the hash is recorded
         self.assertIn(secret_hash(SECRET).encode(), raw)    # and it is the right hash
 
-    def test_on_disk_cap_the_value_is_in_the_vault_not_the_record(self):
-        # HONEST CAP (design/31 §7): closure closes the SYSTEM path, not the disk path. The value IS on
-        # disk in the vault dir (campaign-4 crypto closes that); it is simply unreadable THROUGH the
-        # system — no read op exists. This test states the cap plainly rather than hiding it.
+    def test_on_disk_cap_discharged_nothing_of_a_secret_is_on_disk(self):
+        # HONEST CAP DISCHARGED (design/31 §7; MAINT-VAULT-HASH-ONLY, owner scan :4435): seal now stores
+        # NOTHING, so the value's bytes are on disk NOWHERE — not in the record and not in the vault dir.
+        # The OLD form of this test asserted the value WAS on disk (write-once) — that assertion pinned
+        # the very thing removed and is retired here. ONE separate question remains, named not closed
+        # (design/31 J8): the stored HASH is an unsalted sha256, guessable offline for a low-entropy
+        # secret; salting the hash home is that home's later decision, not this unit.
         self.gate.execute("SEAL-SECRET", "owner", {"name": "db-pw", "value": SECRET})
         on_disk = b""
         for root, _dirs, files in os.walk(self.vault_dir):
             for fn in files:
                 with open(os.path.join(root, fn), "rb") as f:
                     on_disk += f.read()
-        self.assertIn(SECRET.encode(), on_disk)             # the value lives in the vault (write-once)
+        self.assertNotIn(SECRET.encode(), on_disk)          # the value's bytes are on disk nowhere in the vault
         with open(self.record, "rb") as f:
-            self.assertNotIn(SECRET.encode(), f.read())     # never in the record
+            self.assertNotIn(SECRET.encode(), f.read())     # nor in the record — only the hash survives
 
     def test_closure_hit_there_is_no_op_that_returns_a_value(self):
         # reading a secret back is an ABSENT op, not a refused one — a Closure Hit (P3). No read-shaped
@@ -222,6 +255,10 @@ class TestVerifyNeverReveal(_Full):
     def test_round_trip_vault_file_and_record_replay_together(self):
         self.gate.execute("SEAL-SECRET", "owner", {"name": "db-pw", "value": SECRET})
         # rebuild the whole kernel from the record file + the same vault dir — nothing derived kept
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the live writer before the rebuild so the reopened
+        # kernel is a WRITER able to VERIFY-SECRET (release-on-close); a second live open would be
+        # demoted to a reader and its append refused by name.
+        self.store.close()
         store2, gate2, views2, _b, _s = build_full_kernel(self.record, self.blob_dir, self.vault_dir)
         self.assertEqual(views2.sealed_secret_hash("db-pw"), secret_hash(SECRET))
         rec = gate2.execute("VERIFY-SECRET", "owner", {"name": "db-pw", "candidate": SECRET})

@@ -49,7 +49,7 @@ class TestIntegration(unittest.TestCase):
         # never era-pinned. THE ACT MOVED, NOT THE ASSERTION: exactly as EP-28N AMENDMENT 1
         # made the directories this row always implied, this row now founds the identity
         # whose channel it always opened. Every assertion below is unchanged.
-        g.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": "web", "actor_class": "process"})
+        g.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": "web", "actor_class": "program"})
         g.execute("COMMS-OPEN", "web", {"channel": "sock:1", "entity": "web",
                                         "role": "user-facing"})
         g.execute("COMMS-SEND", "web", {"channel": "sock:1", "message": "hello", "to": "peer"})

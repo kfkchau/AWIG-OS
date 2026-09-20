@@ -22,7 +22,8 @@ it). The battery proves, in disposable stores:
                               signer both streams call is impossible by construction; the guard REDS on a
                               planted shared signer that reaches both keys (RW2, the reference to refuse).
   A4  TestVaultStillClosed    both per-stream keys sit in vault-class custody; NO read path (RW3); the
-                              signing paths read no sealed value; the vault's closure is BYTE-UNCHANGED.
+                              signing paths read no sealed value; the no-reveal closure is a PROPERTY
+                              guard (surface + source + seam) — the vault is routed AND byte-frozen at the rewired sha (owner :3966).
   A5  TestRoundTrip           streams killed and replayed; every recorded signature verifies as DATA;
                               replay signs nothing new. (Whole-ledger green is the verifier's discover.)
   A6  TestFoundingMoved       the founding MOVED (COMPLETE-KEY-FAMILY, board :2887; owner create-word
@@ -216,18 +217,51 @@ class TestCrossCheckUnchanged(unittest.TestCase):
                                    "sig": {"custody": kb, "ref_seq": rs, "digest": bad, "stream": "dual-audit-b"}}})
         self.assertIn(rs, prot.dual_blind_divergences())            # digest term catches it, valid sig or not
 
-    def test_a2_views_py_is_consumed_unchanged(self):
-        # §8-g: the third-view digest lives in views.py and is CONSUMED UNCHANGED — the comparison is not
-        # edited, only signature verification added beside the read (in the in-fence cross-check). Pin bytes.
-        # §A57 by-name COMPANION RE-PIN (EP-50, VIEW-SERVICING): EP-50 added `fold_set` (the attested
-        # fold-set twin) BESIDE the comparison and rewrote `paper_tigers` — the third-view digest
-        # comparison (`digest_of`, the dual-audit cross-check) is BYTE-IDENTICAL (git diff: neither hunk
-        # touches it; driven at dispatch), so this whole-file pin is re-pinned MECHANICALLY to the new
-        # views.py bytes. The invariant (the comparison consumed unchanged) is UNVIOLATED.
-        with open(VIEWS_PATH, "rb") as fh:
-            digest = hashlib.sha256(fh.read()).hexdigest()
-        self.assertEqual(digest, "3b0f3f4a34c30d6429b64b619f8defb559ef32e84bf3d6284f1437e26177aa21",
-                         "views.py bytes changed — it is CONSUMED UNCHANGED (§8-g); STOP if the comparison needs editing")
+    # FUNCTION-SCOPED PIN (P8B-HARDENING delta 3, archi :3731 the overdue pin). What was here was a
+    # WHOLE-FILE views.py byte-pin, re-pinned SIX times by APPENDS elsewhere in the Views class (EP-50
+    # `fold_set`, C6 P16 path-view, C6 P7 handshake-relation, C6 P6 live-stages, and the P8b census
+    # reporting line) that NEVER touched the dual-audit comparison. A whole-file pin that reds on every
+    # unrelated views.py edit is churn wearing coverage's coat: it cannot say WHETHER the thing it guards
+    # moved, only that SOMETHING did, and each red cost a mechanical re-pin that re-asserted the invariant
+    # by hand. Scoped to the ONE function it exists to protect — `digest_of`, the third-view / dual-audit
+    # content digest (§8-g / RW4) — the pin reds IFF that comparison's source changes and is byte-STABLE
+    # across every edit elsewhere in views.py. The invariant is unchanged; only the surface it reads is.
+    DIGEST_OF_PIN = "de8b5a8fe95cd0d29370fbb8cf42dd64d4d0e062bb8f82c8d1b21f11cce8e00d"
+
+    @staticmethod
+    def _digest_of_source():
+        import kernel.views as views_mod
+        return inspect.getsource(views_mod.digest_of)
+
+    def test_a2_the_digest_of_comparison_is_consumed_unchanged(self):
+        # §8-g / RW4: the third-view digest (`digest_of`, the dual-audit cross-check) is CONSUMED
+        # UNCHANGED. Function-scoped, so an unrelated views.py edit no longer forces a re-pin.
+        src = self._digest_of_source()
+        self.assertEqual(hashlib.sha256(src.encode("utf-8")).hexdigest(), self.DIGEST_OF_PIN,
+                         "the digest_of dual-audit comparison changed — it is CONSUMED UNCHANGED (§8-g); "
+                         "STOP if the third-view digest needs editing")
+
+    def test_a2_the_function_scoped_pin_can_fail_on_a_comparison_change(self):
+        # THE REFERENCE TO REFUSE (§A64: a check that cannot fail is not a check). A change to the
+        # comparison — here its digest truncation width `[:16]`, the core of the dual-audit content
+        # digest — reds the pin. Proven against a mutated copy of the real source.
+        src = self._digest_of_source()
+        mutated = src.replace("[:16]", "[:15]")
+        self.assertNotEqual(mutated, src, "digest_of no longer truncates at [:16] — update this control")
+        self.assertNotEqual(hashlib.sha256(mutated.encode("utf-8")).hexdigest(), self.DIGEST_OF_PIN)
+
+    def test_a2_the_pin_ignores_edits_elsewhere_in_views_py(self):
+        # what the whole-file pin could NOT do: an edit anywhere else in views.py leaves the pinned
+        # region byte-identical, so the pin does not churn. Proven — the comparison's source is a
+        # contiguous verbatim block of views.py, and survives synthetic edits far from it, hashing the same.
+        region = self._digest_of_source()
+        with open(VIEWS_PATH, encoding="utf-8") as fh:
+            whole = fh.read()
+        self.assertIn(region, whole)                                   # a contiguous block of the file
+        edited = whole.replace("class Views:", "    # synthetic unrelated edit\nclass Views:", 1) \
+            + "\n    # a trailing unrelated append to the module\n"
+        self.assertIn(region, edited)                                  # untouched by edits elsewhere
+        self.assertEqual(hashlib.sha256(region.encode("utf-8")).hexdigest(), self.DIGEST_OF_PIN)
 
 
 # ============================================================================================
@@ -305,10 +339,18 @@ class TestVaultStillClosed(unittest.TestCase):
             self.assertNotIn(reader, src, f"protection.py must not contain `{reader}` — no key read/seal path in the engine")
 
     def test_a4_the_vault_closure_is_byte_unchanged(self):
+        # RE-ENABLED (owner :3966): the vault byte-freeze was SET ASIDE for the C7-P2 rewiring
+        # (:3930/:3952 routed vault.py through host_seam) and is now PUT BACK ON at the REWIRED contents.
+        # It rides BESIDE the property guards — the vault surface (test_a4_rw3_the_vault_has_no_read_path_
+        # for_the_per_stream_keys), the signing-path source census (test_a4_the_signing_paths_read_no_
+        # sealed_value), and the seam's no-read-act (test_c7_p2_seam) — not instead of them.
+        # RE-POINTED (MAINT-VAULT-HASH-ONLY; owner scan :4435, archi :4437): seal now stores NOTHING
+        # (no write-once put, no _path); the pin guards the property (the vault's exact bytes), so it
+        # moves with the owner-authorized code to the hash-only vault's sha.
         with open(VAULT_PATH, "rb") as fh:
             digest = hashlib.sha256(fh.read()).hexdigest()
-        self.assertEqual(digest, "2038a8cdfcb2a5e2113555bdc05dcbba0c4badfb0cefec779b0dae184c7bfbc6",
-                         "vault.py bytes changed — the vault is CONSUMED only (§8-h)")
+        self.assertEqual(digest, "6a82f449865f5464ef70b6d39db2fee568ba1cae43b5b380e21cc4d5ad09f767",
+                         "vault.py bytes changed — the vault is byte-frozen at the hash-only sha (§8-h; MAINT-VAULT-HASH-ONLY)")
 
 
 # ============================================================================================

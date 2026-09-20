@@ -144,10 +144,13 @@ class TestVerificationEvidenceIsAHash(_Kernel):
         self.assertNotIn("secret", rec["payload"])
 
     def test_the_op_accepts_no_plaintext_param(self):
-        # structural: VERIFY-ACCOUNT's params are {account, evidence_hash} — there is no plaintext
-        # `evidence`/`secret`/`password` parameter to store, so no plaintext CAN enter the record.
+        # structural: VERIFY-ACCOUNT's params carry no plaintext `evidence`/`secret`/`password`
+        # parameter, so no plaintext CAN enter the record. C6 P8 (B17) added `target` and
+        # `evidence_kind` — both structural CLASSIFY metadata (what an act classifies and the kind of
+        # evidence), NEITHER a plaintext secret, so verify-never-reveal is unviolated; the pin grows to
+        # the amended set.
         spec = self.gate.list()["VERIFY-ACCOUNT"]["params"]
-        self.assertEqual(set(spec), {"account", "evidence_hash"})
+        self.assertEqual(set(spec), {"account", "evidence_hash", "target", "evidence_kind"})
 
 
 class TestAttributionSplitsFromActingAuthority(_Kernel):

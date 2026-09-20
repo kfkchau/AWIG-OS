@@ -6,7 +6,7 @@ You will get an acknowledgement within a few days. We agree a disclosure date wi
 
 ## Read this before you report
 
-AWIG OS is at an early stage. Do not put real secrets behind it yet.
+AWIG OS is at an early stage. Do not put real secrets behind it yet. The kernel in `code/src/body` runs in a virtual machine only; do not run it on a real computer.
 
 The locks are real when you install them. Nothing is installed by default, and by default the keys are stand-ins of the right shape, as before. Install the named library and signing and sealing are real cryptography. Either way, whoever holds the disk or administers the running machine can read what it holds. In the build team's exact words:
 
@@ -20,6 +20,8 @@ The locks are real when you install them. Nothing is installed by default, and b
 - Content removed without a signed receipt.
 - Someone reading content they were not given a key for.
 - A secret readable by any route.
+- The kernel starting, or acting, with a changed byte in itself or in the interpreter it carries, without refusing.
+- A program under the kernel reaching the disk, the network or another program by any way that is not a recorded act.
 
 ## What does not count, for now
 
@@ -27,6 +29,7 @@ The locks are real when you install them. Nothing is installed by default, and b
 - Reading the disk or the running program's memory. Known, and stated above.
 - An administrator editing the record file. Known. The chain shows where, and cannot stop it.
 - Timing and hardware side channels, and denial of service. Out of scope until stated otherwise.
+- The kernel on real hardware, on more than one processor, or with devices beyond the few it names. Not built yet, and `STATUS.md` says so.
 
 ---
 

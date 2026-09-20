@@ -1,6 +1,6 @@
 {
-  "founding_version": "1.50.0",
-  "description": "v1.25.0 (EP-30-W1b, THE DECLARED STREAM KEY'S FIRST USE: op:UNBIND's declaration names the stream its records are written under; a MINOR because ONE shipped operation's declaration gains a key the engine already honours, no check kind is added and none removed, no operation is added or removed, and every other declaration is byte-unchanged): THE DOOR AN ACT ENTERS DECIDED THE STREAM ITS DECLARATION LANDED IN, and which stream a law writes into is LAW CONTENT rather than a property of the door — the conflation EP-30-W1a removed from the engine and that this pass is the first law to use. op:UNBIND now declares `record_stream: BIND-DEVICE`, so AN UNBIND RECORD LANDS IN THE GRANTING ACT'S STREAM WHILE STILL RECORDING THAT UNBIND WROTE IT: `action` is untouched and goes on carrying the door where every existing reader already looks, `record_stream` names only where the declaration lands, and a record shape that could not carry BOTH facts would have been a STOP AND RAISE rather than an overwrite — an amending record that hid its own author would be a record holding an act nobody performed. WHAT IT BUYS: `prior_value`'s latest-seq-wins now MEETS the revoking act. EP-30-E1 established that the thirteenth kind ALREADY expresses revocation, on condition that the revoking record is reachable from the granting act's stream — it separated ADMIT/REFUSE where grant and revoke were one operation and gave ADMIT/ADMIT against this estate's SEPARATE op:UNBIND, and that blindness is exactly what this pass removes. NOTHING NEW IS REFUSED AND THAT IS THE DESIGN: no consuming operation gains a check here, so every act admitted before this pass is admitted after it; making revocation BITE is EP-30-W2, and the fact becomes VISIBLE here before it becomes BINDING there. THE DECLARED-LAW CENSUS DOES NOT MOVE: 76 ops and 43 laws unchanged, ONE declaration amended, no record removed.",
+  "founding_version": "1.55.0",
+  "description": "v1.55.0 (C7 P3, THE KERNEL FROM THE RECORD — OUR OWN KERNEL'S DEFINITION AS ROWS — a MINOR because it SEEDS the twelve host-seam act kinds as twelve CREATE-RULE rows of law and adds NO op, no check kind, no src module, no MAJOR breaking change): the twelve KINDS OF WORK the kernel asks its host to perform (bridge/host_seam.py ACT_KINDS — the eleven plus `memory`, each with its portability label and its meaning) enter the record as twelve CREATE-RULE act-kind-definition rows (step 13-act-kind-definitions, payload kind `seam_act_definition`, each carrying seam_kind + label + meaning), so the seam's act set is DERIVED FROM THE RECORD at build (kernel/boot.py live_act_kinds folds the rows; replay_act_kinds reconciles the derivation against the seam's declared work — A2 the kind sets match, precision b every declare_act site's label equals its kind's row) rather than authored beside the record (design/54 §3 B11, §5 L16; archi :3993). DELETE the built act set and REGENERATE it from the rows and the same twelve come back, each with the same contract (the owner's \"as long as that delete and regen work, like the demo, it is fine\"). At EVERY WAKING the running kernel is checked against the rows — BY HASH and BY DECLARED WORK — after the two-body check (P6) and before the first actor act (kernel/boot.py check_kernel_against_rows), or the first act is refused (Q8); a planted kernel whose work differs from the rows reds the check. THE ROWS ARE ROWS OF LAW, NOT OPERATIONS (an act kind is a rule, not an op): NO CREATE-OP, the op_definition cell untouched (archi :3993 precision a). ACT_KINDS is NOT widened (the same twelve, now DERIVED not authored; the store-free closed-set gate stays, reconciled against the rows). OP_CHECKS UNCHANGED at 19; op-population UNCHANGED at 94; no src engine module added, so ATTESTED_MEMBERS is unchanged at 57; the founding record count grows by the twelve act-kind rows (the §A57 live-version companions moved by name). v1.54.0 (C6a VT-6d, THE STAMP FOUNDING — THE REQUIRED-STAMPS POLICY RULE — a MINOR because it MINTS ONE policy rule as founding data and adds NO op, no check kind, no src module, no MAJOR breaking change): the founding gains ONE CREATE-RULE, the REQUIRED-STAMPS policy rule (policy_key `required-stamps`, value an EMPTY map {} at the founding), that a gate step reads to decide which CLASS OF ACT (keyed by its action) must carry named master-view stamps before the gate accepts it (design/25 v2.4 rulings 14/15, design/53 B10). The gate step refuses an act of a STAMPED class missing a required stamp and EARLY-RETURNS for an UNSTAMPED class, so with the founding value EMPTY no production act is a stamped class and every act passes UNTOUCHED — day one byte-identical. The STAMPS THEMSELVES are a GATE-ADDED envelope field of the PROVENANCE CLASS in CODE (design/25 v2.4, board :3869 correcting :3866's `beside the seal` — the estate has NO decider's seal over content): written by the gate INSIDE `provenance` beside the invoking account's signature, EXCLUDED from the invoker's `_signed_content` and the store's countersignature message, their stored integrity the record CHAIN (prev_hash over the whole prior record). The stamps field is declared in NO operation definition and NO pack field — it is gate-added code; a CALLER-SUPPLIED stamps key is refused for every op (the gate writes stamps, never a caller); the climb pipeline that POPULATES the stamps as an act rises is a LATER move (VT-6a), and the two read-side checks are VT-6c. Detection never legitimacy (ruling 14): no number of stamps makes an unlawful act lawful. OP_CHECKS UNCHANGED at 19 (no new check kind); op-population UNCHANGED at 94 (no op added or removed); no src engine module added, so ATTESTED_MEMBERS is unchanged; the founding record count grows by the ONE policy-rule record (the §A57 live-version companions moved by name). v1.53.0 (C6a VT-3, THE TREE SEEDED AS ROWS AND THE THIRD VIEW FORM — a MINOR because it SEEDS the base view tree as 35 view-definition rows and REALISES the third view form at CREATE-VIEW’s INLINE door, adding NO op, no law, no check kind, no MAJOR breaking change): the base view tree (design/25 v2, 25-view-tree-v2.json seed_form oracle) enters the record as 35 CREATE-VIEW rows — 12 BIND (a master naming an S-plane fold) + 23 DERIVE (the third form); node 1 (events, definitive) and the 8 level-4 nodes (computed) are NOT seeded (ruling 10/11). THE THIRD FORM is a DERIVED view row derive={from:<parent view>, where:{<dimension>:<value>}} — design/28’s system view given a row form; admitted, RECORDED and REFUSED at create_view’s OWN INLINE door (boot.py), mirroring the bind/trigger closure. CREATE-VIEW is BOOT-REGISTERED and has NO op definition, so NOTHING is declared structural — the door is code, and the pack carries the SEED ROWS AND THE BUMP ONLY (board :3825, the :3817 wrong noun corrected). Four refusals, each an AR-2 that can fail: a where not naming exactly one dimension; a dimension outside DERIVE_DIMENSIONS {actor_class, scope_class, item_kind, liveness, tree_kind} (a closed grow-only constant in views.py beside FOLD_NAMES); a from naming no seeded view at head; a derive riding with a bind or a non-empty when. The SERVING of a derive row — narrowing the parent’s output — is VT-3b, NOT here (design/53 L16). SIX FOLDS the seed’s binds name are PROMOTED to FOLD_NAMES (10 -> 16, the fold_set pin’s ONE grow-only move): rule_changing_acts, acts_under_rules, rules, items, active_items, static_composite (design/53 L14, ruling :3781); each is a SEPARATE memoised projection (I7), their master read served in VT-3b. The seven existing masters (step 09) are UNTOUCHED — reconciled, not double-seeded. OP_CHECKS UNCHANGED (no new check kind); op-population UNCHANGED (no op added or removed — view definitions are records, not ops); no src engine module added, so ATTESTED_MEMBERS is unchanged; the founding record count grows by the 35 seed rows (the §A57 live-count companions moved by name). v1.52.0 (C6a VT-2, THE RELATION ROW AND ITS OPERATION — a MINOR because it MINTS ONE named-pending operation live and adds NO check kind, no law, no MAJOR breaking change): CREATE-RELATIONSHIP was named-pending in BOOTSTRAP_OPS (boot.py) with its fold defined and RAISED; this pass MINTS it live as founding data so a containment/touching relation becomes a recorded venn2 row. THE ROW SHAPE is {subject, object, geometry, zone} (design/25 v2.1; 25-view-tree-v2.json), correcting the first-mint placeholder {from, to, rel_kind}: NO rel_kind is stored (ruling 7 — the frame derives from the act's cited rule, the reading from that rule's text, the roles from actor/object/target); GEOMETRY carries a CLOSED value_domain {AD, IN, NS, EM} (the four venn2 geometries — unrelated is never stored, so an absent or unknown geometry is REFUSED AT THE DOOR by the existing value_domain check kind, no new kind minted); ZONE is {edge, core, unknown} or absent (optional, asserted). All four fields are declared STRUCTURAL in the op META and the cell is S (a structured mechanic; a declared overlap's judgment is a STATION's step, never the op's — ruling 9, the cell law L28). THE ACTOR NO-ORPHAN / NO-LOOP REFUSAL IS EXTENDED FROM SPACES TO ACTORS (ruling 23): a containment (NS/EM) relation whose BOTH ends are established actors is a group edge, and the gate refuses it when it would LOOP the actor tree (a cycle never reaches the root group) or when the group `object` does not itself GROUND to the constitution's root group (the founding anchors — an orphan). Many parents lawful. This rides the EXISTING anchor least-fixpoint (views._grounded_actors mirrors _verified_accounts) and the existing ancestor walk (authority.would_actor_cycle mirrors would_cycle); the SPACE guard (space_tree / mother_space / would_cycle) is UNTOUCHED. OP_CHECKS UNCHANGED at 19 (no new check kind); op-population moves 93 -> 94 (one op MINTED live, the §A57 live-census companion moved by name); no src engine module added (the handler rides the generic interpreter, the guard rides authority.py), so ATTESTED_MEMBERS is unchanged. v1.51.0 (C6 P8, THE TWO AMENDMENTS AND THE TWO DECLARATIONS — the campaign's SOLE founding move; a MINOR because it AMENDS two existing operations to carry declared new OPTIONAL fields and DECLARES founding data, no operation added or removed, no check kind added or removed, no MAJOR breaking change): (1) VERIFY-ACCOUNT (the attest-shaped op, B17 classify-is-attest-generalised) gains a TARGET and an EVIDENCE KIND, both optional and declared STRUCTURAL in the op META, so a classify act names what it classifies and the kind of evidence and a class is the latest live such act computed at read; (2) RECEIPT gains the CHECKS MAP (who/body/memory_sane, SPIKE-3 N2), the DISCLOSURE_LEVEL (HASHES-ONLY/SHELLS/FULL) and the ADDRESS_FORM (row/segment, SPIKE-5), three optional structural fields, admitted_level DERIVED AT READ never stored (I10); (3) the two CAPABILITY declarations and the closed CLASS DOMAIN as the actor-classes category_pack (B16, K12); (4) the CELL per operation (S|U|U{s}|S{u}) as founding data on every op def beside param_kinds, and CELL-LAW (L28) — every op declares a cell or the founding door refuses it, the (actor class, task cell) pairing reads the required capability off the cell through the existing ceiling machinery, and enforcement is HELD behind a dry-run census over the whole record published with its world. OP_CHECKS UNCHANGED at 19 (no new check kind); op-population UNCHANGED at 93 (no op added or removed). v1.25.0 (EP-30-W1b, THE DECLARED STREAM KEY'S FIRST USE: op:UNBIND's declaration names the stream its records are written under; a MINOR because ONE shipped operation's declaration gains a key the engine already honours, no check kind is added and none removed, no operation is added or removed, and every other declaration is byte-unchanged): THE DOOR AN ACT ENTERS DECIDED THE STREAM ITS DECLARATION LANDED IN, and which stream a law writes into is LAW CONTENT rather than a property of the door — the conflation EP-30-W1a removed from the engine and that this pass is the first law to use. op:UNBIND now declares `record_stream: BIND-DEVICE`, so AN UNBIND RECORD LANDS IN THE GRANTING ACT'S STREAM WHILE STILL RECORDING THAT UNBIND WROTE IT: `action` is untouched and goes on carrying the door where every existing reader already looks, `record_stream` names only where the declaration lands, and a record shape that could not carry BOTH facts would have been a STOP AND RAISE rather than an overwrite — an amending record that hid its own author would be a record holding an act nobody performed. WHAT IT BUYS: `prior_value`'s latest-seq-wins now MEETS the revoking act. EP-30-E1 established that the thirteenth kind ALREADY expresses revocation, on condition that the revoking record is reachable from the granting act's stream — it separated ADMIT/REFUSE where grant and revoke were one operation and gave ADMIT/ADMIT against this estate's SEPARATE op:UNBIND, and that blindness is exactly what this pass removes. NOTHING NEW IS REFUSED AND THAT IS THE DESIGN: no consuming operation gains a check here, so every act admitted before this pass is admitted after it; making revocation BITE is EP-30-W2, and the fact becomes VISIBLE here before it becomes BINDING there. THE DECLARED-LAW CENSUS DOES NOT MOVE: 76 ops and 43 laws unchanged, ONE declaration amended, no record removed.",
   "mother_space": "space:root",
   "steps": [
     {
@@ -1447,6 +1447,7 @@
             "polarity": "+",
             "name": "REGISTER-CAPABILITY",
             "definition": {
+              "cell": "S",
               "description": "admit a driver capability (a LAW amendment): the driver declares the device class and the capabilities it may use. A registration that enumerates no capabilities enumerates NOTHING and containment over it permits nothing (DEV-LAW-BIND) — the two enumerating parameters are declared OPTIONAL, which is a statement that a capability may be registered bare, never that a bare one covers anything.",
               "params": {
                 "driver": "required",
@@ -1485,6 +1486,7 @@
             "polarity": "+",
             "name": "BIND-DEVICE",
             "definition": {
+              "cell": "S",
               "description": "bind a registered driver to a device. A BIND GRANTS CUSTODY AND NOT I/O: it makes this driver the bound one and admits no byte. I/O ADMISSION CITES A WINDOW DECLARATION BY NAME under DEV-LAW-BIND, and where that law declares no window the act is permitted by nothing and REFUSES, recorded, citing the terminal rule — declared in DEV-LAW-BIND, never defaulted by the engine.",
               "params": {
                 "device": "required",
@@ -1526,6 +1528,7 @@
             "polarity": "+",
             "name": "UNBIND",
             "definition": {
+              "cell": "S",
               "description": "end a device binding (remove it from the active binding view). Requires a PRIOR BIND-DEVICE naming this device: an unbind cites a bind. NOT declared `act_kind: release` — this operation takes only `device`, so any actor may end any actor's binding, which moves another actor's holdings; a release declaration would be a false sentence about what this op IS. The width of the check is stated rather than assumed: require_prior reads HISTORY, so it refuses an unbind of a never-bound device and does NOT refuse a second unbind of an already-unbound one.",
               "params": {
                 "device": "required"
@@ -1565,6 +1568,7 @@
             "polarity": "+",
             "name": "AMEND-BUDGET",
             "definition": {
+              "cell": "S",
               "description": "set/amend an actor's memory budget (LAW)",
               "params": {
                 "holder": "required",
@@ -1615,6 +1619,7 @@
             "polarity": "+",
             "name": "MEM-GRANT",
             "definition": {
+              "cell": "S",
               "description": "create a mapping (checked against budget)",
               "params": {
                 "region": "required",
@@ -1670,6 +1675,7 @@
             "polarity": "+",
             "name": "MEM-PROTECT",
             "definition": {
+              "cell": "S",
               "description": "change region protection",
               "params": {
                 "region": "required",
@@ -1702,6 +1708,7 @@
             "polarity": "+",
             "name": "MEM-EVICT",
             "definition": {
+              "cell": "S",
               "description": "reclaim a region (embeds the evidence it acted on)",
               "params": {
                 "region": "required"
@@ -1737,6 +1744,7 @@
             "polarity": "+",
             "name": "SCHED-ADMIT",
             "definition": {
+              "cell": "S",
               "description": "admit a process to the runnable set",
               "params": {
                 "proc": "required"
@@ -1771,6 +1779,7 @@
             "polarity": "+",
             "name": "DESCHEDULE",
             "definition": {
+              "cell": "S",
               "description": "remove a process from the runnable set (not ended)",
               "params": {
                 "proc": "required"
@@ -1801,6 +1810,7 @@
             "polarity": "+",
             "name": "SET-PRIORITY",
             "definition": {
+              "cell": "S",
               "description": "change a process's priority",
               "params": {
                 "proc": "required",
@@ -1833,6 +1843,7 @@
             "polarity": "+",
             "name": "SCHED-HALT",
             "definition": {
+              "cell": "S",
               "description": "force a governed pause",
               "params": {},
               "law_cited": "SCHED-LAW-HALT",
@@ -1861,6 +1872,7 @@
             "polarity": "+",
             "name": "SCHED-RESUME",
             "definition": {
+              "cell": "S",
               "description": "lift a halt",
               "params": {},
               "law_cited": "SCHED-LAW-HALT",
@@ -1888,6 +1900,7 @@
             "polarity": "+",
             "name": "SCHED-KILL",
             "definition": {
+              "cell": "S",
               "description": "end a process (terminal rung of the penalty chain)",
               "params": {
                 "proc": "required"
@@ -1918,6 +1931,7 @@
             "polarity": "+",
             "name": "COMMS-OPEN",
             "definition": {
+              "cell": "S",
               "description": "open a channel OF AN ENTITY under a message contract: a channel is an opening of somebody's, in one of two declared roles (design/39 §6)",
               "params": {
                 "channel": "required",
@@ -1991,6 +2005,7 @@
             "polarity": "+",
             "name": "COMMS-SEND",
             "definition": {
+              "cell": "S",
               "description": "enqueue a message (payload content-addressed)",
               "params": {
                 "channel": "required",
@@ -2047,6 +2062,7 @@
             "polarity": "+",
             "name": "COMMS-RECV",
             "definition": {
+              "cell": "S",
               "description": "dequeue a message",
               "params": {
                 "channel": "required"
@@ -2100,6 +2116,7 @@
             "polarity": "+",
             "name": "COMMS-CLOSE",
             "definition": {
+              "cell": "S",
               "description": "tear down a channel",
               "params": {
                 "channel": "required"
@@ -2140,6 +2157,7 @@
             "polarity": "+",
             "name": "SHM-GRANT",
             "definition": {
+              "cell": "S",
               "description": "grant shared access to a region (interior writes NOT audited)",
               "params": {
                 "region": "required"
@@ -2197,6 +2215,7 @@
             "polarity": "+",
             "name": "FILE-CREATE",
             "definition": {
+              "cell": "S",
               "description": "create a file/dir in the namespace; `node_type` says WHAT was created — a regular file by default, or a fifo, whose data path is the kernel's own pipe and whose custody is the name and the type this record carries",
               "params": {
                 "path": "required",
@@ -2271,6 +2290,7 @@
             "polarity": "+",
             "name": "FILE-WRITE",
             "definition": {
+              "cell": "S",
               "description": "write content (full-fidelity, content-addressed)",
               "params": {
                 "path": "required",
@@ -2323,6 +2343,7 @@
             "polarity": "+",
             "name": "FILE-LINK",
             "definition": {
+              "cell": "S",
               "description": "add a name for existing content",
               "params": {
                 "new_path": "required",
@@ -2388,6 +2409,7 @@
             "polarity": "+",
             "name": "FILE-UNLINK",
             "definition": {
+              "cell": "S",
               "description": "remove a name from the active namespace (record survives); `mechanism` and `hidden_path` carry HOW the port honoured the POSIX open-file contract beneath the decision the actor actually took, never in place of it",
               "params": {
                 "path": "required",
@@ -2445,6 +2467,7 @@
             "polarity": "+",
             "name": "FILE-PERM",
             "definition": {
+              "cell": "S",
               "description": "change a file's permission record",
               "params": {
                 "path": "required",
@@ -2486,6 +2509,7 @@
             "polarity": "+",
             "name": "MOUNT",
             "definition": {
+              "cell": "S",
               "description": "attach a filesystem (a LAW amendment)",
               "params": {
                 "mount_point": "required"
@@ -2520,6 +2544,7 @@
             "polarity": "+",
             "name": "UNMOUNT",
             "definition": {
+              "cell": "S",
               "description": "detach a filesystem",
               "params": {
                 "mount_point": "required"
@@ -2549,6 +2574,7 @@
             "polarity": "+",
             "name": "AMEND-PACK",
             "definition": {
+              "cell": "S",
               "description": "amend a category_pack — the governed way to change a vocabulary (audit floor enforced)",
               "params": {
                 "name": "required",
@@ -2586,6 +2612,7 @@
             "polarity": "+",
             "name": "CREATE-RULE",
             "definition": {
+              "cell": "S",
               "description": "create or amend a LAW record — policy value and/or full trigger->outcome form",
               "params": {
                 "rule_id": "required",
@@ -2675,6 +2702,7 @@
             "polarity": "+",
             "name": "REVIEW",
             "definition": {
+              "cell": "S",
               "description": "review an object — the maker may not review its own (separation of powers)",
               "params": {
                 "object": "required"
@@ -2709,6 +2737,7 @@
             "polarity": "+",
             "name": "HALT-WATCHER",
             "definition": {
+              "cell": "S",
               "description": "brake: a watched actor freezes its watcher's ops pending owner resolution",
               "params": {
                 "watcher": "required"
@@ -2738,6 +2767,7 @@
             "polarity": "+",
             "name": "RESOLVE-WATCHER",
             "definition": {
+              "cell": "S",
               "description": "the owner resolves a watcher brake, lifting the halt",
               "params": {
                 "watcher": "required"
@@ -2767,6 +2797,7 @@
             "polarity": "+",
             "name": "COMPARE",
             "definition": {
+              "cell": "S",
               "description": "compare a and b under a frame -> a verdict record (frame-carrying, never merged)",
               "params": {
                 "a": "required",
@@ -2814,6 +2845,7 @@
             "polarity": "+",
             "name": "DICT-ENTRY",
             "definition": {
+              "cell": "S",
               "description": "a reusable dictionary term (action/resource/actor entry) with an optional definition_ref",
               "params": {
                 "term": "required",
@@ -2860,6 +2892,7 @@
             "polarity": "+",
             "name": "DISPUTE",
             "definition": {
+              "cell": "S",
               "description": "dispute a dictionary entry by its seq — changes what the latest-undisputed fold answers",
               "params": {
                 "ref_seq": "required"
@@ -2900,6 +2933,7 @@
             "polarity": "+",
             "name": "RESOLVE-DISPUTE",
             "definition": {
+              "cell": "S",
               "description": "resolve a dispute on a dictionary entry by its seq — lifts the dispute (cgl-app resolution)",
               "params": {
                 "ref_seq": "required"
@@ -2940,6 +2974,7 @@
             "polarity": "+",
             "name": "USE-TERM",
             "definition": {
+              "cell": "S",
               "description": "use a dictionary term — resolves latest-undisputed and verifies its definition_ref",
               "params": {
                 "entity_kind": "required",
@@ -2983,6 +3018,7 @@
             "polarity": "+",
             "name": "TICK",
             "definition": {
+              "cell": "S",
               "description": "record a timer-tick sensor arrival (INPUT class; the clock is a sensor, not a scheduler)",
               "params": {
                 "now": "required"
@@ -3022,6 +3058,7 @@
             "polarity": "+",
             "name": "CREATE-OBLIGATION",
             "definition": {
+              "cell": "S",
               "description": "create a temporal obligation — a runtime when/then law (condition -> op invocation)",
               "params": {
                 "rule_id": "required",
@@ -3074,6 +3111,7 @@
             "polarity": "+",
             "name": "BLOCK-ON",
             "definition": {
+              "cell": "S",
               "description": "record that an actor is blocked awaiting a condition (a matching arrival wakes it)",
               "params": {
                 "on": "required"
@@ -3108,6 +3146,7 @@
             "polarity": "+",
             "name": "CREATE-ACCOUNT",
             "definition": {
+              "cell": "S",
               "description": "found an identity: an account (identity founding; verified is DERIVED per check, never a stored boolean)",
               "params": {
                 "account_id": "required",
@@ -3151,16 +3190,21 @@
             "polarity": "+",
             "name": "VERIFY-ACCOUNT",
             "definition": {
-              "description": "record that an account passed an identity check — evidence stored AS A HASH (verify-never-reveal; no plaintext secret ever enters the record, CONST-SECRETS), the verifier named (itself verified or a founding anchor; recursion grounds at the founding)",
+              "cell": "S",
+              "description": "record that an account passed an identity check — evidence stored AS A HASH (verify-never-reveal; no plaintext secret ever enters the record, CONST-SECRETS), the verifier named (itself verified or a founding anchor; recursion grounds at the founding). C6 P8 (B17): CLASSIFY IS ATTEST GENERALISED — this attest-shaped op gains a TARGET (what it classifies: an actor, an object, or the band being assigned) and an EVIDENCE KIND, both OPTIONAL and declared STRUCTURAL in the META, so a classify act names what it classifies and the kind of evidence. A class is the LATEST LIVE such act on an entity, computed AT READ (never a stored band). A bare identity-verify act omits both and is byte-unchanged from before P8; no new op is minted.",
               "params": {
                 "account": "required",
-                "evidence_hash": "required"
+                "evidence_hash": "required",
+                "target": "optional",
+                "evidence_kind": "optional"
               },
               "law_cited": "CAP-IS-LAW",
               "object_param": "account",
               "payload_from": [
                 "account",
-                "evidence_hash"
+                "evidence_hash",
+                "target",
+                "evidence_kind"
               ],
               "payload_derive": {
                 "kind": {
@@ -3182,8 +3226,14 @@
               ],
               "structural_params": [
                 "account",
-                "evidence_hash"
-              ]
+                "evidence_hash",
+                "target",
+                "evidence_kind"
+              ],
+              "param_kinds": {
+                "target": "text",
+                "evidence_kind": "text"
+              }
             },
             "tier": "owner",
             "text": "operation VERIFY-ACCOUNT: when invoked and its checks pass -> append a verification citing CAP-IS-LAW"
@@ -3205,6 +3255,7 @@
             "polarity": "+",
             "name": "CREATE-SPACE",
             "definition": {
+              "cell": "S",
               "description": "found a space — a node in the containment tree, nested under a parent",
               "authority_regime": "attenuation-family",
               "params": {
@@ -3250,6 +3301,59 @@
         {
           "actor": "PC_RUNTIME",
           "action": "CREATE-OP",
+          "object": "op:CREATE-RELATIONSHIP",
+          "rule_cited": "CAP-IS-LAW",
+          "payload": {
+            "kind": "op_definition",
+            "rule_id": "op:CREATE-RELATIONSHIP",
+            "polarity": "+",
+            "name": "CREATE-RELATIONSHIP",
+            "definition": {
+              "cell": "S",
+              "description": "record a relation row — one venn2 fact (subject, object, geometry, zone); the frame derives from the cited rule, the reading from that rule's text, the roles from actor/object/target (design/25 v2.1 rulings 6/7); unrelated is never stored",
+              "params": {
+                "subject": "required",
+                "object": "required",
+                "geometry": "required"
+              },
+              "law_cited": "CAP-IS-LAW",
+              "object_derive": {
+                "tpl": "rel:{subject}:{object}"
+              },
+              "payload_from": [
+                "subject",
+                "object",
+                "geometry",
+                "zone"
+              ],
+              "checks": [
+                {
+                  "check": "value_domain",
+                  "param": "geometry",
+                  "domain": [
+                    "AD",
+                    "IN",
+                    "NS",
+                    "EM"
+                  ],
+                  "cite": "CAP-IS-LAW",
+                  "message": "CREATE-RELATIONSHIP: geometry is one of the four closed venn2 values AD, IN, NS, EM (design/25 v2.1 B5) — unrelated is never stored, so an absent or unknown geometry is refused at the door"
+                }
+              ],
+              "structural_params": [
+                "subject",
+                "object",
+                "geometry",
+                "zone"
+              ]
+            },
+            "tier": "owner",
+            "text": "operation CREATE-RELATIONSHIP: when invoked and its checks pass -> append a relation row citing CAP-IS-LAW"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-OP",
           "object": "op:CREATE-ROLE",
           "rule_cited": "CAP-IS-LAW",
           "payload": {
@@ -3258,6 +3362,7 @@
             "polarity": "+",
             "name": "CREATE-ROLE",
             "definition": {
+              "cell": "S",
               "description": "found a role — a name grants may cite (it stores no power)",
               "authority_regime": "attenuation-family",
               "params": {
@@ -3302,6 +3407,7 @@
             "polarity": "+",
             "name": "GRANT",
             "definition": {
+              "cell": "S",
               "description": "record a positive grant: grantee x actions x info x space (power is the grant)",
               "authority_regime": "attenuation-family",
               "params": {
@@ -3361,6 +3467,7 @@
             "polarity": "+",
             "name": "REVOKE",
             "definition": {
+              "cell": "S",
               "description": "revoke a grant — supersedes it latest-wins (nothing cascades)",
               "authority_regime": "attenuation-family",
               "params": {
@@ -3403,6 +3510,7 @@
             "polarity": "+",
             "name": "DESIGNATE-SUCCESSOR",
             "definition": {
+              "cell": "S",
               "description": "the root designates a verified human successor (a recorded ceremony, never a stored owner field). The gate anchor guard refuses a non-root designator, an unverified successor, or a pure-agentic successor (CONST-AUTHORITY-ANCHORED).",
               "params": {
                 "successor": "required"
@@ -3437,6 +3545,7 @@
             "polarity": "+",
             "name": "ACCEPT-SUCCESSION",
             "definition": {
+              "cell": "S",
               "description": "the designated successor accepts — the acceptance half of the designation-acceptance pair the current-successor fold reads (the accepter is the record's actor)",
               "params": {},
               "law_cited": "CAP-IS-LAW",
@@ -3463,6 +3572,7 @@
             "polarity": "+",
             "name": "REVOKE-SUCCESSION",
             "definition": {
+              "cell": "S",
               "description": "the root revokes the current succession designation (supersedes the pair). The gate anchor guard refuses a non-root revoker.",
               "params": {},
               "law_cited": "CAP-IS-LAW",
@@ -3489,6 +3599,7 @@
             "polarity": "+",
             "name": "HANDOVER",
             "definition": {
+              "cell": "S",
               "description": "the root hands over root authority to the accepted successor (owner account retirement / self-removal): the old chain-end's authority ends by supersession, the successor becomes the new chain-end BY DERIVATION (no owner field is written). The gate anchor guard refuses it unless a valid, accepted, verified human successor exists — root authority never orphans (exit-with-continuity).",
               "params": {},
               "law_cited": "CAP-IS-LAW",
@@ -3520,6 +3631,7 @@
             "polarity": "+",
             "name": "SEAL-SECRET",
             "definition": {
+              "cell": "S",
               "description": "seal a secret under a name — the value crosses ONCE, is sealed into the vault (write-once, keyed by hash, NO read path), and the record holds the HASH only, never the value (verify-never-reveal, CONST-SECRETS). Re-sealing a name ROTATES it: supersession by hash, latest-per-name",
               "params": {
                 "name": "required",
@@ -3558,6 +3670,7 @@
             "polarity": "+",
             "name": "VERIFY-SECRET",
             "definition": {
+              "cell": "S",
               "description": "verify a candidate against the secret sealed under a name — the vault compares BY HASH inside the S-plane; the decision records MATCH / NO-MATCH + the sealed hash, NEVER the candidate (verify-never-reveal, CONST-SECRETS). Account verification is a consumer of this family (the vault seed re-homes here, design/31 J8)",
               "params": {
                 "name": "required",
@@ -3601,6 +3714,7 @@
             "polarity": "+",
             "name": "key-bind",
             "definition": {
+              "cell": "S",
               "description": "bind a public key to an account — the LAW-class member of the key family (design/37 §4). A recorded ceremony act citing KEY-LAW-BIND; validity is a live supersession fold (kernel.keys), never a stored value. Adds NO check kind: the account/public_key are recorded, not namespace keys. The root key's leash and the succession key half live at the gate anchor guard, engaging only when the key-bind law is live and, for the succession half, only per-account (a keyless account is untouched).",
               "params": {
                 "account": "required",
@@ -3647,6 +3761,7 @@
             "polarity": "+",
             "name": "key-rotate",
             "definition": {
+              "cell": "S",
               "description": "rotate an account's bound key — the DECISION-class supersession that replaces the binding with a new public key (latest-supersession-wins; the prior bind stays on the record as DATA, an old signature over it remains verifiable as evidence of who decided then). A rotate of the ROOT key refuses without a successor key bound through the human-only succession ceremony (the gate anchor guard, is_root_key_op); a non-root key rotates unleashed.",
               "params": {
                 "account": "required",
@@ -3693,6 +3808,7 @@
             "polarity": "+",
             "name": "key-revoke",
             "definition": {
+              "cell": "S",
               "description": "revoke an account's bound key — the DECISION-class supersession to none (the fold reads the account as no longer holding a valid key). Nothing cascades: validity is re-derived live from the record, never read from a cache. A revoke of the ROOT key refuses without a successor key bound through the human-only succession ceremony (the gate anchor guard, is_root_key_op); a non-root key revokes unleashed.",
               "params": {
                 "account": "required",
@@ -3742,6 +3858,7 @@
             "name": "ANSWER-RETURNED",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "record the answer of an executor outside the S-plane — an INPUT-class arrival that binds to its hand-out by the store's own citation and is accepted only against the world it was judged in. The content is FROZEN: replay consumes it and never re-invokes the answerer (the clock-as-sensor law generalized to every oracle)",
               "params": {
                 "handout_seq": "required",
@@ -3795,6 +3912,7 @@
             "name": "PRESENT-CREDENTIAL",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "record that a channel presented, on an open crossing, the vault-held credential that crossing was handed out under. The vault COMPARES by hash inside the S-plane; the record carries MATCH/NO-MATCH and the sealed hash, never the candidate and never the value. No read path is used and none exists — the vault's whole surface is seal and compare, so the record can prove a secret was used without any actor ever reading it",
               "params": {
                 "handout_seq": "required",
@@ -3848,6 +3966,7 @@
             "polarity": "+",
             "name": "FILE-OPEN",
             "definition": {
+              "cell": "S",
               "description": "open a file: the explicit custody grant (design/10 §6, open row)",
               "params": {
                 "path": "required",
@@ -3886,6 +4005,7 @@
             "polarity": "+",
             "name": "FILE-CLOSE",
             "definition": {
+              "cell": "S",
               "description": "release an open custody (design/10 §6, close row — the symmetric release)",
               "act_kind": "release",
               "params": {
@@ -3922,6 +4042,7 @@
             "polarity": "+",
             "name": "FILE-TRUNCATE",
             "definition": {
+              "cell": "S",
               "description": "set a file's length; the resulting content is content-addressed",
               "params": {
                 "path": "required",
@@ -3968,6 +4089,7 @@
             "polarity": "+",
             "name": "FILE-MKDIR",
             "definition": {
+              "cell": "S",
               "description": "create a directory (design/10 §6, mkdir row — a namespace create)",
               "params": {
                 "path": "required",
@@ -4035,6 +4157,7 @@
             "polarity": "+",
             "name": "FILE-RMDIR",
             "definition": {
+              "cell": "S",
               "description": "remove an empty directory (design/10 §6, rmdir row)",
               "params": {
                 "path": "required",
@@ -4090,6 +4213,7 @@
             "polarity": "+",
             "name": "FILE-SYMLINK",
             "definition": {
+              "cell": "S",
               "description": "create a symbolic link — the link's target is the new inode's content",
               "params": {
                 "path": "required",
@@ -4155,6 +4279,7 @@
             "polarity": "+",
             "name": "FILE-RENAME",
             "definition": {
+              "cell": "S",
               "description": "atomically rename / move a name (design/10 §6, rename row)",
               "params": {
                 "path": "required",
@@ -4215,6 +4340,7 @@
             "polarity": "+",
             "name": "FILE-CHOWN",
             "definition": {
+              "cell": "S",
               "description": "change file ownership — an amendment of the file's permission",
               "params": {
                 "path": "required",
@@ -4256,6 +4382,7 @@
             "polarity": "+",
             "name": "FILE-TIMES",
             "definition": {
+              "cell": "S",
               "description": "set a file's timestamps (design/10 §6, utimensat row)",
               "params": {
                 "path": "required",
@@ -4297,6 +4424,7 @@
             "polarity": "+",
             "name": "FILE-XATTR-SET",
             "definition": {
+              "cell": "S",
               "description": "set an ordinary extended attribute — a recorded metadata DECISION",
               "params": {
                 "path": "required",
@@ -4339,6 +4467,7 @@
             "polarity": "+",
             "name": "FILE-XATTR-REMOVE",
             "definition": {
+              "cell": "S",
               "description": "remove an ordinary extended attribute",
               "params": {
                 "path": "required",
@@ -4377,6 +4506,7 @@
             "polarity": "+",
             "name": "FILE-XATTR-LAW",
             "definition": {
+              "cell": "S",
               "description": "set a PERMISSION-BEARING extended attribute (security.* / system.posix_acl_*) — a rule with a one-file scope, recorded as LAW because its content is prescriptive",
               "params": {
                 "path": "required",
@@ -4429,6 +4559,7 @@
             "polarity": "+",
             "name": "FILE-LOCK",
             "definition": {
+              "cell": "S",
               "description": "grant exclusivity over a byte range of a file (design/10 §6, the fcntl F_SETLK and flock rows — a lock grant, recorded, citing its rule). `length` 0 carries the POSIX meaning: to the end of the file, however far that moves. `owner` is the holder the port could assert.",
               "params": {
                 "path": "required",
@@ -4477,6 +4608,7 @@
             "polarity": "+",
             "name": "FILE-UNLOCK",
             "definition": {
+              "cell": "S",
               "description": "release exclusivity a caller held (design/10 §6). `mechanism` says which caller act released it: an explicit unlock, or the POSIX rule that closing a descriptor for the file releases that process's locks on it — the mechanism belongs beneath the decision, never in place of it.",
               "act_kind": "release",
               "params": {
@@ -4526,6 +4658,7 @@
             "polarity": "+",
             "name": "FILE-READ-AGGREGATE",
             "definition": {
+              "cell": "S",
               "description": "the read-traffic audit aggregate for one inode over one window (STREAM); the caller's bytes were delivered exactly and are not what this record carries",
               "params": {
                 "path": "required",
@@ -4568,6 +4701,7 @@
             "polarity": "+",
             "name": "MAP-UID",
             "definition": {
+              "cell": "S",
               "description": "record that a kernel-asserted uid at the port acts as a named account — a recorded act, from which actor resolution is DERIVED; never a synchronized user table",
               "params": {
                 "uid": "required",
@@ -4608,6 +4742,7 @@
             "polarity": "+",
             "name": "CUSTODY-HALT",
             "definition": {
+              "cell": "S",
               "description": "halt the assume: the state replayed from the record alone differs from the state being served, so the mount goes read-only and the divergence is recorded",
               "params": {
                 "reason": "required",
@@ -4643,6 +4778,7 @@
             "polarity": "+",
             "name": "FILE-CUSTODY-TRANSFER",
             "definition": {
+              "cell": "S",
               "description": "hand an OPEN HANDLE from one entity to another: the custody plane's verb for a handover, and the one act in it whose subject is a RELATION BETWEEN TWO PARTIES rather than a fact about a file. Every other FILE-* action answers what a file IS or who holds exclusivity over part of one; this one answers WHO HOLDS IT NOW, and the answer is a fold of these records rather than a field on anything. THE RECORD SHAPE IS THE POINT, not the check vocabulary: EP-30-E1 established that a current holding is expressible when the state is written as an amending declaration of the SAME action under latest-seq-wins, and blind when it is written as a separate act — so a handover amends this action and never mints a second one. `device` is INHERITED from the binding that founded it and is never derived here.",
               "params": {
                 "handle": "required",
@@ -4731,6 +4867,7 @@
             "name": "SESSION-OPEN",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "record that a decider has opened a live working context, declaring the read-set that binds what it is doing. A known contact point, so a law change whose reach meets this session's declared view can be delivered to it rather than overtaking it in flight. This is the decider session of the two-times law, unrelated to the POSIX setsid session — the /proc and scheduling surfaces keep the POSIX word for the POSIX thing",
               "params": {
                 "session_id": "required",
@@ -4785,6 +4922,7 @@
             "name": "SESSION-CLOSE",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "record that a decider's working context has ended. Live-or-closed is the difference between the two records and is held nowhere",
               "params": {
                 "session_id": "required"
@@ -4827,6 +4965,7 @@
             "name": "OVERTURN",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "record the reconciliation verdict on one act a late-arriving law reached: an appended decision acting FORWARD, citing the reaching law (or the overturned ancestor whose exclusion reached it), the overturned act, and both deciding times. Nothing recorded is edited and nothing disappears — the act and its overturn are both permanently on the record, and an asOf answer from before the overturn still shows the act's effect",
               "params": {
                 "target_seq": "required",
@@ -4895,6 +5034,7 @@
             "polarity": "+",
             "name": "DECLARE-IO-WINDOW",
             "definition": {
+              "cell": "S",
               "description": "declare an I/O WINDOW under DEV-LAW-BIND: the named surface through which a class of device I/O may be admitted, WITH THE ACCESS THAT SURFACE COSTS. DEV-LAW-BIND says a bind grants custody and not I/O and that I/O admission CITES A WINDOW DECLARATION BY NAME; this op is how such a declaration comes into existence. THE ACCESS COST IS A REQUIRED PARAMETER AND NOT AN ANNOTATION (K12 — every view costs its own dependencies, priced at authoring): a window whose surface can only be read by a privileged observer is a window that has bought a privilege, and a declaration that hid that would price the view at zero. `sees` AND `does_not_see` ARE BOTH REQUIRED: the no-bare-form instruction extended from parameter forms to parameter ABSENCES — a window declaring nothing it sees would still admit its act class while claiming no observability, which is the comforting-fallback shape wearing a declaration. A window declares ADMISSION and never GRANULARITY: at what granularity an admitted act is RECORDED is the INTAKE declaration, which is EP-29 W2's first product and is deliberately absent from this vocabulary so nothing lands by drift. `families`, `events_available` and `established` ARE PARAMETERS AND NOT DECORATION: a window may not be declared without saying how its surface was ESTABLISHED, which is the whole lesson of the pass that authored it — a window declared against a surface nobody drove is the wrong-reference class authored into law. NOT declared `act_kind: release` — this op founds a declaration, it ends nothing.",
               "params": {
                 "window": "required",
@@ -4959,6 +5099,7 @@
             "polarity": "+",
             "name": "DEVICE-IO-WINDOW-WRITE",
             "definition": {
+              "cell": "S",
               "description": "admit a device I/O write across a DECLARED window. This is the act class DEV-LAW-BIND named and, until this pass, founded no declaration for — so it refused citing the terminal rule that an act class no declaration founds does not exist. THE REFUSAL IS NARROWED HERE AND NOT REMOVED: the act is now declared, and it refuses on THREE stated grounds instead of on absence. FIRST, a bind: a bind grants custody and I/O still needs the custody to exist, so an I/O act naming a device no record ever bound refuses. SECOND, AND IT IS WHAT MAKES CUSTODY REVOCABLE RATHER THAN ONLY GRANTABLE (EP-30-W2): the bind must still BE IN FORCE. The first ground asks whether a bind EVER happened, and history never unhappens, so it went on admitting bytes for a device whose custody had ended — the gap EP-30-P1 pinned as a measured verdict rather than as a paragraph. This row reads the LATEST record in this device's binding stream and requires it to still declare a driver. Because op:UNBIND writes its record into BIND-DEVICE's own stream (EP-30-W1b) while still recording that UNBIND wrote it, the latest record after a revocation is the unbind, an unbind declares no driver, and the licence stops computing. A FRESH BIND RESTORES IT: latest-seq-wins means a re-bind is the newest declaration and admits again, so a revocation is not a one-way door. THIRD, and this is the sentence DEV-LAW-BIND wrote, I/O ADMISSION CITES A WINDOW DECLARATION BY NAME: the cited window must be a DECLARED one, and a name that no DECLARE-IO-WINDOW record founds is refused — which is why the citation is checked against that action and not against the law records generally, since keying it on rule ids would let any law id in the founding pass as a window. EVERY OTHER DEVICE ACT CLASS STILL HOLDS NO DECLARATION and still refuses citing the terminal rule; this op widens the permitted set by exactly the windows the founding declares and by nothing else. NOT declared `act_kind: release` — it moves bytes, it ends nothing.",
               "params": {
                 "device": "required",
@@ -5089,6 +5230,7 @@
             "polarity": "+",
             "name": "DECLARE-INTAKE",
             "definition": {
+              "cell": "S",
               "description": "declare an INTAKE under DEV-LAW-INTAKE: the grade at which device INPUT arrivals admitted through a named window are RECORDED. DEV-LAW-INTAKE says an arrival is never recorded at per-interrupt grade and that a covering record spans a bounded WINDOW of arrivals; this op is how such a bound comes into existence. IT DECLARES THE GRADE AND NEVER THE ADMISSION — admission is DECLARE-IO-WINDOW's, under DEV-LAW-BIND, and the two are kept apart because a declaration that did both could widen what is admitted while appearing to change only how much is written down. \n\nEVERY MEASUREMENT-DERIVED VALUE IS A STRUCTURED FIELD AND NOT A BARE NUMBER, and `derived_values` NAMES WHICH PARAMETERS THOSE ARE. A bare number in law is a value whose population and basis are unfalsifiable (charter §A51): each derived value carries `value`, `cell`, `population`, `basis` and `why_this_value` — the last named that way because `derivation` is a RESERVED KEY estate-wide (T-CHAIN-COMPUTED: no record anywhere carries a stored reasoning chain, because a stored chain is a stored derivative) — so a value with no calibration cell behind it is visible as a MISSING KEY rather than as a missing sentence. `derived_values` is a required parameter rather than a convention so that the set being checked is declared by the record itself; a declaration cannot shrink its own audited population by leaving a derived value off the list, because a derived value not on the list is a defect the rows read structurally. \n\nAN UNESTABLISHED VALUE IS DECLARED UNESTABLISHED, NEVER OMITTED — the no-bare-form instruction extended from parameter forms to parameter ABSENCES, which is the shape DECLARE-IO-WINDOW's required `does_not_see` already took. A class whose per-act unit the calibration could not establish carries `value: null` with the basis stating WHY, rather than a plausible number divided out of a requested load. \n\n`closers` ARE EVENT-BASED BY LAW, and `limits` and `does_not_declare` ARE REQUIRED: a declaration that named no limit would generalise silently from one guest and one boot, and a declaration that named no absence would read as covering everything it did not mention. `established` states how the table this declaration derives from was TAKEN — an intake declared against a calibration nobody drove is the wrong-reference class authored into law, one layer in from where the window declarations met it. \n\nNOT declared `act_kind: release` — this op founds a declaration, it ends nothing.",
               "params": {
                 "intake": "required",
@@ -5163,6 +5305,7 @@
             "polarity": "+",
             "name": "DEVICE-INTAKE-COVER",
             "definition": {
+              "cell": "S",
               "description": "write the COVERING RECORD DEV-LAW-INTAKE governs: one recorded INPUT standing for a WINDOW of admitted device arrivals. THIS LAW HAS DESCRIBED THIS RECORD SINCE v1.22.0 AND SUPPLIED NO OPERATION THAT WRITES ONE — EP-29 W3b's walk found that exactly one operation cited this law and it was DECLARE-INTAKE, the DECLARING operation, so C3's intake crossing and C7's fail-closed refusal both required a record no operation could produce. This is that operation, and the division from DECLARE-INTAKE is the point: DECLARE-INTAKE declares THE GRADE at which arrivals are recorded and writes no arrival; this writes ONE RECORD AT THAT DECLARED GRADE and declares nothing. Recording through DECLARE-INTAKE is barred by this law's own words, and filing this record under DEV-LAW-BIND would file the RECORD's question under the ADMISSION law — a second source of truth about what this world's law declares.\n\nWHAT IT CARRIES IS THE LAW'S OWN LIST AND NOTHING BESIDE IT: the COUNT of arrivals covered, the BYTE TOTAL over them, the DEVICE the arrivals were attributed to, the WINDOW they were admitted under BY NAME, and this law's citation together with the intake declaration's name. NEVER THE CONTENT — device I/O content is STREAM and is classified out, which the window declarations already state in their own `does_not_see`. A covering record makes no governed act invisible: it names how many there were and how many bytes they moved.\n\nFAIL-CLOSED AT THE DEVICE LAYER, AND THE GATE COMPUTES THE LICENCE RATHER THAN A CALLER ASSERTING IT. The `prior_value` check reads THE CITED DECLARATION'S OWN `max_arrivals.value` and requires it ESTABLISHED. Where this law declares a class's threshold UNESTABLISHED — an explicit no-value, not an unwritten gap — no licence computes, the act is permitted by nothing, and the gate refuses it citing the TIP-LEVEL TERMINAL RULE that what no declaration permits does not exist. That is the same citation an act class no declaration founds already gets, so this operation introduces no second citation object and no law gains a sentence. THE VALUE COMES FROM THE LAW-DATA AND NEVER FROM A PARAMETER: nothing a caller passes can move the answer, which is what separates a licence test from a check the caller satisfies by construction.\n\nTHE CUSTODY ROW IS DERIVED FROM THE DECLARATION'S OWN CLOSER, NOT ADDED FOR SAFETY. Every intake declaration under this law names `unbind` as a closer — the covering record closes when the custody that admitted the I/O ends — so a covering record written for a device no record binds would contradict the declaration it cites. Its refusal cites DEV-LAW-BIND because custody is that law's object; the RECORD is filed under DEV-LAW-INTAKE, which is this operation's `law_cited` and the whole of what the wrong-law bar is about.\n\nAND THE CLOSER IS NOW ENFORCED AND NOT ONLY DECLARED (EP-30-W2). The custody row above asks whether a bind EVER happened, which history answers YES forever, so an unbind closed nothing and this operation went on writing covering records after the custody that admitted the arrivals had ended — a declaration naming `unbind` as its closer, with nothing closing. The second custody row reads the LATEST record in this device's binding stream and requires it to still declare a driver: op:UNBIND writes into BIND-DEVICE's own stream (EP-30-W1b), an unbind declares no driver, and the licence stops computing at exactly the act the declaration named. It cites DEV-LAW-BIND on the same ground as the row above — custody is that law's object — and a fresh bind restores admission, because latest-seq-wins makes the newest declaration the one in force.\n\nEVERY PARAMETER FORM IS EXPLICIT (charter C7's rule, and the no-bare-form instruction this law's declaring operation already carries): a form taken by silence is not declining the choice, it is taking it undecided.\n\nTWO THINGS THIS OPERATION DOES NOT ENFORCE, WRITTEN HERE RATHER THAN LEFT TO BE DISCOVERED, because each is a gap the licensed vocabulary cannot close and both are RAISED by the pass that landed this. (1) THE WINDOW ROW AND THE INTAKE ROW MAY MEET TWO DIFFERENT RECORDS: each `require_prior` is an independent existence scan, so a caller naming a declared window and a declared intake that do not belong together satisfies both — the same limitation that made the threshold read unsayable, and closing it needs a same-record read across two fields, which the licence for one kind does not cover. (2) NO ROW REFUSES `arrival_count` OF ONE. This law's never-clause binds DECLARATIONS — no declaration may set a bound of one — and a covering record standing for exactly one arrival is the per-interrupt grade wearing a window's name in the law's own words; expressing it needs a numeric comparison against a parameter that no live check kind performs. Both are named for the operation's first consumer rather than fixed by a kind nobody licensed.\n\nNOT declared `act_kind: release` — this operation writes a record, it ends nothing.",
               "params": {
                 "intake": "required",
@@ -5408,6 +5551,7 @@
             "polarity": "+",
             "name": "OPEN-CONTENT",
             "definition": {
+              "cell": "S",
               "description": "an allowed reader opens a sealed content piece — a recorded read",
               "params": {
                 "piece": "required"
@@ -5439,6 +5583,7 @@
             "polarity": "+",
             "name": "SOCKET-OPEN",
             "definition": {
+              "cell": "S",
               "description": "open a socket of a declared family, by an established entity, under the socket grant law (who may open what, to where); the wire act, HOST-MODELLED — no real socket on the host (design/51 §5, N1/N2)",
               "params": {
                 "entity": "required",
@@ -5497,6 +5642,7 @@
             "polarity": "+",
             "name": "SOCKET-BIND",
             "definition": {
+              "cell": "S",
               "description": "bind a socket the record opened to a local address; the wire act, host-modelled (design/51 §5)",
               "params": {
                 "socket": "required",
@@ -5538,6 +5684,7 @@
             "polarity": "+",
             "name": "SOCKET-LISTEN",
             "definition": {
+              "cell": "S",
               "description": "mark a socket the record opened as listening; the wire act, host-modelled (design/51 §5)",
               "params": {
                 "socket": "required"
@@ -5576,6 +5723,7 @@
             "polarity": "+",
             "name": "SOCKET-CONNECT",
             "definition": {
+              "cell": "S",
               "description": "connect a socket the record opened to a target; the wire act — the target is recorded, the reach ungated today (host-modelled, design/51 §5)",
               "params": {
                 "socket": "required",
@@ -5617,6 +5765,7 @@
             "polarity": "+",
             "name": "SOCKET-ACCEPT",
             "definition": {
+              "cell": "S",
               "description": "accept a peer on a socket the record opened; the wire act — the peer is recorded (host-modelled, design/51 §5)",
               "params": {
                 "socket": "required",
@@ -5658,6 +5807,7 @@
             "polarity": "+",
             "name": "SOCKET-CLOSE",
             "definition": {
+              "cell": "S",
               "description": "tear down a socket the record opened; the wire act, host-modelled (design/51 §5). Reached by the op directly on the host — the flat syscall-ops map cannot discriminate a socket fd's close from a file fd's, so `close` stays unmapped on the host (:3266 precision 3); EP-48G maps it in-guest where the fd's kind is known",
               "params": {
                 "socket": "required"
@@ -5702,6 +5852,7 @@
             "name": "BORDER-SUBMIT",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "an outside entity submits a DRAFT through its system-facing channel -- a request the gate decides against the record BEFORE any effect, never executed as the act itself (design/51 N3, the door). A crossing is an opening of the entity's system-facing channel (design/39); the entity is prior-established under CAP-IS-LAW, never a peer-minted token (the API-gateway trap refused, design/51 section 9). The submit row's content hash IS the crossing id (archi :3266)",
               "params": {
                 "entity": "required",
@@ -5751,6 +5902,7 @@
             "name": "BORDER-REPLY",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "the border's REPLY to an allowed crossing -- it carries the crossing id (the submit row's content hash) and a SEAL over exactly what was shown (a REAL Ed25519 signature via the signer where the library is present, REFUSED and never faked when absent -- N10, RW-FAKE-SEAL). The reply binds to its submit by the store's recomputation of the submit's content hash at the gate chokepoint, never by the reply's own claim (the crossing.py correlation discipline, the border's direction)",
               "params": {
                 "crossing_id": "required",
@@ -5794,6 +5946,7 @@
             "name": "BORDER-REFUSAL",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "the border's REFUSAL of a crossing, surfaced through the system's own WINDOW: the record carries the reason (readable by the human through the window) and names the refused ENTITY -- whose own system-facing channel this refusal never writes to (design/51 N3: a refusal reaches the human through the window, never through the refused party; the system is not the courier of the reason)",
               "params": {
                 "entity": "required",
@@ -5842,13 +5995,17 @@
             "name": "RECEIPT",
             "tier": "owner",
             "definition": {
-              "description": "the RECEIVER's own record of a crossing (design/51 N9, EP-49D). A row sent from body A is received at body B as INPUT through B's border; B appends THIS receipt to ITS OWN record -- A never writes B's record and B never A's (one pen per record, D08.30 / the single-writer lock, store.py). The receipt cites the received row's CONTENT HASH (content_hash -- border.content_id, the crossing id that excludes record_time so two bodies recording one crossing at different times derive the SAME hash, D08.40); the FROM-BODY (from_body -- the sender's bound SYSTEM PUBLIC KEY together with its genesis hash, a body's NAME, D08.42 -- a copied seed is a FORK the chain exposes, never a clash); the sender's SIGNATURE (from_sig -- verified under from_body's key, real-or-refused N10); the UNDER-RULE (under_rule); and the REVEALED-SET (revealed_set -- the selective-disclosure leaf set when a tree was presented, D08.48, empty otherwise). Identity is what CROSSED, never trust in the peer's own record (N4's cap; the API-gateway trap refused, design/51 section 9). One row, ONE receipt: a second receipt for the same content_hash is refused at the gate chokepoint (idempotent)",
+              "cell": "S",
+              "description": "the RECEIVER's own record of a crossing (design/51 N9, EP-49D). A row sent from body A is received at body B as INPUT through B's border; B appends THIS receipt to ITS OWN record -- A never writes B's record and B never A's (one pen per record, D08.30 / the single-writer lock, store.py). The receipt cites the received row's CONTENT HASH (content_hash -- border.content_id, the crossing id that excludes record_time so two bodies recording one crossing at different times derive the SAME hash, D08.40); the FROM-BODY (from_body -- the sender's bound SYSTEM PUBLIC KEY together with its genesis hash, a body's NAME, D08.42 -- a copied seed is a FORK the chain exposes, never a clash); the sender's SIGNATURE (from_sig -- verified under from_body's key, real-or-refused N10); the UNDER-RULE (under_rule); and the REVEALED-SET (revealed_set -- the selective-disclosure leaf set when a tree was presented, D08.48, empty otherwise). Identity is what CROSSED, never trust in the peer's own record (N4's cap; the API-gateway trap refused, design/51 section 9). One row, ONE receipt: a second receipt for the same content_hash is refused at the gate chokepoint (idempotent). C6 P8 (SPIKE-3 N2, SPIKE-5, B15): RECEIPT gains THREE OPTIONAL structural fields — the CHECKS MAP (who / body / memory_sane, each pass|fail), the DISCLOSURE_LEVEL (HASHES-ONLY | SHELLS | FULL), and the ADDRESS_FORM (row | segment: a segment receipt cites the SEGMENT hash in the content_hash slot and is verified by blob-rehash, receipt_binds_segment, not by content_id). admitted_level is DERIVED AT READ from the checks map + disclosure_level, NEVER stored (I10). A bare row receipt omits all three and is byte-unchanged from before P8 apart from three null fields the honest record carries",
               "params": {
                 "content_hash": "required",
                 "from_body": "required",
                 "from_sig": "required",
                 "under_rule": "required",
-                "revealed_set": "required"
+                "revealed_set": "required",
+                "checks": "optional",
+                "disclosure_level": "optional",
+                "address_form": "optional"
               },
               "law_cited": "COMM-LAW-CONTRACT",
               "object_param": "content_hash",
@@ -5857,7 +6014,10 @@
                 "from_body",
                 "from_sig",
                 "under_rule",
-                "revealed_set"
+                "revealed_set",
+                "checks",
+                "disclosure_level",
+                "address_form"
               ],
               "payload_derive": {
                 "kind": {
@@ -5873,8 +6033,15 @@
                 "from_body",
                 "from_sig",
                 "under_rule",
-                "revealed_set"
-              ]
+                "revealed_set",
+                "checks",
+                "disclosure_level",
+                "address_form"
+              ],
+              "param_kinds": {
+                "disclosure_level": "text",
+                "address_form": "text"
+              }
             },
             "text": "operation RECEIPT: when invoked -> append a receipt DECISION (the receiver's own record of a crossing) carrying the received row's content hash, the from-body (the sender's bound system public key + genesis hash), the sender's signature, the under-rule and the revealed-set, citing COMM-LAW-CONTRACT (the binding of exactly one receipt per received row is the gate chokepoint's, not a handler's)"
           }
@@ -5896,6 +6063,7 @@
             "name": "VIEW-SERVICE",
             "tier": "owner",
             "definition": {
+              "cell": "S",
               "description": "the SERVICING of a mandated view is a record (design/51 N6, EP-50). A view DEFINITION is already a record (CREATE-VIEW, kind view_definition -- views.py); what was missing is a SERVICING signal for a MASTER/query view (no move_to), which in v1 had NO recorded per-run signal at all (paper_tigers could clear a mandated view only by a non-empty delivery queue -- delivery was the only witness). A VIEW-SERVICE DECISION is appended each time a mandated view is serviced, carrying WHO (servicer -- STAMPED from the acting actor, the engine's fact never the caller's claim, so a servicing cannot be attributed to another), WHEN (the seq of this record) and OVER-WHICH-HEAD (head_seq -- the store head the servicer serviced over). paper_tigers reads VIEW-SERVICE, so a mandated view NEVER serviced is a FOLD and not an inference (N6); DELIVERY is RETAINED as a SECOND WITNESS (design/51 section 6 item 4). Cites ROOT-NEG-6 -- the SAME founded law CREATE-VIEW cites (a view definition is law, contradiction-gated; no new law is minted, EP-50 architect precision board :3377). The fold FUNCTIONS stay CODE (mechanism, S-plane, air rider 1); this op records the servicing DECISION, never a fold's definition. checks: [] -- servicing is a recorded act, gated by no new check kind (OP_CHECKS unchanged; this mints an OP, not a KIND)",
               "params": {
                 "view_name": "required",
@@ -5945,6 +6113,7 @@
             "polarity": "+",
             "name": "FILTER-DECISION",
             "definition": {
+              "cell": "S",
               "description": "the firewall's filtering decision as a record (design/51 N8, EP-52). A connection is ADMITTED or REFUSED by an established entity, CITING a FILTER-RULE (a CREATE-RULE of law class NET-LAW-FILTER) over a socket the record OPENED (EP-48) — the deciding rule recorded so 'which rule dropped this' is a fold (src/subsystems/filter.py), never an inference. The record DECIDES; the guest kernel's netfilter DROPS — the seam is NAMED (guest-netfilter) and the host record never claims the drop (DIGEST-C4 §6). HOST-MODELLED: no real packet is dropped by the host; the guest-real drop is proven guest-only under the pinned kernel (EP-00 rule 9). A routing/name FACT the world hands us is INPUT (ANSWER-RETURNED), never this decision (design/44 §2). The filter READS and decides OVER the socket table; it never rewrites a socket act.",
               "params": {
                 "entity": "required",
@@ -6132,6 +6301,56 @@
       ]
     },
     {
+      "step": "09-p8-actor-classes-and-cell-law",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-INFO",
+          "object": "pack:actor-classes",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "kind": "category_pack",
+            "name": "actor-classes",
+            "levels": [
+              "human",
+              "ai",
+              "program"
+            ],
+            "capability_vocabulary": [
+              "structured-arm",
+              "unstructured-arm"
+            ],
+            "capabilities": {
+              "human": [
+                "structured-arm",
+                "unstructured-arm"
+              ],
+              "ai": [
+                "unstructured-arm"
+              ],
+              "program": [
+                "structured-arm"
+              ]
+            },
+            "text": "C6 P8 DECLARATIONS 1 & 2 (B16 ACTOR CLASSES AS BANDS; K12 the field's domain closes). The actor CLASSES are labels over TWO declared CAPABILITIES — may be the arm of a STRUCTURED rule (structured-arm), may be the arm of an UNSTRUCTURED rule (unstructured-arm). HUMAN holds BOTH; an AI holds the UNSTRUCTURED arm ONLY (an AI is never the arm of a pure-structured rule); a PROGRAM holds the STRUCTURED arm ONLY (a program is never the arm of a rule with judgment). The cut bounds WHO EXECUTES a rule, never who may ask (B16). The class field's DOMAIN CLOSES to exactly these three (K12, D08.50's vocabulary rule): a class NOT in this list is not a valid band, so the band computed at read refuses it (a class not in the list cannot be validly written/classified). This is founding DATA (a category_pack), so re-cutting the classes is an AMEND-PACK, never a code change; the required capability for any task is READ OFF ITS CELL against this map (the arm of an unstructured rule if any side has judgment, else the arm of a structured rule), so the pairing needs no table beyond these two capabilities."
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "CELL-LAW",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "CELL-LAW",
+            "text": "C6 P8 DECLARATION 3 (L28 THE CELL). Every task is one actor, one input, one transformation, one output, in EXACTLY ONE CELL — S (structured both sides), U (judgment both sides), U{s} (judgment over a structured input), or S{u} (structured over a judgment input). The cell is a DECLARATION per operation (and per station), FOUNDING DATA, NEVER derived from the shapes of the op's fields: a program that inferred a cell from field shapes would be a program holding judgment about where judgment sits, which this law forbids. Every operation carries a declared cell or its definition is REFUSED at the founding door (never defaulted to S). The REQUIRED CAPABILITY is read off the cell (actor-classes): the arm of an UNSTRUCTURED rule if ANY side has judgment (a cell other than S), else the arm of a STRUCTURED rule. THE (ACTOR CLASS, TASK CELL) PAIRING runs through the EXISTING ceiling machinery — a PROGRAM is refused at any cell with judgment, an AI at a pure-S cell, a HUMAN holds any — and adds NO new check kind (a class is a computed ceiling that only shrinks, B18/I21). A declared-S operation must REPLAY TO IDENTITY or satisfy a predicate, or its declaration is a FINDING; a declared-judgment operation is validated to its envelope's schema and NEVER SCORED by the machine. The recorder's own SYSTEM mechanics (form-fill, validate, route) are OUTSIDE the pairing — the cell names the JUDGE's step, and the door checks the acting actor. ENFORCEMENT OF THE PAIRING IS HELD: a DRY-RUN CENSUS over the WHOLE RECORD reports every past act the pairing WOULD have refused, published WITH ITS WORLD (the founding version, the as-of head), and enforcement is a STOP until that census is read — a constitution is not turned on over its own history silently (C6 measures only, L25; the stop in L28). admitted_level and the band are DERIVED AT READ, never stored.",
+            "scope": "space:root",
+            "enforcement": "live",
+            "enforced_by": "kernel.opdefs.validate_definition_shape._require_wellformed_cell (a declared cell must be one of S | U | U{s} | S{u}, at all THREE doors; inert on absence) AND founding.install._validate's cell-presence check, engaged when CELL-LAW is live (read from the pack's own rule records, the wire-at-birth idiom): every op the founding declares must carry a cell or the WHOLE founding is refused. The (actor class, task cell) PAIRING and the required-capability read are kernel.views (class_band, required_capability, pair, pairing_census) reading the actor-classes founding data; ENFORCEMENT IS HELD — the pairing is a dry-run census (kernel.views.pairing_census) published with its world, NOT a live act-door refusal, until the owner reads the census (archi precision 2, board :3688). No new check kind; the class is the existing ceiling machinery's computed shrink."
+          }
+        }
+      ]
+    },
+    {
       "step": "10-founding-openness-grant",
       "records": [
         {
@@ -6148,6 +6367,923 @@
             "space": "space:root",
             "enforcement": "inert",
             "text": "the mother space's founding openness recorded as explicit law: today's open world as a grant anyone can read and later narrow space by space (design/31 EP-17 transition policy). It enforces nothing at the founding."
+          }
+        }
+      ]
+    },
+    {
+      "step": "11-view-tree-seed",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.1",
+            "polarity": "+",
+            "name": "1.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "rule_changing_acts",
+            "text": "view-tree node 1.1 \"rule-changing acts\": master bound to the rule_changing_acts fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.1.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.1.1",
+            "polarity": "+",
+            "name": "1.1.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.1",
+              "where": {
+                "actor_class": "program"
+              }
+            },
+            "text": "view-tree node 1.1.1 \"rule-changing acts by programs\": 1.1 narrowed by actor_class=program"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.1.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.1.2",
+            "polarity": "+",
+            "name": "1.1.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.1",
+              "where": {
+                "actor_class": "human"
+              }
+            },
+            "text": "view-tree node 1.1.2 \"rule-changing acts by humans\": 1.1 narrowed by actor_class=human"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.1.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.1.3",
+            "polarity": "+",
+            "name": "1.1.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.1",
+              "where": {
+                "actor_class": "ai"
+              }
+            },
+            "text": "view-tree node 1.1.3 \"rule-changing acts by AI\": 1.1 narrowed by actor_class=ai"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.2",
+            "polarity": "+",
+            "name": "1.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "acts_under_rules",
+            "text": "view-tree node 1.2 \"acts under rules\": master bound to the acts_under_rules fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.2.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.2.1",
+            "polarity": "+",
+            "name": "1.2.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.2",
+              "where": {
+                "actor_class": "program"
+              }
+            },
+            "text": "view-tree node 1.2.1 \"acts under rules by programs\": 1.2 narrowed by actor_class=program"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.2.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.2.2",
+            "polarity": "+",
+            "name": "1.2.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.2",
+              "where": {
+                "actor_class": "human"
+              }
+            },
+            "text": "view-tree node 1.2.2 \"acts under rules by humans\": 1.2 narrowed by actor_class=human"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:1.2.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:1.2.3",
+            "polarity": "+",
+            "name": "1.2.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "1.2",
+              "where": {
+                "actor_class": "ai"
+              }
+            },
+            "text": "view-tree node 1.2.3 \"acts under rules by AI\": 1.2 narrowed by actor_class=ai"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2",
+            "polarity": "+",
+            "name": "2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "rules",
+            "text": "view-tree node 2 \"rules\": master bound to the rules fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.1",
+            "polarity": "+",
+            "name": "2.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "active_rules",
+            "text": "view-tree node 2.1 \"active rules\": master bound to the active_rules fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.1.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.1.1",
+            "polarity": "+",
+            "name": "2.1.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.1",
+              "where": {
+                "scope_class": "program"
+              }
+            },
+            "text": "view-tree node 2.1.1 \"active rules binding programs\": 2.1 narrowed by scope_class=program"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.1.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.1.2",
+            "polarity": "+",
+            "name": "2.1.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.1",
+              "where": {
+                "scope_class": "human"
+              }
+            },
+            "text": "view-tree node 2.1.2 \"active rules binding humans\": 2.1 narrowed by scope_class=human"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.1.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.1.3",
+            "polarity": "+",
+            "name": "2.1.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.1",
+              "where": {
+                "scope_class": "ai"
+              }
+            },
+            "text": "view-tree node 2.1.3 \"active rules binding AI\": 2.1 narrowed by scope_class=ai"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.1.4",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.1.4",
+            "polarity": "+",
+            "name": "2.1.4",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.1",
+              "where": {
+                "scope_class": "all"
+              }
+            },
+            "text": "view-tree node 2.1.4 \"active rules binding all actors\": 2.1 narrowed by scope_class=all"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.2",
+            "polarity": "+",
+            "name": "2.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "old_rules",
+            "text": "view-tree node 2.2 \"old rules\": master bound to the old_rules fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.2.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.2.1",
+            "polarity": "+",
+            "name": "2.2.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.2",
+              "where": {
+                "scope_class": "program"
+              }
+            },
+            "text": "view-tree node 2.2.1 \"old rules that bound programs\": 2.2 narrowed by scope_class=program"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.2.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.2.2",
+            "polarity": "+",
+            "name": "2.2.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.2",
+              "where": {
+                "scope_class": "human"
+              }
+            },
+            "text": "view-tree node 2.2.2 \"old rules that bound humans\": 2.2 narrowed by scope_class=human"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.2.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.2.3",
+            "polarity": "+",
+            "name": "2.2.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.2",
+              "where": {
+                "scope_class": "ai"
+              }
+            },
+            "text": "view-tree node 2.2.3 \"old rules that bound AI\": 2.2 narrowed by scope_class=ai"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:2.2.4",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:2.2.4",
+            "polarity": "+",
+            "name": "2.2.4",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "2.2",
+              "where": {
+                "scope_class": "all"
+              }
+            },
+            "text": "view-tree node 2.2.4 \"old rules that bound all actors\": 2.2 narrowed by scope_class=all"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3",
+            "polarity": "+",
+            "name": "3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "items",
+            "text": "view-tree node 3 \"items\": master bound to the items fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.1",
+            "polarity": "+",
+            "name": "3.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "active_items",
+            "text": "view-tree node 3.1 \"active items\": master bound to the active_items fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.1.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.1.1",
+            "polarity": "+",
+            "name": "3.1.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "actors",
+            "text": "view-tree node 3.1.1 \"active actors\": master bound to the actors fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.1.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.1.2",
+            "polarity": "+",
+            "name": "3.1.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "static_composite",
+            "text": "view-tree node 3.1.2 \"active static\": master bound to the static_composite fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.2",
+            "polarity": "+",
+            "name": "3.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "old_items",
+            "text": "view-tree node 3.2 \"old items\": master bound to the old_items fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.2.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.2.1",
+            "polarity": "+",
+            "name": "3.2.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "3.2",
+              "where": {
+                "item_kind": "actor"
+              }
+            },
+            "text": "view-tree node 3.2.1 \"old actors\": 3.2 narrowed by item_kind=actor"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:3.2.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:3.2.2",
+            "polarity": "+",
+            "name": "3.2.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "3.2",
+              "where": {
+                "item_kind": "static"
+              }
+            },
+            "text": "view-tree node 3.2.2 \"old static\": 3.2 narrowed by item_kind=static"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4",
+            "polarity": "+",
+            "name": "4",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "relationships",
+            "text": "view-tree node 4 \"relationships\": master bound to the relationships fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.1",
+            "polarity": "+",
+            "name": "4.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4",
+              "where": {
+                "liveness": "active"
+              }
+            },
+            "text": "view-tree node 4.1 \"active relationships\": 4 narrowed by liveness=active"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.1.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.1.1",
+            "polarity": "+",
+            "name": "4.1.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.1",
+              "where": {
+                "tree_kind": "actor_tree"
+              }
+            },
+            "text": "view-tree node 4.1.1 \"active actor tree\": 4.1 narrowed by tree_kind=actor_tree"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.1.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.1.2",
+            "polarity": "+",
+            "name": "4.1.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.1",
+              "where": {
+                "tree_kind": "item_tree"
+              }
+            },
+            "text": "view-tree node 4.1.2 \"active item tree\": 4.1 narrowed by tree_kind=item_tree"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.1.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.1.3",
+            "polarity": "+",
+            "name": "4.1.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.1",
+              "where": {
+                "tree_kind": "non_tree"
+              }
+            },
+            "text": "view-tree node 4.1.3 \"active non-tree\": 4.1 narrowed by tree_kind=non_tree"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.2",
+            "polarity": "+",
+            "name": "4.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "bind": "old_relationships",
+            "text": "view-tree node 4.2 \"old relationships\": master bound to the old_relationships fold"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.2.1",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.2.1",
+            "polarity": "+",
+            "name": "4.2.1",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.2",
+              "where": {
+                "tree_kind": "actor_tree"
+              }
+            },
+            "text": "view-tree node 4.2.1 \"old actor tree\": 4.2 narrowed by tree_kind=actor_tree"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.2.2",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.2.2",
+            "polarity": "+",
+            "name": "4.2.2",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.2",
+              "where": {
+                "tree_kind": "item_tree"
+              }
+            },
+            "text": "view-tree node 4.2.2 \"old item tree\": 4.2 narrowed by tree_kind=item_tree"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-VIEW",
+          "object": "view:4.2.3",
+          "rule_cited": "ROOT-NEG-6",
+          "payload": {
+            "kind": "view_definition",
+            "rule_id": "view:4.2.3",
+            "polarity": "+",
+            "name": "4.2.3",
+            "when": {},
+            "then": {},
+            "tier": "owner",
+            "derive": {
+              "from": "4.2",
+              "where": {
+                "tree_kind": "non_tree"
+              }
+            },
+            "text": "view-tree node 4.2.3 \"old non-tree\": 4.2 narrowed by tree_kind=non_tree"
+          }
+        }
+      ]
+    },
+    {
+      "step": "12-required-stamps-law",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "REQUIRED-STAMPS",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "REQUIRED-STAMPS",
+            "policy_key": "required-stamps",
+            "value": {},
+            "text": "REQUIRED-STAMPS (design/25 v2.4 rulings 14/15 and 17b, board :3869; design/53 B10): a POLICY rule mapping a CLASS OF ACT (keyed by its action) to the master-view stamps that class must carry before the gate accepts it. The gate step reads this policy and refuses an act of a stamped class missing a required stamp; an unstamped class (no entry) passes untouched. EMPTY {} at the founding, so no production act is a stamped class until the climb pipeline that populates the stamps is minted (VT-6a) — day one every act passes untouched. The stamps themselves are a GATE-ADDED envelope field of the PROVENANCE CLASS in code, not declared here and in no operation definition: written by the gate inside `provenance`, excluded from the invoker's signed content and the store's countersignature, their stored integrity the record chain (there is no decider's seal over content). A caller may never supply stamps. Detection never legitimacy (ruling 14): no number of stamps makes an unlawful act lawful."
+          }
+        }
+      ]
+    },
+    {
+      "step": "13-act-kind-definitions",
+      "records": [
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-01",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-01",
+            "kind": "seam_act_definition",
+            "seam_kind": "record-pen",
+            "label": "portable-host-primitive",
+            "meaning": "the sole appender + the record reads/stat/mkdir",
+            "text": "ACT-KIND record-pen (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the sole appender + the record reads/stat/mkdir. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-02",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-02",
+            "kind": "seam_act_definition",
+            "seam_kind": "atomic-write-once",
+            "label": "portable-host-primitive",
+            "meaning": "the blob/vault write-once + the durability barrier (dir fsync)",
+            "text": "ACT-KIND atomic-write-once (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the blob/vault write-once + the durability barrier (dir fsync). The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-03",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-03",
+            "kind": "seam_act_definition",
+            "seam_kind": "remove",
+            "label": "portable-host-primitive",
+            "meaning": "the handover removal tail (blobs)",
+            "text": "ACT-KIND remove (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the handover removal tail (blobs). The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-04",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-04",
+            "kind": "seam_act_definition",
+            "seam_kind": "single-writer-lock",
+            "label": "least-portable",
+            "meaning": "the host-PID liveness lock — the LEAST-PORTABLE crossing",
+            "text": "ACT-KIND single-writer-lock (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: least-portable — a different host has different process semantics (the host-PID single-writer lock). What it is: the host-PID liveness lock — the LEAST-PORTABLE crossing. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-05",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-05",
+            "kind": "seam_act_definition",
+            "seam_kind": "recording-clock",
+            "label": "portable-host-primitive",
+            "meaning": "datetime.now(utc) — the recorded_at on every record",
+            "text": "ACT-KIND recording-clock (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: datetime.now(utc) — the recorded_at on every record. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-06",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-06",
+            "kind": "seam_act_definition",
+            "seam_kind": "commit-window",
+            "label": "portable-host-primitive",
+            "meaning": "time.monotonic / time.sleep — the group-commit window",
+            "text": "ACT-KIND commit-window (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: time.monotonic / time.sleep — the group-commit window. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-07",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-07",
+            "kind": "seam_act_definition",
+            "seam_kind": "entropy",
+            "label": "portable-host-primitive",
+            "meaning": "os.urandom — nonces and fresh secrets",
+            "text": "ACT-KIND entropy (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: os.urandom — nonces and fresh secrets. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-08",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-08",
+            "kind": "seam_act_definition",
+            "seam_kind": "concurrency",
+            "label": "portable-host-primitive",
+            "meaning": "the threading substrate (a host primitive the core must supply)",
+            "text": "ACT-KIND concurrency (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the threading substrate (a host primitive the core must supply). The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-09",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-09",
+            "kind": "seam_act_definition",
+            "seam_kind": "network-socket",
+            "label": "guest-gated-capability",
+            "meaning": "the one guest-gated outbound socket",
+            "text": "ACT-KIND network-socket (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: guest-gated-capability — real only inside the pinned guest (EP-00 rule 9). What it is: the one guest-gated outbound socket. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-10",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-10",
+            "kind": "seam_act_definition",
+            "seam_kind": "body-read",
+            "label": "portable-host-primitive",
+            "meaning": "the attestation member read + os.walk of the S-plane",
+            "text": "ACT-KIND body-read (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the attestation member read + os.walk of the S-plane. The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-11",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-11",
+            "kind": "seam_act_definition",
+            "seam_kind": "founding-pack-read",
+            "label": "portable-host-primitive",
+            "meaning": "the installer's read of founding-pack.json (DATA, never edited)",
+            "text": "ACT-KIND founding-pack-read (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: the installer's read of founding-pack.json (DATA, never edited). The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
+          }
+        },
+        {
+          "actor": "PC_RUNTIME",
+          "action": "CREATE-RULE",
+          "object": "ACT-KIND-12",
+          "rule_cited": "BOOT-INT",
+          "payload": {
+            "rule_id": "ACT-KIND-12",
+            "kind": "seam_act_definition",
+            "seam_kind": "memory",
+            "label": "portable-host-primitive",
+            "meaning": "host-backed anonymous memory — the C7 P7a interpreter-hosting growth (12th)",
+            "text": "ACT-KIND memory (design/54 §3 B11, §5 L16; archi :3993): one of the twelve KINDS OF WORK the kernel asks its host to perform, DEFINED HERE AS A ROW OF LAW so the seam's act set is derived from the record, never authored beside it (L16). Portability label: portable-host-primitive — names no Linux facility (disk, clock, entropy, threads). What it is: host-backed anonymous memory — the C7 P7a interpreter-hosting growth (12th). The derived act set is a fold over these twelve rows (kernel/boot.py live_act_kinds); the running kernel is checked against them by hash and by declared work at every waking (check_kernel_against_rows), or the first act is refused. An act kind is a rule, not an operation — this is a CREATE-RULE, never a CREATE-OP.",
+            "scope": "space:root"
           }
         }
       ]

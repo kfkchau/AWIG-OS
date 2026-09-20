@@ -197,7 +197,7 @@ class TestAnchorRefusals(_Kernel):
         self.assertEqual(cm.exception.rule, "CONST-AUTHORITY-ANCHORED")
 
     def test_a_pure_agentic_successor_refuses_at_designation(self):
-        self._account("eve", "agentic")     # verified, but not human
+        self._account("eve", "ai")     # verified, but not human
         with self.assertRaises(OpError) as cm:
             self.gate.execute("DESIGNATE-SUCCESSOR", "owner", {"successor": "eve"})
         self.assertEqual(cm.exception.rule, "CONST-AUTHORITY-ANCHORED")

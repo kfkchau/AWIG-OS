@@ -40,7 +40,14 @@ def build_full_kernel(record_path, blob_dir, vault_dir=None):
     # kernel, which opens the real record to write it, takes the writer lock so two processes cannot
     # both mint over one record (the observed seq-166 collision). A second process on the same record
     # is refused the writer role at build (store._acquire_lock), no seq collision.
-    store, gate, views = build_kernel(record_path, blobs=blobs, lock=True)  # blobs -> content ops register; single writer
+    # THE READER OUTCOME (EP-MAINT-OUTSIDE-5, re-spec C; archi :4199): lock=True asks for the writer
+    # role, but a SECOND full composition over a record a LIVE writer already holds in this process
+    # opens as a READER (store._reader) — no OS lock, every view computed, any append refused by
+    # name. attest_boot (idempotent on an unchanged tree) and genesis (idempotent on a founded
+    # record) append NOTHING on a reconstruction reopen, so the reconstruction idiom (build_full_
+    # kernel AGAIN over a live record to prove replay) runs transparently as a reader; only a site
+    # that genuinely APPENDS through a second live instance trips the refusal (the true two-writer case).
+    store, gate, views = build_kernel(record_path, blobs=blobs, lock=True)  # blobs -> content ops register; single writer / reader-on-second-open
     # The secrets vault (EP-19; design/31 J8). Wired HERE, at full compose (like the blob store is
     # threaded into build_kernel): set gate.vault, then re-run the replay so the secret ops
     # (SEAL-SECRET / VERIFY-SECRET), skipped during the bare replay for lack of a vault, register now.

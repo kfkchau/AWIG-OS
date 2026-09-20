@@ -127,8 +127,8 @@ class AutoWorld(unittest.TestCase):
         if frozen:
             ra = os.path.join(self._dir, "replica-a-%d.jsonl" % self._head_seq())
             rb = os.path.join(self._dir, "replica-b-%d.jsonl" % self._head_seq())
-            shutil.copy(self.path, ra)
-            shutil.copy(self.path, rb)
+            shutil.copyfile(self.path, ra)   # C7 P3b-5c: content only, no file-mode (I7)
+            shutil.copyfile(self.path, rb)   # C7 P3b-5c: content only, no file-mode (I7)
             pair = (cp_a, ra, self.blobdir, cp_b, rb, self.blobdir)
         else:
             pair = (cp_a, self.path, self.blobdir, cp_b, self.path, self.blobdir)
@@ -151,8 +151,14 @@ class AutoWorld(unittest.TestCase):
         else:
             rec["_damage"] = "chain-break"
         lines[seq - 1] = json.dumps(rec)
-        with open(self.path, "w", encoding="utf-8") as f:
+        # C7 P3b-5c: the tampered record lands in a FRESH file (a served create) and self.path is
+        # repointed to it — never reopen the present governed record with 'w' (an O_TRUNC reset the
+        # body refuses). _rebuild replays this fresh damaged file; the original record is untouched.
+        self._tamper_n = getattr(self, "_tamper_n", 0) + 1
+        newpath = os.path.join(self._dir, "record-tampered-%d.jsonl" % self._tamper_n)
+        with open(newpath, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
+        self.path = newpath
 
     def _rebuild(self):
         self.store, self.gate, self.views, self.blobs, _subs = build_full_kernel(self.path, self.blobdir)

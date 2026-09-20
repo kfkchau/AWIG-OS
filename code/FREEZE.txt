@@ -1,2 +1,2 @@
-AWIG OS rendering, founding 1.50.0, commit 40eb0ff748b2b27bb78feacb0d0d208c7d55d0e6, extras commit 53fb771d5b95d1a61dbb63eccd5e68d1e9262649, rendered by tools/release/render.py d44706023126.
-tree checksums: src 7965777e09a59ba940d258721311bcb1f3497725dfb8e3cf5d1dd61951faf126, tests 74a24b961bfa9831e0d0f164ec34830f20875af40b1c0afd2fb62593ea01f032, tools 445a2cf1cebeecc537d49fe5806edf37d31c6de33285af5d536086db7f33c9c4.
+AWIG OS rendering, founding 1.55.0, commit c7066950262880b7c985f0909bc0848fbb510ec1, extras commit c7066950262880b7c985f0909bc0848fbb510ec1, rendered by tools/release/render.py 595566576647.
+tree checksums: src 98a7af07662ead649fd2110db53f50ed4e8eed876cb14a705debe14ebebc7062, tests a7471e4562a27fe61f5924d212493d7c119186c635bb43df59cae947a384aa28, tools 48205422c642eb7ad743e178b3e841e4bca42a6db35aebcb710e889705eee87f.

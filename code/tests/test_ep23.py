@@ -639,6 +639,11 @@ class TestReplay(_World):
         self.assertEqual(self.answerer.calls, 1)
         before = self.views.open_crossings()
 
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the live writer before the reconstruction so the
+        # rebuilt kernel is a WRITER able to complete the resume (release-on-close). The pre-rebuild
+        # views were already read into `before` above; only THIS test resumes (appends) on the
+        # rebuilt machine, so the close is per-test, not in the shared `_rebuild` helper.
+        self.store.close()
         store2, gate2, views2, _, _ = self._rebuild()
         self.assertEqual(list(views2.open_crossings()), list(before))
         self.assertEqual(views2.crossings()[h["seq"]]["seal"], h["payload"]["seal"])

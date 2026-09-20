@@ -38,6 +38,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 from kernel import store as store_mod                          # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.errors import OpError                              # noqa: E402
 from bridge.kernel_port import KernelPort                      # noqa: E402
 from bridge.mount import build_brain                           # noqa: E402
@@ -157,8 +158,8 @@ class TestOneActIsOneDurableAppend(W8Case):
         counted too, and expected to be ZERO on this path — otherwise a store that synced twice,
         or that reverted to the stronger barrier, would read as one sync and pass."""
         seen = {"fdatasync": 0, "fsync": 0, "order": []}
-        real_fdatasync = store_mod.os.fdatasync
-        real_fsync = store_mod.os.fsync
+        real_fdatasync = seam_mod.os.fdatasync
+        real_fsync = seam_mod.os.fsync
 
         def spy_fdatasync(fd):
             seen["fdatasync"] += 1
@@ -177,15 +178,15 @@ class TestOneActIsOneDurableAppend(W8Case):
         # `_append` after that measures a function nothing on this path calls, and would have
         # gone silently inert. K1(a) is about what reaches the CALLER, so the bracket is the
         # act — which is stronger, because it is the boundary the invariant names.
-        store_mod.os.fdatasync = spy_fdatasync
-        store_mod.os.fsync = spy_fsync
+        seam_mod.os.fdatasync = spy_fdatasync
+        seam_mod.os.fsync = spy_fsync
         seen["order"].append("act-enter")
         try:
             fn()
         finally:
             seen["order"].append("act-return")
-            store_mod.os.fdatasync = real_fdatasync
-            store_mod.os.fsync = real_fsync
+            seam_mod.os.fdatasync = real_fdatasync
+            seam_mod.os.fsync = real_fsync
         return seen
 
     def test_every_appended_record_costs_exactly_one_sync(self):
@@ -262,8 +263,15 @@ class TestOneActIsOneDurableAppend(W8Case):
         of code and its closure should be visible in the same place."""
         with open(os.path.join(REPO, "src", "kernel", "store.py"), encoding="utf-8") as f:
             src = f.read()
-        self.assertIn("os.fdatasync(f.fileno())", src)
-        self.assertNotIn("os.fsync(f.fileno())", src)
+        with open(os.path.join(REPO, "src", "bridge", "host_seam.py"), encoding="utf-8") as f:
+            seam_src = f.read()
+        # C7 P2 (:3927): the barrier's host call followed the routing into the seam — fdatasync
+        # there, and the record pen has no fsync rescue. Re-pointed to the seam and STRENGTHENED
+        # with the absence assertion on store.py; the raise's closure is visible where the call is.
+        self.assertIn("os.fdatasync(fd)", seam_src)             # the seam performs the fdatasync barrier
+        self.assertIn("host().fdatasync(f.fileno())", src)      # store.py issues it through the seam
+        self.assertNotIn("os.fdatasync(", src)                  # ABSENCE: no direct barrier remains in the pen
+        self.assertNotIn("os.fsync(f.fileno())", src)           # no metadata-sync barrier in the pen (unchanged)
 
 
 # =====================================================================================

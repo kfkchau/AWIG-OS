@@ -27,6 +27,13 @@ Rendered source cites private-repository documents by path as provenance (the sa
 stance as the private commit); that is not a laptop path, a transcript, an address or
 an email, and `design/` is not a refuse pattern. INFO never raises the exit code.
 
+Allowed and only LISTED as ALLOWED (RELEASE-4 round 3, owner :4656): ONE file-scoped allow,
+per (rule, basename) -- `loopback with a port` inside tests/test_p17_honest_state.py, the
+honest-state test whose three loopback literals are its OWN DATA and which the renderer leaves
+raw (render.py LOOPBACK_PORT_EXEMPT_BASENAMES, the mirror of CONTENT_RULE_FILE_EXEMPT below).
+That file is still refused under every other rule; every other file is still refused under
+this one. An allowed match is printed under ALLOWED and never raises the exit code.
+
 Usage:
   pushscan.py --repo DIR [--ref REF]     scan every tracked file at REF (default HEAD)
   pushscan.py PATH [PATH ...]            scan these files (or dirs, recursively)
@@ -65,6 +72,14 @@ CONTENT_RULES = [
     ("guest user at loopback", re.compile(rb"[a-z][a-z0-9_-]*@127\.0\.0\.1")),
     ("private repository url", re.compile(rb"(?:git@github\.com:kfkchau/|github\.com/kfkchau/gov-os)")),
 ]
+# FILE-SCOPED ALLOW (RELEASE-4 round 3, owner :4656): {rule name: (basenames,)}. Keyed by the path's
+# BASENAME so every invocation form (--repo, a directory, a single file) reads the same thing. This
+# table MIRRORS render.py's LOOPBACK_PORT_EXEMPT_BASENAMES and the shipped check's _REFUSE_EXEMPT;
+# tests/test_release_loopback_exemption.py asserts the three agree -- one file, one rule, three
+# enforcers, or the release refuses itself. Narrow by construction: one rule, one basename.
+CONTENT_RULE_FILE_EXEMPT = {
+    "loopback with a port": ("test_p17_honest_state.py",),
+}
 # INFO (archi :3239) — a BARE relative document cite inside a comment/docstring/
 # string (`planning/NN…`, `design/NN…`, `prompt/…`, `sessions/…`) is ALLOWED and
 # only COUNTED. Rendered source cites private-repository documents by path as
@@ -99,24 +114,33 @@ def blob_bytes(repo, ref, relpath):
 
 
 def scan_one(relpath, data):
-    """Return (refusals, infos): each a list of (reason, matched-string).
-    Refusals raise the exit code; infos are only counted and listed."""
+    """Return (refusals, infos, allowed): each a list of (reason, matched-string).
+    Refusals raise the exit code; infos are only counted and listed; allowed are matches of a
+    CONTENT rule inside a file that rule's FILE-SCOPED allow names by basename (owner :4656) --
+    listed under ALLOWED, never a refusal."""
     refusals = []
     infos = []
-    top = relpath.replace("\\", "/").split("/", 1)[0]
+    allowed = []
+    norm = relpath.replace("\\", "/")
+    top = norm.split("/", 1)[0]
+    base = norm.rsplit("/", 1)[-1]
     if top in FORBIDDEN_TOP:
         refusals.append(("path under estate-only tree %s/" % top, relpath))
-    if relpath.replace("\\", "/").endswith(".jsonl") and re.search(UUID, relpath.encode()):
+    if norm.endswith(".jsonl") and re.search(UUID, relpath.encode()):
         refusals.append(("session-id .jsonl filename", relpath))
     for reason, rx in CONTENT_RULES:
         m = rx.search(data)
         if m:
-            refusals.append((reason, m.group(0).decode("utf-8", "replace")))
+            matched = m.group(0).decode("utf-8", "replace")
+            if base in CONTENT_RULE_FILE_EXEMPT.get(reason, ()):
+                allowed.append((reason, matched))
+            else:
+                refusals.append((reason, matched))
     for reason, rx in INFO_RULES:
         m = rx.search(data)
         if m:
             infos.append((reason, m.group(0).decode("utf-8", "replace")))
-    return refusals, infos
+    return refusals, infos, allowed
 
 
 def main(argv):
@@ -151,21 +175,30 @@ def main(argv):
 
     refusals = 0
     info_files = []  # (relpath, [(reason, matched), ...])
+    allowed_files = []  # (relpath, [(reason, matched), ...]) -- the file-scoped allow, always printed
     for label, rel, data in items:
-        r, info = scan_one(rel, data)
+        r, info, allowed = scan_one(rel, data)
         for reason, matched in r:
             print("REFUSE %s: %s — %r" % (label, reason, matched))
             refusals += 1
         if info:
             info_files.append((rel, info))
+        if allowed:
+            allowed_files.append((rel, allowed))
+    if allowed_files:
+        print("\nALLOWED — file-scoped allow (owner :4656; the renderer leaves the same file raw):")
+        for rel, allowed in allowed_files:
+            for reason, matched in allowed:
+                print("  %s — %s: %r" % (rel, reason, matched))
     if info_files:
         print("\nINFO — bare relative document cites (ALLOWED, counted; archi :3239):")
         for rel, info in info_files:
             kinds = sorted({reason for reason, _ in info})
             print("  %s — %s" % (rel, ", ".join(kinds)))
         print("INFO total: %d file(s) carry a bare doc cite" % len(info_files))
-    print("\npushscan: %d file(s) scanned, %d refusal(s), %d file(s) with doc-cite INFO"
-          % (len(items), refusals, len(info_files)))
+    print("\npushscan: %d file(s) scanned, %d refusal(s), %d file(s) with doc-cite INFO, "
+          "%d file(s) under a file-scoped allow"
+          % (len(items), refusals, len(info_files), len(allowed_files)))
     print("CLEAN" if refusals == 0 else "REFUSED — a private string is in the push set; STOP and name it")
     return 1 if refusals else 0
 

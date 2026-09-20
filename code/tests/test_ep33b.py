@@ -700,7 +700,7 @@ class TestK12SubsystemViewsFamilySource(unittest.TestCase):
     def _comms_churn(self):
         seqs = {}
         for ent in ("p1", "p2"):
-            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": ent, "actor_class": "process"})
+            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": ent, "actor_class": "program"})
         seqs["open1"] = self.gate.execute("COMMS-OPEN", "p1",
                                           {"channel": "c1", "entity": "p1", "role": "user-facing"})["seq"]
         self.gate.execute("CREATE-INFO", "SYSTEM", {"object": "u:0", "content": "x"})   # unrelated
@@ -844,7 +844,7 @@ class TestK12SubsystemViewsFamilySource(unittest.TestCase):
     def test_comms_live_channels_family_reads_only_its_family_not_unrelated_records(self):
         fam = {"COMMS-OPEN", "COMMS-CLOSE"}
         def build():
-            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": "p1", "actor_class": "process"})
+            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": "p1", "actor_class": "program"})
             self.gate.execute("COMMS-OPEN", "p1", {"channel": "c1", "entity": "p1", "role": "user-facing"})
             self.gate.execute("COMMS-CLOSE", "p1", {"channel": "c1"})
         base, grown = self._family_reads(fam, build, n_unrelated=5000)

@@ -1,6 +1,6 @@
 # Where AWIG OS stands
 
-Dated 13 September 2026. If this page and the code disagree, the code is right and this page is out of date.
+Dated 20 September 2026. If this page and the code disagree, the code is right and this page is out of date.
 
 ## What you can try today
 
@@ -14,9 +14,17 @@ The first command starts from a written rulebook. It performs one action the rul
 
 The second command runs sixteen checks: eight on the machinery, one of which deliberately breaks a value to prove the checks can fail, and eight that prove the tool which produced this folder refuses to ship eight kinds of private text.
 
-The third command runs the program's own test suite, which ships with this release for the first time. On a machine with nothing else installed it runs 94 test files and skips 65, and every skipped test prints what it would need: a private file from the development repository, a Linux guest machine, or a third-party filesystem package. It prints the fingerprints of the three folders it ran against, so a result can be matched to the exact code.
+The third command runs the program's own test suite. On a machine with nothing else installed it runs 170 test files, all of which pass, and skips 67, and every skipped test prints what it would need: a private file from the development repository, the build team's virtual machine, or a third-party package. Before it runs anything it recomputes the fingerprints of the three folders it runs against and refuses if one byte has moved, and it refuses an empty run.
 
-On the Linux machine this release was cut on (Python 3.12.3): 94 run, 94 passed, 0 failed, 65 skipped; sixteen checks of sixteen. One further test is skipped in this copy because it could fail by chance (an assertion over the record's text collides with timestamp and hash digits about one time in six); it is repaired in the private repository and returns in the next copy; the skip row names the defect and the repair. This release we also ran it more seriously on Windows, under Debian in WSL 2 (Python 3.13.5). That run found a test that measures how the disk batches writes, which that platform does not do, so it now skips there and says why; and it showed one timing test that fails when the whole suite runs at once and passes on its own. Neither is a broken promise of the code, both are named in the test output, and the timing test is addressed in the next release. If you run it on WSL 2 today, expect 94 of 94, or 93 if the timing test trips. Windows on its own refuses with one sentence, because it cannot prove a write has reached the disk, and points you to WSL. Needs Python 3 and nothing else.
+Measured on 20 September 2026 on a Windows laptop under Debian in WSL 2 (Python 3.13.5), from a clean copy with nothing of ours installed: sixteen checks of sixteen; 170 test files run, 170 passed, 0 failed, 64 skipped naming what they need and 3 more that skip as they load; 2,779 test cases, none failed. The same again with the real locks installed (PyNaCl 1.6.2): the same figures. The build team ran the leak scan and the sixteen checks on its own render of the same commit and got the same.
+
+**New in this copy: build the kernel and boot it.** On a Linux machine with `gcc`, `binutils`, Python 3 and `qemu-system-x86_64` installed, and nothing of ours installed:
+
+    cd code/src/body
+    ./build.sh . /tmp/awig-body
+    qemu-system-x86_64 -cpu qemu64 -display none -no-reboot -m 256 -rtc base=utc -serial stdio -kernel /tmp/awig-body/body.img
+
+What comes up is our own kernel with no Linux beneath it. It brings up its memory and proves each piece works, checks its own body, and prints each check as PASS or FAIL on the serial line. Add one word to the build, for example `./build.sh . /tmp/awig-body PLANT_WORKER_IMAGE_TAMPER`, and the matching check fails, which is how you know the checks can fail. This is the plain kernel. The full slice, the one that runs the standard Python interpreter as sealed content and opens a network connection only after its own record grants it, builds from the same script and takes two inputs from your own machine, named in [`THIRD-PARTY.md`](./THIRD-PARTY.md). Built and booted this way on 19 September 2026 on a Windows laptop under Debian in WSL 2 (gcc 14.2.0, QEMU 10.0.13), with nothing of ours installed: 120 lines on the serial line, every check PASS, the last line `BODY-HALT`. With no disk and no network card attached, the kernel says so itself (`DISK: ABSENT`, `NET: ABSENT`) and skips those acts.
 
 To turn the real locks on, install one library, PyNaCl, the Python binding of libsodium (`pip install pynacl`). Everything below about keys depends on whether it is installed.
 
@@ -35,21 +43,39 @@ The same program, with more of it switched on. Some of it needs a Linux guest ma
 - The border is governed. Something arriving from outside is a draft; the rulebook decides it before it has any effect; the reply seals exactly what was shown. Who sent it is established at the door, by a recorded identity, never by trusting the sender's own record.
 - One row, one receipt, two bodies. A record sent from one machine is received by another as input; the receiver writes its own receipt in its own record; neither writes the other's. Shown between a host and a Linux guest over a real socket, in the development repository's test worlds.
 - The firewall is rules in the record. Every filtering decision is a recorded act.
-- The rulebook itself can only be changed through the same door as everything else. It has been changed fifty times that way since 24 July 2026.
+- The rulebook itself can only be changed through the same door as everything else. It has been changed fifty-five times that way since 24 July 2026.
 
-How we know: on the private Linux machine, at the campaign 5 grade of 9 September 2026, 145 test files with 3,899 tests, all passing, run one file at a time. Ninety-four of those test files run here in the third command; the rest are the 65 that skip, each naming what it needs. Any test count you see from us names the machine it ran on.
+How we know: at the close of campaign 7 the whole estate's standing tests ran 194 of 199 green; the five that were red were known before the campaign and none was the kernel's. Any test count you see from us names the machine it ran on.
 
-## Built since this copy was cut, in the private repository
+## The kernel, new in this copy
 
-- Several machines, each keeping its own record, with the stage each machine holds derived from its own rules.
-- The kernel. The build has reached its last stage: a bare-metal kernel body that boots in a virtual machine into 64-bit mode on its own page tables, lays out its memory, and answers system calls. It does not yet run a program of its own; that is the unit being built now.
+Until this copy, everything above ran on Linux. Campaign 7 wrote the kernel underneath it, from a blank page, and closed on 19 September 2026. In plain words:
 
-These are not in this code. They arrive in a later public copy.
+- The machine boots into our own kernel in a virtual machine, with no Linux beneath it.
+- Before its first act it checks its own body, its record chain, its constitution and its keys, and writes down that two separate witnesses agreed it woke sane. One witness alone cannot write that row.
+- The kernel and the interpreter it carries are pinned in the record by their fingerprints. Change one byte of either and the machine refuses to start, and each of those refusals was tested by planting the change.
+- The kernel's own definition is rows in the record. The code is derived from them at build; delete it and regenerate it and the same bytes come back.
+- It runs the standard Python interpreter, unmodified, as sealed content, and runs the gate on it.
+- It opens a network connection only after its own record grants it: the grant row first, then the socket. On a refusal there is no socket, and the refusal is a row. The network code it borrows runs unmodified inside an enclosure; every device it finds and every device effect is a row.
+- Nothing above the kernel changed. The same acts run on Linux and on our kernel through one declared seam.
+
+**The numbers, the same acts under both, each with its run.** Rows written per second: Linux 696.8 (5,000 rows), our kernel 181.8 (200 rows). One decision under one rule: Linux 5.99 microseconds, our kernel 204. Verifying a record of one million rows ran under Linux only (534.8 seconds of processor time over a 518 MB record); our kernel, whose record as built holds 2,048 entries in 8 MiB, ran the same acts at its own size (739 rows, 0.906 seconds) and is never presented as the million's equal. The figure that is equal on both, and does not depend on the record's size: the proof that localises a change is 347 bytes on each, and verifies true on each. Our kernel appends at 2 MiB of memory and fails at 1 MiB, printing its own failure; a clean boot needs 3 MiB. All figures: the build team's Linux machine and its nested virtual machine, 19 September 2026, campaign 7's review.
+
+It is slower than Linux, and it is narrow by design: it is the record's own body, never a desktop. Its limits as built are 2,048 record entries, an 8 MiB record and a 64 MiB data region.
+
+## What comes next
+
+Named as work the build side has committed to, not as things you can use. Each entry closes when a stranger can check it; no dates.
+
+- **Campaign 8: the load act and the actor model.** A program's rule set sealed at load, actors separated from static information, permissions reshaped not stacked. When it closes: every program the system runs is born by one row you can read, and cannot ask for more than the rules sealed on that row.
+- **Campaign 9: the one-file installer.** A stripped Linux kept only as a boxed driver worker under our kernel. Its first act on a real computer is a probe from a USB stick that deletes nothing. Beside it, the side-by-side stretch: the same acts on Linux and on our kernel, both records compared byte for byte, before the real record moves onto the kernel.
+- **Carried from the outside reviews:** an effect that happened with no row after a crash shown as unknown, never as done; destroying content as a recorded act with a receipt, where the law requires it; more than one holder of a stage of governance over one scope; the second public test run with the real locks installed.
 
 ## Designed on paper, not built
 
-- The AI team that is meant to work inside it. The box exists in this code; it is empty.
-- Running on its own hardware without Linux underneath.
+- The AI team that is meant to work inside it. The room has two doors, built and tested between two machines, and nobody living in it.
+- Every program born on the record with its rules sealed at load (campaign 8, above).
+- Running on real hardware (campaign 9, above).
 
 ## What is not true yet
 
@@ -59,10 +85,11 @@ Read this before trusting it with anything that matters.
 
 > Real cryptography is in this code and is off until you turn it on. Install the one vetted library it names and every key is real: signatures, key wrapping and sealed content are done by that library, never by our own code, and the signing seed never touches the disk. Install nothing, and the code runs exactly as the previous release did, with keys that are stand-ins of the right shape; anything that asks for a real signature is then refused rather than faked, so a real key can never quietly become a stand-in. Two limits stay true in both states: a reader who has the disk can read the sealed bytes of the secrets store, and an administrator of the running machine can read the program's memory, where the keys that open sealed content live. Protect the disk and the machine by other means; this code does not.
 
+- **The kernel runs in a virtual machine only.** No real hardware yet, one processor, a small set of devices. The record that matters still runs on Linux; the two run side by side and the move is not taken.
 - **One machine, one user.** Every speed figure we publish comes from one computer with one user at a time.
 - **The record can be wrong while every view of it is right.** Once, two things created at the same instant produced two entries for one act. The checks run from the record outward, never the other way.
 - **A known defect: rename and replay.** Some programs save a file by writing a new one and renaming it over the old. The record then holds two entries for one file and the rebuild merges them. This is why the demo stops at `git add` and never reaches `git commit`. Renaming a folder with contents, and renaming one of two names for the same file, were also wrong and are repaired in this code.
-- **An outside AI reviewer has tested it twice.** What it found is in the section below. The written list of things still to try has not all been attempted.
+- **An outside AI reviewer has tested it three times.** What it found is in the section below. The written list of things still to try has not all been attempted.
 - **An administrator can edit the file.** Someone with full rights on the machine can change the record. The chain will show where. It cannot stop them.
 - **The two watchdogs have only been tested on one machine.** Two components check each other's saved states. Whether they stay independent on two separate machines is later work.
 
@@ -77,17 +104,17 @@ The ones that matter most, in plain words:
 - A handover removed the content before the rulebook had decided whether the handover was allowed. Now the decision comes first, is written down, and only then does the content leave.
 - A write the rulebook refused could still be read back through the mounted filesystem for as long as the operating system kept a copy of it. The mount now sends every read to the record instead of keeping a copy. That has a price, and the price is real: a program that maps a file into memory for shared writing is refused by the operating system; a program that writes and reads through two open handles before saving sees what was last saved, not its own unsaved write; and a second program reading a file after another program's refused write sees what was last saved, never the refused bytes. We measured all three on a real mount and kept the measurements.
 - A permission that a later rule had overturned still counted when a new action asked for it. One check now decides what is still in force, and every part of the program that grants or holds something asks it.
-- Two copies of the program could open the same record at once and each write the same entry number. The record was given a one-writer rule. A third round, below, found that rule could still be beaten. The repair is made in the private repository and ships at the next release; the code in this copy still checks a process-id file.
+- Two copies of the program could open the same record at once and each write the same entry number. One writer holds the pen: every change enters through one gate that cites a rule, onto one append-only record, and everything else the system shows is computed from that record. The record takes one writer at a time: an operating-system lock held for the writer's lifetime, raced in its test by ten real processes; a second copy of the program opened over the same record in one process reads but cannot write. The released code before this repair checked a pid file instead.
 - Stored content was trusted by its name and not by its bytes. It is now checked against its bytes each time, and a missing item is refused rather than served as an empty file.
 - A file created on the mount was written down as belonging to the administrator, whatever account created it. It is now written down as belonging to the account that created it.
 
 The rest are smaller and are listed, one line each, with their repair, in the private repository's build record. The repairs are in this code, with the tests that prove them.
 
-On 13 September I ran a third round, the same way, on this public copy. It found four things. The one-writer rule above could be beaten by racing real processes, so two writers got in. A half-written last line in the record stopped the program from opening instead of being set aside. A value the record could not write down came back as an error instead of a refusal, and left the record refusing everything after it. And the shipped test runner would have passed an empty test folder. All four are repaired and tested in the private repository and ship at the next release. Until then this copy carries them, and this page says so.
+On 13 September I ran a third round, the same way, on the previous public copy. It found four things. The one-writer rule above could be beaten by racing real processes, so two writers got in. A half-written last line in the record stopped the program from opening instead of being set aside. A value the record could not write down came back as an error instead of a refusal, and left the record refusing everything after it. And the shipped test runner would have passed an empty test folder. All four are repaired in this copy, with the tests that prove them. The review keeps running.
 
 ## What you can and cannot check from here
 
-The commit numbers in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belong to the private repository. You cannot look them up from here. Treat them as stamps. What you can check is the three tags on this repository, `milestone-0-seed`, `c4-close` and `c5-close`, the sixteen checks, and the shipped test suite with its printed fingerprints.
+The commit numbers in `code/RENDER-STAMP.json` and `code/FREEZE.txt` belong to the private repository. You cannot look them up from here. Treat them as stamps. What you can check is the four tags on this repository, `milestone-0-seed`, `c4-close`, `c5-close` and `c7-close`, the sixteen checks, and the shipped test suite with its printed fingerprints.
 
 ## If you want to know more
 

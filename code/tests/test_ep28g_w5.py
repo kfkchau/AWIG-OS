@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.join(REPO, "src"))
 from kernel import commit as commit_mod                          # noqa: E402
 from kernel import gate as gate_mod                              # noqa: E402
 from kernel import store as store_mod                            # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                     # noqa: E402
 
 #: WHAT THIS EP'S ROWS WERE EXERCISED AGAINST, stated as data so it is checkable rather than
@@ -94,9 +95,17 @@ class DeclarationsCase(unittest.TestCase):
         reason; asserting them here too is deliberate — this EP's derivation depends on them,
         and a dependency stated only in prose is a dependency nobody re-checks."""
         src = open(store_mod.__file__, encoding="utf-8").read()
+        seam_src = open(seam_mod.__file__, encoding="utf-8").read()
+        # the write to the held descriptor stays in store.py — one write site.
         self.assertEqual(src.count("self._fh.write("), 1)
-        self.assertEqual(src.count("os.fdatasync("), 1)
-        self.assertEqual(src.count('self.file_path.open("a"'), 1)
+        # C7 P2 (:3927): the barrier and the append-open are host crossings routed into the seam;
+        # re-pointed to the seam and STRENGTHENED with the absence assertion on store.py.
+        self.assertEqual(seam_src.count("os.fdatasync("), 1)
+        self.assertEqual(seam_src.count('path.open("a"'), 1)
+        self.assertEqual(src.count("os.fdatasync("), 0)               # ABSENCE on the old file
+        self.assertEqual(src.count('self.file_path.open("a"'), 0)     # ABSENCE on the old file
+        self.assertEqual(src.count("host().fdatasync("), 1)          # one routed barrier site
+        self.assertEqual(src.count("host().open_append("), 1)        # one routed append site
 
     #: THE ORDER THE COMPOSITION MUST PRODUCE, stated as data so the predicate below reads
     #: as a property and not as a spelling of three syscalls: the blob's BYTES are made
@@ -135,34 +144,59 @@ class DeclarationsCase(unittest.TestCase):
                 return digest
             blobs.put = _put_with_no_barrier
         gate.execute("CREATE-ACCOUNT", "SYSTEM",
-                     {"account_id": "w5", "actor_class": "process"})
+                     {"account_id": "w5", "actor_class": "program"})
         gate.execute("COMMS-OPEN", "w5",
                      {"channel": "sock:w5", "entity": "w5", "role": "user-facing"})
-        seen, real_fsync, real_fdatasync = [], os.fsync, os.fdatasync
+        seen = []
 
-        def _named(fd):
-            try:                                  # the descriptor's own path, at call time
-                return os.readlink("/proc/self/fd/%d" % fd)
-            except OSError:                       # pragma: no cover - unreachable on Linux
-                return ""
+        class _SeamDurabilityTracer:
+            """DELEGATE every host act to the real performer and RECORD the composition's three
+            durability acts IN THE ORDER THE BODY ISSUES THEM, traced AT THE SEAM the barrier
+            issues from (C7 P2, :3927). This is the body-appropriate observer, and it replaces an
+            `os.fsync`/`os.fdatasync` monkeypatch that named its descriptor through
+            `/proc/self/fd`: the body-hosted interpreter serves the real durability path
+            (serve.c's O_TRUNC staging fd, bodyfs.c's fs_durable_write) so the barriers DO fire on
+            the body, but it has no `/proc` filesystem for an fd-naming observer to read, so on the
+            body the old probe saw nothing and returned () (measured — C7-P3b-5b-BODY-LEDGER-GREEN
+            serial-test_ep28g_w5.txt, and C7-MAINT-5B-W5-DURABILITY-REMEASURE re-measures it here).
+            The seam trace needs no `/proc`: it records the act at the one interface every host
+            crossing routes through (`host()`), and runs identically on host and body. The three
+            acts, by the seam method each rides:
+              write_file_durably(final under blobdir) -> the blob's BYTES made durable
+              fsync_dir(dir under blobdir)            -> the blob's NAME made durable
+              fdatasync(fd)                           -> the record made durable (store.py's SOLE
+                                                         barrier; the seam carries exactly one
+                                                         fdatasync site, asserted by
+                                                         test_the_single_record_file_condition, so
+                                                         no fd naming is needed to know it is the
+                                                         record).
+            The observation is at the OBSERVER only; the suppression stays at the CALL SITE (the
+            replaced `blobs.put` never reaches these seam methods), so the control still fails when
+            the barrier is gone rather than when the trace stops looking."""
 
-        def _fsync(fd):
-            path = _named(fd)
-            if path.startswith(blobdir):
-                seen.append("the blob's name" if os.path.isdir(path) else "the blob's bytes")
-            return real_fsync(fd)
+            def __init__(self, inner):
+                self._inner = inner
 
-        def _fdatasync(fd):
-            if _named(fd) == record:
+            def __getattr__(self, name):            # every other host act passes straight through
+                return getattr(self._inner, name)
+
+            def write_file_durably(self, tmp_, final, data, mode=0o644):
+                if str(final).startswith(blobdir):
+                    seen.append("the blob's bytes")
+                return self._inner.write_file_durably(tmp_, final, data, mode)
+
+            def fsync_dir(self, dirpath):
+                if str(dirpath).startswith(blobdir):
+                    seen.append("the blob's name")
+                return self._inner.fsync_dir(dirpath)
+
+            def fdatasync(self, fd):
                 seen.append("the record naming it")
-            return real_fdatasync(fd)
+                return self._inner.fdatasync(fd)
 
-        os.fsync, os.fdatasync = _fsync, _fdatasync
-        try:
+        with seam_mod.using(_SeamDurabilityTracer(seam_mod.host())):
             sent = gate.execute("COMMS-SEND", "w5",
                                 {"channel": "sock:w5", "message": "durable-before", "to": "w5"})
-        finally:
-            os.fsync, os.fdatasync = real_fsync, real_fdatasync
         self.assertTrue(blobs.has(sent["payload"]["message_hash"]),
                         "the act did not content-address its payload, so this drive says "
                         "nothing about the composition")

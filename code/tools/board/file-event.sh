@@ -15,7 +15,11 @@
 # comments below are kept because each one names what it cost.
 set -uo pipefail
 R=<HOME>/Documents/Claude/apps/gov-os
-LOG=$R/planning/build/BOARD-EVENTS.log
+# BOARD_LOG override — default is the live board. The gate folds, range-checks,
+# appends and re-folds THIS ONE log throughout (every board.py call below is passed
+# --events "$LOG"), so a test can point every step at a TEMP board copy and never
+# touch the record. UNSET in production => byte-identical behaviour to before.
+LOG=${BOARD_LOG:-$R/planning/build/BOARD-EVENTS.log}
 BODY=${1:?usage: file-event.sh <file-containing-one-EVT-line>}
 
 # GAP 3, found 2026-08-26 the only way this estate ever finds anything — by an
@@ -31,7 +35,7 @@ grep -qE '^EVT \| [0-9]{4}-[0-9]{2}-[0-9]{2} \| [^|]+ \| [^|]+ \| [^|]+ \| ' "$B
   || { echo "REFUSED: '$BODY' does not match the EVT grammar (EVT | date | item | verb | seat | body)."; exit 6; }
 
 cd "$R" || exit 9
-python3 tools/board/board.py --board >/dev/null 2>&1 || { echo "REFUSED: board does not fold BEFORE the append — not writing onto a broken record"; exit 2; }
+python3 tools/board/board.py --events "$LOG" --board >/dev/null 2>&1 || { echo "REFUSED: board does not fold BEFORE the append — not writing onto a broken record"; exit 2; }
 
 # :1577 — RESOLVE BEFORE ACTING. A lifecycle verb changes an item's STATE, and a
 # state written on an envelope's word is a verb on evidence that may never land.
@@ -83,8 +87,20 @@ case "$VERB" in
     # filed below the one removal point pointed above it, so nothing has shifted —
     # but the exposure is structural and complete, and the correct form binds by
     # content digest. Owed by mgr.
-    if python3 tools/board/board.py --ep "$RITEM" 2>/dev/null \
-       | grep -E "^  :$REF " | grep -q 'VOID'; then
+    # THE VOID STATE IS A STRUCTURED FIELD OF THE FOLD (board.py `voided_by`, line 549),
+    # printed by --ep as the mark `<- VOID, superseded by line N` in the cited line's OWN
+    # column — the FIRST suffix mark, so it always sits immediately after the `<- ` mark
+    # separator. This read it as the bare substring `VOID` over the WHOLE display row,
+    # CLAUSE included. So a LIVE line whose clause merely says the word "void" (describing
+    # some OTHER, superseded line) read as void ITSELF, and a lawful cite of it was refused
+    # — that is how the live countersign :4257 (clause: "the :4243 freeze ... VOID")
+    # turned a lawful DISPATCHED into a NOTED (:4266). A prose substring is not a fold
+    # state. Anchor to the mark's column: `<- VOID, superseded by line <n>` is the token
+    # the fold COMPUTES from voided_by and cannot be a clause substring; a truly-voided
+    # line always carries it, so the guard STILL refuses a real void (it narrows the FALSE
+    # positive, never the true one).
+    if python3 tools/board/board.py --events "$LOG" --ep "$RITEM" 2>/dev/null \
+       | grep -E "^  :$REF " | grep -qE '<- VOID, superseded by line [0-9]'; then
       echo "REFUSED: AUTHORISED-BY :$REF is marked VOID by the fold on item '$RITEM'."
       echo "         A voided act cannot authorise anything. Cite the line that stands."
       exit 11
@@ -116,7 +132,7 @@ if [ "$VERB" = "DISPATCHED" ]; then
     # §5 fence members under tests/ are the shared surface a suite run reads.
     SHARED=$(awk '/^# 5 —/,/^# 6 —/' "$PLAN" | grep -oE '(^|[[:space:]])tests/[A-Za-z0-9_./-]+\.py' | tr -d ' ' | sort -u)
     if [ -n "$SHARED" ]; then
-      OTHERS=$(python3 tools/board/board.py --board 2>/dev/null \
+      OTHERS=$(python3 tools/board/board.py --events "$LOG" --board 2>/dev/null \
                | awk '$2=="DISPATCHED"{print $1}' | grep -vx "$DITEM" || true)
       if [ -n "$OTHERS" ]; then
         echo "REFUSED: OUTWARD GATE (archi :2253). '$DITEM' fences shared test files:"
@@ -132,21 +148,40 @@ if [ "$VERB" = "DISPATCHED" ]; then
   fi
 fi
 
+# SELF-HEAL A MISSING LINE TERMINATOR, before anything counts the log. If a prior
+# append landed without its trailing newline, this append would GLUE its event onto
+# that last physical line — two events on one line, the second invisible to the fold
+# (:963, :4236, :4248, :4256 and later ones were made exactly this way). The gate
+# never checked the LOG's own last byte before. So: if the log is non-empty and its
+# last byte is NOT a newline, append ONE newline FIRST. This is a lawful APPEND (one
+# byte added; no existing byte read-for-edit, rewritten, split or removed — the
+# record's append-only property holds), and it terminates the prior line so the new
+# event lands on its own physical line. Command substitution strips only trailing
+# NEWLINES, so `$(tail -c1 "$LOG")` is empty exactly when the last byte is a newline
+# and non-empty otherwise — the precise test we need. It runs BEFORE `BEFORE=` is
+# captured so the +1 arithmetic guard below stays exact: the heal is not "the append".
+if [ -s "$LOG" ] && [ -n "$(tail -c1 "$LOG")" ]; then
+  printf '\n' >> "$LOG"
+  echo "SELF-HEAL : log's last byte was not a newline; appended one before the event"
+  echo "            (a lawful append — the record is never rewritten, the prior line is"
+  echo "            terminated so this event cannot glue onto it)."
+fi
+
 BEFORE=$(wc -l < "$LOG")
 
 cat "$BODY" >> "$LOG"
 AFTER=$(wc -l < "$LOG")
 
-if ! python3 tools/board/board.py --board >/dev/null 2>&1; then
+if ! python3 tools/board/board.py --events "$LOG" --board >/dev/null 2>&1; then
   echo "REFUSED: the line just appended BREAKS the fold. Removing it and restoring."
-  python3 tools/board/board.py --board 2>&1 | head -2 | sed 's/^/    /'
+  python3 tools/board/board.py --events "$LOG" --board 2>&1 | head -2 | sed 's/^/    /'
   python3 - "$LOG" "$BEFORE" <<'PY'
 import sys
 p,keep=sys.argv[1],int(sys.argv[2])
 ls=open(p,encoding='utf-8').read().split('\n')
 open(p,'w',encoding='utf-8').write('\n'.join(ls[:keep])+'\n')
 PY
-  python3 tools/board/board.py --board >/dev/null 2>&1 && echo "    RESTORED, fold rc 0 at $(wc -l < "$LOG") lines" || echo "    RESTORE FAILED — STOP"
+  python3 tools/board/board.py --events "$LOG" --board >/dev/null 2>&1 && echo "    RESTORED, fold rc 0 at $(wc -l < "$LOG") lines" || echo "    RESTORE FAILED — STOP"
   exit 3
 fi
 if [ "$AFTER" -ne $((BEFORE + 1)) ]; then

@@ -2450,5 +2450,214 @@ class TBoardAttribution(unittest.TestCase):
         self.assertTrue(board.positive_control()[0], 'the control did not restore')
 
 
+
+class TBoardGluedLines(unittest.TestCase):
+    """C7-MAINT-BOARD-GLUED-LINES A2 — the fold reads a CLOSED PINNED SET of glued physical
+    lines as two events each, ALARMS on any other full-grammar terminal remainder, and never
+    fabricates from a quoted string or bricks on a partial header. The RECORD IS NEVER READ
+    HERE and NO LIVE LINE NUMBER IS PINNED HERE (this file's founding rule): every world is a
+    by-value fixture, and the roster is INJECTED so the split MECHANISM is proven on a small
+    line number. The live four-line acceptance runs main-side over a temp copy of the record
+    in the plan's own evidence, not here.
+
+    The load-bearing fact this unit turns on, exhibited by CTRL below: a genuine glue and a
+    quoted full event inside a body are GRAMMATICALLY IDENTICAL (both a lone full-grammar
+    terminal remainder), so no splitter can tell them apart. The PIN decides, and each plant
+    drives the pin failing in one direction.
+    """
+
+    # A genuine 2-event glue: a first event whose body runs into a second complete event with
+    # no newline between them. Built so the glued line is LINE 5 of the fixture.
+    _HEAD = ('# fixture\n'
+             '# ===== SEED BLOCK =====\n'
+             'EVT | 2026-02-01 | ITEM-A | AUTHORED | seat |\n'
+             '# ===== END SEED BLOCK =====\n')
+    _GLUE_LINENO = 5
+
+    _GENUINE_GLUE = (_HEAD +
+        'EVT | 2026-03-01 | ITEM-A | NOTED | mgr | first body.'
+        'EVT | 2026-03-02 | ITEM-B | RULED | archi | second body\n')
+
+    # A body that QUOTES a full, VALID event (COUNTERSIGNED is in the closed set) and then
+    # RESUMES narrative — the :963 class. Grammatically it is a complete terminal remainder.
+    _QUOTED_FULL_MIDBODY = (_HEAD +
+        'EVT | 2026-03-01 | ITEM-A | NOTED | mgr | the offending line quoted at its head: '
+        'EVT | 2026-03-02 | ITEM-B | COUNTERSIGNED | archi | sha c9. the lawful form is '
+        'already this seat s own precedent and needs no new ruling\n')
+
+    # A body whose QUOTED EVT string is NOT a full event (bad verb) — no terminal remainder.
+    _MIDBODY_BAD_VERB = (_HEAD +
+        'EVT | 2026-03-01 | ITEM-A | NOTED | mgr | quoting EVT | 2026-03-02 | ITEM-B | '
+        'NOTAVERB | archi | tail, then narrative resumes here\n')
+
+    # A body carrying a partial header "EVT | 20" — the :4289 class; an impossible date, so
+    # no terminal remainder and NO brick.
+    _PARTIAL_HEADER = (_HEAD +
+        "EVT | 2026-03-01 | ITEM-A | NOTED | mgr | driven by counting 'EVT | 20' headers "
+        "per line and nothing more\n")
+
+    # A body that ENDS with a complete, VALID quoted event (nothing after it) — A2.4's one
+    # ambiguous class. Grammatically identical to a genuine glue.
+    _QUOTED_FULL_AT_END = (_HEAD +
+        'EVT | 2026-03-01 | ITEM-A | NOTED | mgr | see the line: '
+        'EVT | 2026-03-02 | ITEM-B | RULED | archi | quoted verbatim to the end\n')
+
+    def setUp(self):
+        self.scratch = tempfile.mkdtemp(prefix='govos-glue-')
+        self.addCleanup(shutil.rmtree, self.scratch, True)
+
+    def _write(self, name, text):
+        # The join is INLINE in the open() on purpose: the no-live-record write
+        # guard reads the open()'s own target, and a path laundered through a local
+        # is exactly what it cannot follow (matches this file's own _write idiom).
+        with open(os.path.join(self.scratch, name), 'w', encoding='utf-8') as handle:
+            handle.write(text)
+        return os.path.join(self.scratch, name)
+
+    def _set_roster(self, glued=None, benign=None):
+        # Inject a roster keyed on the small fixture's own line number, restoring the module
+        # default on cleanup so no sibling row inherits it.
+        og, ob = board.PINNED_GLUED_LINES, board.PINNED_BENIGN_LINES
+        board.PINNED_GLUED_LINES = glued if glued is not None else {}
+        board.PINNED_BENIGN_LINES = benign if benign is not None else {}
+        def _restore():
+            board.PINNED_GLUED_LINES, board.PINNED_BENIGN_LINES = og, ob
+        self.addCleanup(_restore)
+
+    def _run(self, path, *rest):
+        out = io.StringIO()
+        with unittest.mock.patch('sys.stdout', out):
+            rc = board.main(['--events', path, *rest])
+        return rc, out.getvalue()
+
+    def _glue_digest(self, text):
+        # The pinned hash is the module's own line_digest of the glued physical line.
+        return board.line_digest(text.splitlines()[self._GLUE_LINENO - 1])
+
+    # ---- A2.1 — THE PINNED SET READS AS TWO EACH, WITH A NOTICE -------------------------
+    def test_a21_pinned_glue_reads_two_events_and_prints_one_notice(self):
+        path = self._write('glue.events', self._GENUINE_GLUE)
+        self._set_roster(glued={self._GLUE_LINENO: self._glue_digest(self._GENUINE_GLUE)})
+        # The SECOND event is now visible on its own item, citing the physical line.
+        rc, out = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_OK)
+        self.assertRegex(out, r':%d .*ITEM-B \| RULED \| archi' % self._GLUE_LINENO)
+        # The board prints exactly one notice for the line, naming BOTH events.
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK)
+        notices = [ln for ln in out.splitlines() if ln.startswith('GLUE NOTICE')]
+        self.assertEqual(len(notices), 1, notices)
+        self.assertIn(':%d' % self._GLUE_LINENO, notices[0])
+        self.assertIn('ITEM-A | NOTED | mgr', notices[0])
+        self.assertIn('ITEM-B | RULED | archi', notices[0])
+        self.assertNotIn('GLUE ALARM', out)
+
+    def test_a21_plant_dropping_the_pin_makes_the_second_event_invisible(self):
+        """PLANT (can fail): drop the line from the pinned roster and its second event goes
+        invisible again — ITEM-B is UNKNOWN, and the line ALARMS instead of splitting."""
+        path = self._write('glue.events', self._GENUINE_GLUE)
+        self._set_roster(glued={})  # dropped
+        rc, out = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM,
+                         'a dropped pin must NOT still split — the second event is invisible')
+        rc, out = self._run(path, '--board')
+        self.assertTrue(any(ln.startswith('GLUE ALARM') and (':%d' % self._GLUE_LINENO) in ln
+                            for ln in out.splitlines()), out)
+
+    # ---- A2.2 — AN UNPINNED GENUINE GLUE ALARMS, NO PHANTOM ------------------------------
+    def test_a22_unpinned_genuine_glue_alarms_and_folds_no_phantom(self):
+        path = self._write('glue.events', self._GENUINE_GLUE)
+        self._set_roster(glued={})  # line 5 is not pinned
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK, 'an alarm does not brick the fold')
+        self.assertTrue(any(ln.startswith('GLUE ALARM') and (':%d' % self._GLUE_LINENO) in ln
+                            for ln in out.splitlines()), out)
+        # NO phantom second event entered the fold.
+        rc, _ = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM, 'the unpinned glue must not fabricate')
+
+    # ---- A2.3 — MID-BODY EVT STRING / PARTIAL HEADER IS BODY TEXT ------------------------
+    def test_a23_midbody_evt_with_bad_verb_is_body_text_no_alarm(self):
+        path = self._write('midbody.events', self._MIDBODY_BAD_VERB)
+        self._set_roster()  # empty rosters
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK)
+        self.assertNotIn('GLUE ALARM', out)
+        self.assertNotIn('GLUE NOTICE', out)
+        rc, _ = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM, 'a bad-verb quote is not an event')
+
+    def test_a23_partial_header_evt_20_does_not_brick_or_alarm(self):
+        """THE :4289 CLASS. 'EVT | 20' mid-body is an impossible date — it must be BODY TEXT,
+        never an impossible-date event that refuses the fold."""
+        path = self._write('partial.events', self._PARTIAL_HEADER)
+        self._set_roster()
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK, 'a partial header must not brick the fold')
+        self.assertNotIn('GLUE ALARM', out)
+        self.assertNotIn('REFUSED at', out)
+        self.assertNotIn('Nothing is folded', out)
+
+    def test_a23_benign_pin_quoted_full_event_stays_single_no_alarm(self):
+        """THE :963 CLASS, handled by the benign pin. The body quotes a VALID full event and
+        resumes; hand-ruled body text, so it neither splits nor alarms."""
+        path = self._write('benign.events', self._QUOTED_FULL_MIDBODY)
+        self._set_roster(benign={self._GLUE_LINENO:
+                                 self._glue_digest(self._QUOTED_FULL_MIDBODY)})
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK)
+        self.assertNotIn('GLUE ALARM', out)
+        self.assertNotIn('GLUE NOTICE', out)
+        # No fabricated event on the quoted item.
+        rc, _ = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM)
+
+    def test_a23_plant_benign_pin_is_load_bearing(self):
+        """PLANT: remove the benign pin and the SAME line becomes an unpinned candidate that
+        ALARMS — proving the no-alarm above is the pin's doing, not the grammar's."""
+        path = self._write('benign.events', self._QUOTED_FULL_MIDBODY)
+        self._set_roster(benign={})
+        rc, out = self._run(path, '--board')
+        self.assertTrue(any(ln.startswith('GLUE ALARM') and (':%d' % self._GLUE_LINENO) in ln
+                            for ln in out.splitlines()), out)
+
+    # ---- A2.4 — A QUOTED COMPLETE EVENT AT A BODY'S END ALARMS ---------------------------
+    def test_a24_quoted_complete_event_at_body_end_alarms_never_splits(self):
+        path = self._write('atend.events', self._QUOTED_FULL_AT_END)
+        self._set_roster()  # unpinned
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK)
+        self.assertTrue(any(ln.startswith('GLUE ALARM') and (':%d' % self._GLUE_LINENO) in ln
+                            for ln in out.splitlines()), out)
+        rc, _ = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM, 'never a silent split')
+
+    # ---- Pin integrity: a moved/changed pinned line ALARMS, never a blind offset read ----
+    def test_a_pinned_line_whose_hash_changed_alarms_not_blind_split(self):
+        path = self._write('glue.events', self._GENUINE_GLUE)
+        self._set_roster(glued={self._GLUE_LINENO: 'deadbeef' * 8})  # wrong 64-hex digest
+        rc, out = self._run(path, '--board')
+        self.assertEqual(rc, board.EXIT_OK)
+        self.assertTrue(any(ln.startswith('GLUE ALARM')
+                            and 'content hash' in ln
+                            and (':%d' % self._GLUE_LINENO) in ln
+                            for ln in out.splitlines()), out)
+        rc, _ = self._run(path, '--ep', 'ITEM-B')
+        self.assertEqual(rc, board.EXIT_UNKNOWN_ITEM,
+                         'a hash mismatch must not read a blind offset and split')
+
+    # ---- A2.5 — THE RECORD IS READ-ONLY -------------------------------------------------
+    def test_a25_folding_never_changes_the_fixture_bytes(self):
+        path = self._write('glue.events', self._GENUINE_GLUE)
+        self._set_roster(glued={self._GLUE_LINENO: self._glue_digest(self._GENUINE_GLUE)})
+        import hashlib as _h
+        with open(path, 'rb') as fh:
+            before = _h.sha256(fh.read()).hexdigest()
+        self._run(path, '--board')
+        self._run(path, '--ep', 'ITEM-B')
+        with open(path, 'rb') as fh:
+            after = _h.sha256(fh.read()).hexdigest()
+        self.assertEqual(before, after, 'the fold is a VIEW; it must not write the record')
+
 if __name__ == '__main__':
     unittest.main()

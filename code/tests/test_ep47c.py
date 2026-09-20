@@ -139,6 +139,10 @@ class TestRefusedNoFallback(_KernelCase):
         # bind the system key, then RESTART (rebuild from the record): the bind persists, the in-memory
         # signer is dropped — a bound world with the ceremony NOT run this boot.
         seal_system_signer(self.store, self.gate, self.views)
+        # EP-MAINT-OUTSIDE-5 (re-spec C): a restart genuinely closes the old process — close the live
+        # writer so the rebuilt kernel is the new WRITER; the next append then reaches the ceremony
+        # guard and is refused with CeremonyNotRun (the intended refusal), not the reader-demotion.
+        self.store.close()
         store2, gate2, views2, _b2, _s2 = _build(self.dir)
         self.assertTrue(system_key_bound(store2), "the KEY-LAW-BIND persists across the restart")
         self.assertIsNone(getattr(views2, "signer", None), "the in-memory signer does NOT survive a restart")

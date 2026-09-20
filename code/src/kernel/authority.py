@@ -118,6 +118,72 @@ def space_exists(store, space_id, as_of=None):
     return space_id in spaces(store, as_of)
 
 
+# ---- the actor tree (design/25 v2.1 ruling 23; C6a VT-2) --------------------------------
+# The group tree lives in 4.1 as CONTAINMENT RELATION ROWS (ruling 5): a CREATE-RELATIONSHIP
+# whose geometry is directional containment (NS nested / EM embedded) and whose BOTH ENDS are
+# established actors is a GROUP EDGE — the SUBJECT is nested in the OBJECT (the group). Authority
+# is NEVER a relation row (ruling 7); a containment row carries no power. This is the ACTOR mirror
+# of the space tree above: the space tree grounds every SPACE chain at the mother space; the actor
+# tree grounds every ACTOR chain at the constitution's root group. MANY PARENTS are lawful (one
+# actor nested in several groups — the chief, the gatekeeper, the father — is three chains); an
+# orphan (no chain to the root) or a loop is refused at the gate, exactly as the space guard
+# refuses a space under an unfounded/cyclic parent. The space guard (mother_space / spaces /
+# would_cycle above) is UNTOUCHED; this mirrors it, reading relation rows instead of parent-refs.
+
+#: The directional-containment geometries (design/25 v2.1: NS nested, EM embedded make trees; the
+#: symmetric AD/IN make no tree). `unrelated` is never a row, so a stored geometry is always one of
+#: the four closed venn2 values and only these two build the actor/item trees.
+CONTAINMENT_GEOMETRIES = ("NS", "EM")
+
+
+def actor_containment_edges(store, as_of=None):
+    """Every ACTOR-TREE edge as (subject, object): the CREATE-RELATIONSHIP rows whose geometry is
+    directional containment (NS/EM) and whose BOTH ends are established actors — the subject nested
+    in the group `object`. Read fresh from the record every call (a relation is a row; nothing is
+    stored). An end that is not an established actor makes the row an ITEM-TREE / non-tree row, not
+    an actor-tree edge, so it is excluded here (the 4.1 vs 4.2/4.3 split of design/25)."""
+    edges = []
+    for e in store.by_action("CREATE-RELATIONSHIP", as_of):
+        p = e.get("payload") or {}
+        if p.get("geometry") not in CONTAINMENT_GEOMETRIES:
+            continue
+        subj, obj = p.get("subject"), p.get("object")
+        if is_established(store, subj, as_of) and is_established(store, obj, as_of):
+            edges.append((subj, obj))
+    return edges
+
+
+def actor_group_parents(store, actor, as_of=None):
+    """The groups that CONTAIN `actor` — the OBJECT of every actor-tree edge whose SUBJECT is
+    `actor`. Many parents lawful, so this returns a LIST, never a single parent (the one place the
+    actor tree diverges from the space tree, where a node has exactly one parent)."""
+    return [obj for subj, obj in actor_containment_edges(store, as_of) if subj == actor]
+
+
+def _actor_ancestors_incl(store, actor, as_of=None):
+    """`actor` and every group that contains it, transitively — its group ancestors, walking the
+    containment edges up. The actor mirror of `_ancestors_incl` for spaces, but a DAG walk (many
+    parents): a seen-set breaks any pre-existing loop (there should be none — cycles refuse at
+    creation)."""
+    out, seen, stack = [], set(), [actor]
+    while stack:
+        node = stack.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        out.append(node)
+        stack.extend(actor_group_parents(store, node, as_of))
+    return out
+
+
+def would_actor_cycle(store, subject, obj, as_of=None):
+    """Would nesting `subject` in the group `obj` (a containment relation subject-in-obj) loop the
+    actor tree? True iff `subject` is obj-or-an-ancestor-of-obj — then obj -> ... -> subject -> obj
+    loops. The exact mirror of `would_cycle` for spaces (`space_id in _ancestors_incl(parent)`),
+    with subject the new child and obj the proposed group parent. At a fresh pair it is False."""
+    return subject in _actor_ancestors_incl(store, obj, as_of)
+
+
 # ---- the default-space fold (J2, the migration) ----------------------------------------
 
 def space_of(store, record, as_of=None):

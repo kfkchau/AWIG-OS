@@ -407,8 +407,9 @@ class TestFoundingBump(unittest.TestCase):
         recs = _pack_records()
         op_defs = [r for r in recs if (r.get("payload") or {}).get("kind") == "op_definition"
                    and r["payload"].get("name")]
-        self.assertEqual(len(op_defs), 93)                            # the op-population census
-        self.assertEqual(len({r["payload"]["name"] for r in op_defs}), 93)   # distinct, no double
+        # C6a VT-2 (CREATE-RELATIONSHIP MINTED live, MINOR 1.51.0 -> 1.52.0) moved 93 -> 94 BY NAME (§A57).
+        self.assertEqual(len(op_defs), 94)                            # the op-population census
+        self.assertEqual(len({r["payload"]["name"] for r in op_defs}), 94)   # distinct, no double
         self.assertIn("FILTER-DECISION", {r["payload"]["name"] for r in op_defs})
 
     def test_the_discriminator_is_MINOR_one_op_and_one_law_added_no_op_removed_no_check_kind(self):

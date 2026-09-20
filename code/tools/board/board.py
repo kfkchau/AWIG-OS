@@ -369,6 +369,47 @@ RE_PAIRS = re.compile(r'^PAIRS\(item: (?P<item>[^,)]+), event: (?P<event>[^)]+)\
 #: refusal above rather than by this number.
 EVENT_DIGEST_PREFIX_LEN = 12
 
+#: THE GLUED-LINE ROSTER (C7-MAINT-BOARD-GLUED-LINES). A prior append that landed WITHOUT
+#: its trailing newline glued the next event onto its physical line, so ONE physical line
+#: holds TWO terminal events; the fold, reading one event per line, lost the second. The
+#: repair NEVER rewrites the record (append-only) and NEVER auto-splits: a byte-level
+#: "split every EVT header" detector cannot tell a genuine terminal glue from an EVT string
+#: quoted inside a body. :963 quotes a full `COUNTERSIGNED` event mid-body then resumes its
+#: narrative -- grammatically it is a complete terminal remainder (COUNTERSIGNED is in the
+#: closed set) and a splitter would FABRICATE a phantom act; :4289 carries a partial
+#: "EVT | 20" header and a splitter would BRICK on its impossible date. So the four genuine
+#: glues are PINNED by line number AND content hash; each is read as its two events, both
+#: citing the physical line as coordinate. Any OTHER line whose bytes parse as a
+#: full-grammar terminal remainder ALARMS for a hand check and is NEVER split. The hash is
+#: `line_digest` -- the anchor's own algorithm, never a second one -- so a pin that no
+#: longer matches is a line that MOVED or CHANGED and ALARMS rather than reading a blind
+#: offset. The record is append-only, so these line numbers do not shift under lawful
+#: appends. Digests verified once at the builder's hand (C7-MAINT-BOARD-GLUED-LINES; mgr's
+#: :4514 corrected roster, archi's :4515 WHAT).
+PINNED_GLUED_LINES = {
+    4236: '0a05755f80a285cf1636d979a5434abdc1c8f7f20870b7a1605e1f9bc9c7d808',
+    4248: 'b6546a8b416f06f9af70b72b35aeb50b549fe3b1a4744472a258f6cfbe674391',
+    4256: '9b4c52b45a4046adc8225481d0f45de9a1b825199afc0d2f75c49124008b2e2d',
+    4361: '44d82f2650bfbbd41f0025a4c1bbf773c369110e9769afd7c499fce18c87ac34',
+}
+
+#: THE KNOWN-BENIGN ROSTER (same unit). :963 is a SINGLE `mtr` event whose body QUOTES a
+#: full EVT header ("... EP-30-R1 | COUNTERSIGNED | archi | ...") and then RESUMES its
+#: narrative. It is grammatically INDISTINGUISHABLE from a genuine glue -- exactly one
+#: full-grammar terminal remainder, `COUNTERSIGNED` being in the closed set -- which is the
+#: whole reason a live splitter is refused (mgr's :4514 STOP: the :4289 roster wrongly named
+#: :963 a glue and omitted the real :4361). It is hand-ruled BODY TEXT: never split, never
+#: alarmed. Pinned by hash so that if the line ever changes it ALARMS instead of staying
+#: silently exempt.
+PINNED_BENIGN_LINES = {
+    963: '29e9bbf32f426ac69fe65286ce15a1e469b181218236a3bffedcc2cf7365a8e5',
+}
+
+#: The opening of an EVT header, found ANYWHERE on a physical line. Offset 0 is the line's
+#: own event; any LATER occurrence is a CANDIDATE second-event boundary, tested for real by
+#: parsing both sides (never trusted from the byte match alone).
+RE_EVT_HEADER = re.compile(r'EVT\s*\|')
+
 
 def content_digest(lines):
     """The CONTENT DIGEST of a prefix of the record — the coordinate §1a's hole-fix ruled.
@@ -743,6 +784,29 @@ def _classify_verb(verb, lineno):
         'than folding as something it resembles.' % verb)
 
 
+def _terminal_remainder_splits(text, lineno):
+    """Offsets where `text` divides into TWO complete lawful events: a complete PREFIX and a
+    complete TERMINAL REMAINDER running to the line's end. NON-REFUSING by construction -- a
+    candidate boundary whose prefix or remainder does not parse EXACTLY is simply not a
+    split, it is body text -- so `EVT | 20` mid-body (a partial header, bad date) yields no
+    split and can never brick the fold. This is the recognition the whole unit turns on, and
+    it DELIBERATELY cannot tell a genuine glue from a full event quoted inside a body (:963);
+    that judgement belongs to the pinned rosters above, never to this function.
+    """
+    offsets = []
+    for match in RE_EVT_HEADER.finditer(text):
+        i = match.start()
+        if i == 0:
+            continue
+        try:
+            parse_event_line(text[:i].strip(), lineno)
+            parse_event_line(text[i:].strip(), lineno)
+        except BoardRefusal:
+            continue
+        offsets.append(i)
+    return offsets
+
+
 def read_events(path, at=None):
     """Read the log into (events, meta). REFUSES; never returns a partial fold.
 
@@ -799,13 +863,71 @@ def read_event_lines(raw, label):
         raise BoardRefusal(seed_end, 'END SEED BLOCK appears before SEED BLOCK')
 
     events = []
+    glue_notices = []
+    glue_alarms = []
     for idx, text in enumerate(raw, start=1):
         stripped = text.strip()
         if not stripped or stripped.startswith('#'):
             continue
-        ev = parse_event_line(stripped, idx)
-        ev.in_seed = seed_start < idx < seed_end
-        events.append(ev)
+        splits = _terminal_remainder_splits(stripped, idx)
+        pinned_glue = idx in PINNED_GLUED_LINES
+        pinned_benign = idx in PINNED_BENIGN_LINES
+        if pinned_glue or pinned_benign:
+            roster = PINNED_GLUED_LINES if pinned_glue else PINNED_BENIGN_LINES
+            want = roster[idx]
+            got = line_digest(stripped)
+            if got != want:
+                # A PINNED LINE MOVED OR CHANGED (stop condition b). Never a blind offset
+                # read: ALARM, name the line, and fold it as ONE event so the fold stays
+                # readable and nothing is fabricated. Re-pinning is a hand act under a ruling.
+                glue_alarms.append(
+                    ':%d - a PINNED %s line no longer matches its content hash (want '
+                    '%s:%s, got %s:%s): the line moved or changed. Folded as a SINGLE event '
+                    'and NOT split at a blind offset; hand-verify and re-pin.'
+                    % (idx, 'GLUED' if pinned_glue else 'BENIGN',
+                       ANCHOR_ALGO, want[:16], ANCHOR_ALGO, got[:16]))
+                seg_events = [parse_event_line(stripped, idx)]
+            elif pinned_glue:
+                if len(splits) != 1:
+                    # A matching-hash glue pin resolves to exactly one terminal-remainder
+                    # split (verified at the builder's hand). A departure is an alarm, never
+                    # a guess between offsets.
+                    glue_alarms.append(
+                        ':%d - a pinned GLUED line whose hash matches did not split into '
+                        'exactly two events (%d split point(s)); folded as a single event, '
+                        'hand-verify.' % (idx, len(splits)))
+                    seg_events = [parse_event_line(stripped, idx)]
+                else:
+                    off = splits[0]
+                    first = parse_event_line(stripped[:off].strip(), idx)
+                    second = parse_event_line(stripped[off:].strip(), idx)
+                    seg_events = [first, second]
+                    glue_notices.append(
+                        ':%d - one physical line holds 2 terminal events, read as two, the '
+                        'record never rewritten: [%s | %s | %s] + [%s | %s | %s].'
+                        % (idx, first.item, first.verb, first.seat,
+                           second.item, second.verb, second.seat))
+            else:
+                # PINNED BENIGN: a full event is quoted inside this body and it is hand-ruled
+                # body text. Folded as ONE event, never split, never alarmed.
+                seg_events = [parse_event_line(stripped, idx)]
+        elif splits:
+            # A CANDIDATE OUTSIDE THE PINNED ROSTER. After the append gate self-heals a
+            # missing terminator (A1) such a line should be impossible, so this is a
+            # hand-verified addition under a new ruling or the gate's own failure surfacing.
+            # It is NEVER split and NEVER fabricated: folded as ONE event, the fold stays
+            # readable, and the line is named for a hand check.
+            glue_alarms.append(
+                ':%d - a full-grammar TERMINAL REMAINDER was found on a line OUTSIDE the '
+                'pinned glued roster. It is NOT split and NOT folded as a second event; the '
+                'fold stays readable. Hand-verify: a new genuine glue (re-pin under a '
+                'ruling) or the append gate failed.' % idx)
+            seg_events = [parse_event_line(stripped, idx)]
+        else:
+            seg_events = [parse_event_line(stripped, idx)]
+        for ev in seg_events:
+            ev.in_seed = seed_start < idx < seed_end
+            events.append(ev)
 
     meta = {
         'path': label,
@@ -819,6 +941,8 @@ def read_event_lines(raw, label):
         'seed_events': sum(1 for e in events if e.in_seed),
         'pre_seed_events': sum(1 for e in events if e.lineno < seed_start),
         'post_seed_events': sum(1 for e in events if e.lineno > seed_end),
+        'glue_notices': glue_notices,
+        'glue_alarms': glue_alarms,
     }
     return events, meta
 
@@ -2836,6 +2960,10 @@ def main(argv=None):
     print('')
     print('positive control PASSED — ' + '; '.join(notes))
     print(anchor_text(meta))
+    for notice in meta.get('glue_notices', ()):
+        print('GLUE NOTICE ' + notice)
+    for alarm in meta.get('glue_alarms', ()):
+        print('GLUE ALARM ' + alarm)
     return rc
 
 

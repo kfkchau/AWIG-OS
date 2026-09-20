@@ -78,7 +78,7 @@ class _World(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.dir, True)
 
     def account(self, who):
-        self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": who, "actor_class": "process"})
+        self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": who, "actor_class": "program"})
 
     def open(self, entity, channel, role=SYS_ROLE):
         return self.gate.execute("COMMS-OPEN", entity,
@@ -520,8 +520,10 @@ class TestCountAndBump(_World):
                     rule_ids.add(p["rule_id"])
         # [§A57 sweep, EP-52 (FILTER-DECISION, 1.45.0 -> 1.46.0): the LIVE op-population moved 92 -> 93
         #  by a real op-MINT (EP-52's founding move), NOT by this amend — EP-49C's own point stands: an
-        #  amend adds no op. Widened by name at the EP-52 dispatch.]
-        self.assertEqual(len(names), 93, "the op population moved by a mint elsewhere — an amend adds no op")
+        #  amend adds no op. Widened by name at the EP-52 dispatch.
+        #  C6a VT-2 (CREATE-RELATIONSHIP MINTED live, MINOR 1.51.0 -> 1.52.0) moved 93 -> 94 BY NAME (§A57);
+        #  EP-49C's point stands — its own move is an AMEND (adds no op); this pin tracks the live population.]
+        self.assertEqual(len(names), 94, "the op population moved by a mint elsewhere — an amend adds no op")
         self.assertTrue({"COMM-LAW-CONTRACT", "COMM-LAW-QUEUE"} <= rule_ids,
                         "a comms law was removed — that is a MAJOR move and the owner's")
 

@@ -209,10 +209,10 @@ def drive(width=None, root=None, prior_records=0):
 
     for k in range(prior_records):
         gate.execute("CREATE-ACCOUNT", "SYSTEM",
-                     {"account_id": "ep30c2-prior-%d" % k, "actor_class": "process"})
+                     {"account_id": "ep30c2-prior-%d" % k, "actor_class": "program"})
 
-    gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": ENTITY, "actor_class": "process"})
-    gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": PEER, "actor_class": "process"})
+    gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": ENTITY, "actor_class": "program"})
+    gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": PEER, "actor_class": "program"})
     gate.execute("COMMS-OPEN", ENTITY, {"channel": CHANNEL, "entity": ENTITY, "role": ROLE})
 
     # THE FILLERS. Released together by a barrier so their submissions OVERLAP; without overlap the
@@ -225,7 +225,7 @@ def drive(width=None, root=None, prior_records=0):
             barrier.wait()
             for k in range(FILLER_EACH):
                 gate.execute("CREATE-ACCOUNT", "SYSTEM",
-                             {"account_id": "ep30c2-fill-%d-%d" % (i, k), "actor_class": "process"})
+                             {"account_id": "ep30c2-fill-%d-%d" % (i, k), "actor_class": "program"})
         except BaseException as exc:                                 # noqa: BLE001 — reported below
             errors.append(repr(exc))
             barrier.abort()

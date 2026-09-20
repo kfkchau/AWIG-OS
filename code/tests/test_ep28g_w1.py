@@ -50,6 +50,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from kernel import gate as gate_mod                              # noqa: E402
 from kernel import store as store_mod                            # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                     # noqa: E402
 from kernel.errors import OpError                                # noqa: E402
 
@@ -139,18 +140,18 @@ class TheConstructCase(WorldCase):
         waits for the covering sync exactly as a permit's does."""
         self.gate.execute("CREATE-OP", "owner", {"name": "ORD", "definition": ORDINARY_DEF})
         syncs = []
-        real = store_mod.os.fdatasync
+        real = seam_mod.os.fdatasync
 
         def spy(fd):
             syncs.append(gate_mod.decide_region_held())
             return real(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             with self.assertRaises(OpError):
                 self.gate.execute("CREATE-OP", "owner",
                                   {"name": "ORD", "definition": ORDINARY_DEF})
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         self.assertEqual(len(syncs), 1,
                          "the refusal did not wait for exactly one covering barrier")
         self.assertEqual(syncs, [False],
@@ -179,7 +180,16 @@ class RegionExcludesTheBarrierCase(WorldCase):
 
         It is the smaller half regardless. The behavioural universal is the row below."""
         src = open(store_mod.__file__, encoding="utf-8").read()
-        self.assertEqual(src.count("os.fdatasync("), 1,
+        seam_src = open(seam_mod.__file__, encoding="utf-8").read()
+        # C7 P2 (:3927): the barrier's host call is PERFORMED from exactly one site in the seam,
+        # and store.py ISSUES it from exactly one site through the seam — re-pointed and
+        # STRENGTHENED with the absence assertion. Either being >1 breaks the universal below.
+        self.assertEqual(seam_src.count("os.fdatasync("), 1,
+                         "the barrier is performed from more than one site in the seam, so a "
+                         "guard in one of them is not a universal")
+        self.assertEqual(src.count("os.fdatasync("), 0,
+                         "store.py still holds the barrier literal — it was not routed to the seam")
+        self.assertEqual(src.count("host().fdatasync("), 1,
                          "the barrier is issued from more than one site, so a guard in one "
                          "of them is not a universal")
         tree = ast.parse(src)
@@ -211,12 +221,12 @@ class RegionExcludesTheBarrierCase(WorldCase):
         thread holding no region. The countable is 'barriers observed', so a world where the
         workload issued none would fail rather than pass vacuously (§A38)."""
         held_at = []
-        real = store_mod.os.fdatasync
+        real = seam_mod.os.fdatasync
 
         def spy(fd):
             held_at.append(gate_mod.decide_region_held())
             return real(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             self.gate.execute("CREATE-OP", "owner", {"name": "ORD", "definition": ORDINARY_DEF})
             with self.assertRaises(OpError):                     # a refusal is a record too
@@ -236,7 +246,7 @@ class RegionExcludesTheBarrierCase(WorldCase):
             for t in threads:
                 self.assertFalse(t.is_alive(), "an act wedged")
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         self.assertGreaterEqual(len(held_at), 3,
                                 "only %d barriers were observed — the universal was asserted "
                                 "over a world that barely has paths" % len(held_at))
@@ -364,16 +374,16 @@ class ReentrantDecideCase(WorldCase):
         pre-split behaviour, preserved, and it is lawful by prefix durability: they sit later
         in the same file, so a barrier covering the act covers them."""
         syncs = []
-        real = store_mod.os.fdatasync
+        real = seam_mod.os.fdatasync
 
         def spy(fd):
             syncs.append(1)
             return real(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             produced = self._mirrored()
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         self.assertGreaterEqual(len(produced), 2)
         self.assertEqual(len(syncs), 1,
                          "one act with %d records issued %d barriers"

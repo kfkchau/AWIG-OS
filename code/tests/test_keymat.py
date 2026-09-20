@@ -20,9 +20,10 @@ the refusal is asserted, so the module is green in both runs (A9's 'both green')
   A3  TestRealWrap            the per-piece key is X25519-wrapped to each reader; a reader opens, a
                               non-reader cannot; adding a reader wraps the SAME key once more (content
                               not re-encrypted).
-  A4  TestSignerSignsNoRead   the signer (BESIDE the byte-frozen vault) produces a real signature with
-                              the SEALED key AND exposes no read path — surface {seal, sign,
-                              compare_public}, no get/reveal; vault.py byte-identical — RW-VAULT.
+  A4  TestSignerSignsNoRead   the signer (BESIDE the vault) produces a real signature with the SEALED
+                              key AND exposes no read path — surface {seal, sign, compare_public}, no
+                              get/reveal — RW-VAULT. (The vault routes through the seam AND is byte-frozen
+                              at the rewired sha, owner :3966; no-reveal held by surface+source+seam guards.)
   A5  TestRealAttestation     the attestation seal is a real signature over the attested record; a
                               tampered surface fails verification — RW-FORGE.
   A6  TestEraSplit            a pre-real (untagged, modelled) value verifies under the modelled path;
@@ -57,8 +58,10 @@ def _new_vault():
 
 
 # THE SIGNING HALF, BUILT BESIDE THE VAULT (KEY-MATERIAL-REAL RE-MINT 2, archi :3249). The vault does
-# NOT gain a SIGN op — vault.py stays BYTE-FROZEN (sha256 2038a8cd…, its five closure guards intact;
-# A4 re-checks the bytes). The system signing key lives in a NEW SigningKeyStore (signer.py) BESIDE the
+# NOT gain a SIGN op — signing lives BESIDE the vault, not inside it (the vault is routed through the
+# host seam AND byte-frozen at the rewired sha, owner :3966; its no-reveal closure is guarded by its
+# surface + source census + the seam's no-read-act assertion, BESIDE the byte-freeze). The system signing
+# key lives in a NEW SigningKeyStore (signer.py) BESIDE the
 # vault, under the vault's own discipline (seal-at-ceremony, sign→a real Ed25519 signature, NO read
 # path, surface EXACTLY {seal, sign, compare_public}). A1/A4/A5 exercise the signer directly; the
 # earlier in-vault HOLD is DISCHARGED by the re-scope, without touching the vault.
@@ -187,11 +190,18 @@ class TestSignerSignsNoRead(_Case):
             signer_src = fh.read()
         for reader in ("read_bytes", "read_text", ".read(", "def get", "def read", "def reveal", "def open"):
             self.assertNotIn(reader, signer_src, "signer.py must not contain %r — no read path" % reader)
-        # THE VAULT IS BYTE-IDENTICAL — signing went BESIDE it, so vault.py is not touched (:3249).
+        # The signer is BESIDE the vault (:3249): the signer source census above guards its no-read
+        # property. THE VAULT IS BYTE-FROZEN AT THE REWIRED SHA (owner :3966) — the byte-freeze was set
+        # aside for the C7-P2 rewiring (:3930/:3952 routed vault.py through host_seam) and is now PUT
+        # BACK ON at the rewired contents, BESIDE the vault's surface + source census + seam no-read-act
+        # (test_c7_p2_seam). Signing went BESIDE the vault, so vault.py holds seal/compare only.
+        # RE-POINTED (MAINT-VAULT-HASH-ONLY; owner scan :4435, archi :4437): seal now stores NOTHING
+        # (no write-once put, no _path); the pin guards the property (the vault's exact bytes), so it
+        # moves with the owner-authorized code to the hash-only vault's sha. The signer stays BESIDE it.
         with open(os.path.join(os.path.dirname(__file__), "..", "src", "kernel", "vault.py"), "rb") as fh:
             vdigest = hashlib.sha256(fh.read()).hexdigest()
-        self.assertEqual(vdigest, "2038a8cdfcb2a5e2113555bdc05dcbba0c4badfb0cefec779b0dae184c7bfbc6",
-                         "vault.py bytes changed — the vault stays byte-frozen; the signer is BESIDE it")
+        self.assertEqual(vdigest, "6a82f449865f5464ef70b6d39db2fee568ba1cae43b5b380e21cc4d5ad09f767",
+                         "vault.py bytes changed — the vault stays byte-frozen at the hash-only sha; the signer is BESIDE it")
         if not crypto.real_available():
             with self.assertRaises(crypto.LibraryAbsent):
                 self.signer.sign(self.signer.seal(b"\x00" * 32), b"m")
@@ -320,7 +330,7 @@ class TestWholeLedgerCoherence(unittest.TestCase):
         self.assertEqual(attestation.twin_uncovered(), [])             # no governance surface outside coverage
         self.assertEqual(attestation.ATTESTED_MEMBERS,
                          tuple(sorted(attestation.ATTESTED_MEMBERS)))  # the list stays sorted
-        self.assertEqual(len(attestation.ATTESTED_MEMBERS), 53)        # 53 since EP-52-BUILD's subsystems/filter.py joined (FIREWALL-IN-THE-RECORD, C5 P7, §5 count-pin companion driven at dispatch); 52 since EP-49A-BUILD's kernel/border.py joined (THE BORDER: THE DOOR, the campaign-5 crux; §A57 name-and-count sweep companion driven at dispatch, disclosed to mgr as a hit beyond the EP-49A fence's enumerated pin files — the same convergence test_ep40/test_ep46 carry). 51: this unit's kernel/signer.py add (49->50) + EP-48-BUILD's subsystems/sockets.py, which joined the attested set CONCURRENTLY during this build (SOCKET-GRANTS founding mover). :3255 by-name widen for the concurrent companion; the count-pin states the true set size, whichever unit added what
+        self.assertEqual(len(attestation.ATTESTED_MEMBERS), 88)     # 88 since C7 P3b-6a's +1 net.c (the virtio-net driver, archi :4250); 87 since C7 P3b-4b's +2 serve files (serve.c/serve.h, archi :4089); 85 since C7 P3b-4a's enclosure add (+6 src/body files enclosure.S/enclosure.c/enclosure.h/sha256.c/worker.S/worker.ld, archi :4085); 79 since C7 P3b-3's clock/interrupt/entropy add (+6 src/body files clkcheck.c/clock.c/clock.h/entropy.c/idt.c/isr.S, archi :4049); 73 since C7 P3b-2's disk add (+5 src/body files ata.c/bodyfs.c/disk.h/diskcheck.c/mkdisk.py, archi :4019); 68 since C7 P3b-1's first-merged-body add (+11 src/body files: the memory C + boot.S + linker.ld + the generated rows-digest header + the derive-from-rows generator .py + build.sh; §9 mechanism 1 ONE ATTESTED LIST, archi :4009). 57 since C7 P7a's interpreter-hosting layer joined (design/54 §7 P7; +2: hosting/__init__.py, hosting/interpreter_host.py); 55 since C7 P2-SEAM-AS-A-CONTRACT's bridge/host_seam.py joined (the effect-seam performer interface, design/54 §7 P2, §5 count-pin companion driven at dispatch); 54 since P12-CONSTITUTION-SURVIVES-BUILD's bridge/reconstruct.py joined (C6 P12, B6/I15; the §5 count-pin companion driven at the fence amendment, mgr :3631); 53 since EP-52-BUILD's subsystems/filter.py joined (FIREWALL-IN-THE-RECORD, C5 P7, §5 count-pin companion driven at dispatch); 52 since EP-49A-BUILD's kernel/border.py joined (THE BORDER: THE DOOR, the campaign-5 crux; §A57 name-and-count sweep companion driven at dispatch, disclosed to mgr as a hit beyond the EP-49A fence's enumerated pin files — the same convergence test_ep40/test_ep46 carry). 51: this unit's kernel/signer.py add (49->50) + EP-48-BUILD's subsystems/sockets.py, which joined the attested set CONCURRENTLY during this build (SOCKET-GRANTS founding mover). :3255 by-name widen for the concurrent companion; the count-pin states the true set size, whichever unit added what
 
 
 # ============================================================================================

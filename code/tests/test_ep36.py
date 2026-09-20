@@ -16,7 +16,9 @@ handed back. The battery proves, in disposable stores:
                             NOTHING cascades (RW2 — a stored downstream "validity" is ignored, the
                             fold re-derives live); an old key stays on the record AS DATA.
   A3  TestVaultStillClosed  after wiring the system key's countersigning to the vault, there is
-                            STILL no read path (RW3); the vault's closure is BYTE-UNCHANGED.
+                            STILL no read path (RW3); the no-reveal closure is a PROPERTY guard (the
+                            surface exposes no read op) — the vault is routed AND byte-frozen at the
+                            rewired sha (owner :3966), the property held by surface + source + seam guards.
   A4  TestSuccessionKey     BOTH directions: a HANDOVER completes only when the successor's key
                             binds first (no key -> refuses); human-only stands unchanged.
   A5  TestValidityFold      validity is a live fold; an as-of query returns the binding valid AT a
@@ -281,12 +283,18 @@ class TestVaultStillClosed(unittest.TestCase):
             self.assertNotIn(reader, src, f"keys.py must not contain `{reader}` — no read path")
 
     def test_a3_the_vault_closure_is_byte_unchanged(self):
-        # vault.py is CONSUMED only — its closure does not change by one line. The bytes are the
-        # baseline captured at this EP's dispatch (HEAD dfa9ec43).
+        # RE-ENABLED (owner :3966): the vault byte-freeze was SET ASIDE for the C7-P2 rewiring
+        # (:3930/:3952 routed vault.py's four call points through host_seam) and is now PUT BACK ON at
+        # the REWIRED file's contents. It rides BESIDE the property guards (surface: test_a3_rw3_the_
+        # vault_has_no_read_path_after_wiring; source: test_a3_the_keys_module_reads_no_sealed_value;
+        # seam: test_c7_p2_seam), not instead of them. It reds if vault.py's bytes change by one line.
+        # RE-POINTED (MAINT-VAULT-HASH-ONLY; owner scan :4435, archi :4437): seal now stores NOTHING
+        # (no write-once put, no _path); the pin guards the property (the vault's exact bytes), so it
+        # moves with the owner-authorized code to the hash-only vault's sha.
         with open(os.path.join(REPO, "src", "kernel", "vault.py"), "rb") as fh:
             digest = hashlib.sha256(fh.read()).hexdigest()
-        self.assertEqual(digest, "2038a8cdfcb2a5e2113555bdc05dcbba0c4badfb0cefec779b0dae184c7bfbc6",
-                         "vault.py bytes changed — the vault is CONSUMED only (F2/§8-e)")
+        self.assertEqual(digest, "6a82f449865f5464ef70b6d39db2fee568ba1cae43b5b380e21cc4d5ad09f767",
+                         "vault.py bytes changed — the vault is byte-frozen at the hash-only sha (F2/§8-e; MAINT-VAULT-HASH-ONLY)")
 
 
 # ============================================================================================
@@ -322,7 +330,7 @@ class TestSuccessionKey(KeyWorld):
         # DESIGNATE-SUCCESSOR (the existing enforcement point) — the key half never loosens it. Even
         # if a designation somehow landed, current_successor re-checks human at read, so no handover
         # could ever complete for a non-human.
-        self._account("agent", actor_class="agentic")
+        self._account("agent", actor_class="ai")
         with self.assertRaises(OpError) as cm:
             self._do("DESIGNATE-SUCCESSOR", "owner", {"successor": "agent"})
         self.assertEqual(cm.exception.rule, "CONST-AUTHORITY-ANCHORED")

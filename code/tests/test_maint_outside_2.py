@@ -32,7 +32,12 @@ from bridge import merkle                                              # noqa: E
 from bridge import checkpoint                                         # noqa: E402
 from bridge import custody                                            # noqa: E402
 from bridge import replay_snapshot                                    # noqa: E402
-from bridge.records_fs import RecordsFS, _Flock                       # noqa: E402
+try:                                                                  # noqa: E402
+    from bridge.records_fs import RecordsFS, _Flock                   # noqa: E402  fusepy adapter
+    _FUSE_OK = True
+except ModuleNotFoundError:                                           # 'fuse' (fusepy) absent outside the lab
+    RecordsFS = _Flock = None
+    _FUSE_OK = False
 from kernel import compose                                            # noqa: E402
 from kernel import erasure                                            # noqa: E402
 from kernel import gate as gate_mod                                   # noqa: E402
@@ -219,6 +224,7 @@ class TestA2RecoverTailUnion(unittest.TestCase):
 # FRONT B, A-3 — a recover splice landing on a LIVE mount re-folds without a remount
 # ==================================================================================================
 
+@unittest.skipUnless(_FUSE_OK, "SKIP GUEST-FACILITY: needs the fusepy adapter (module 'fuse') bound by bridge.records_fs")
 class TestA3LiveRecoverRefolds(unittest.TestCase):
 
     def test_a3_live_recover_refolds(self):
@@ -408,6 +414,7 @@ class TestC3MalformedTextRefused(unittest.TestCase):
 # FRONT C, C-2 — a lawful POSIX negative l_len is normalised before recording
 # ==================================================================================================
 
+@unittest.skipUnless(_FUSE_OK, "SKIP GUEST-FACILITY: needs the fusepy adapter (module 'fuse') bound by bridge.records_fs")
 class TestC2NegativeLLenNormalised(unittest.TestCase):
 
     def test_c2_negative_llen_normalised(self):

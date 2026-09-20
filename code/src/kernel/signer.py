@@ -21,7 +21,8 @@ possession-in-custody producing a signature is the `keys.countersign` pattern MA
 never leaves the signer.
 
 WHY BESIDE THE VAULT, NOT INSIDE IT (archi's design ruling :3249). The vault (`vault.py`) is the
-estate's oldest closure and is BYTE-FROZEN (sha256 2038a8cd…): its five guards pin its bytes, its
+estate's oldest closure and is BYTE-FROZEN (its sha256 re-pinned at the rewired value per owner :3966,
+in tests/test_ep36, test_ep39 and test_keymat): its five guards pin its bytes, its
 public surface to exactly {seal, compare}, and its source to no read path. A SIGN operation ON the
 vault would change its bytes and red those guards — and, worse, an in-vault signature would have to
 read the sealed seed back to sign with it, which the vault's no-read-path law forbids. So the

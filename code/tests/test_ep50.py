@@ -194,11 +194,30 @@ class TestFoldSetAttested(unittest.TestCase):
         self.assertEqual((rec.get("payload") or {}).get("bind"), "actors")
 
     def test_the_set_is_grow_only_the_declared_baseline_members_are_all_present(self):
-        """A4: grow-only — the pinned baseline (the seven declared folds) must ALL remain a member; a
-        shrink (removing any) REDS this pin, and adding a fold moves the set_digest (grow is visible)."""
+        """A4: grow-only — the pinned baseline must ALL remain a member; a shrink (removing any) REDS
+        this pin, and adding a fold moves the set_digest (grow is visible).
+
+        [C6a VT-1] THE BASELINE MOVED ONCE, grow-only: the seven EP-50 folds PLUS the three new
+        level-2 OLD-band masters (old_rules / old_items / old_relationships, design/25 v2.1 ruling
+        19). The move is a strengthening — a shrink of ANY of the ten now reds — and the set_digest
+        recomputed from FOLD_NAMES (9c431d16… -> 952406cb…, the disclosed grow). Events do not split
+        active/old and the level-4 filters compute in memory (ruling 10), so they are NOT library
+        members; only bindable S-plane masters grow the set (I4).
+
+        [C6a VT-3] THE BASELINE MOVED AGAIN, ONCE, grow-only: the ten above PLUS the SIX folds the
+        base-view-tree seed's 12 bind rows name that were not yet members — rule_changing_acts,
+        acts_under_rules, rules, items, active_items, static_composite (design/53 L14 "the promotion
+        happens in the unit that binds", ruling :3781). Sixteen now; a shrink of ANY reds. The
+        set_digest recomputed from FOLD_NAMES (952406cb… -> fbbb8f27…, the disclosed grow). Only
+        bindable S-plane masters grow the set (I7: each a separate memoised projection, served in
+        VT-3b); DERIVE_DIMENSIONS is the derive form's closed vocabulary, NOT a fold, so it is not
+        a member here."""
         members = set(fold_set()["members"])
         for fold in ("active_rules", "actors", "resources", "permissions", "relationships",
-                     "op_definitions", "view_definitions"):
+                     "op_definitions", "view_definitions",
+                     "old_rules", "old_items", "old_relationships",   # baseline moved once (VT-1)
+                     "rule_changing_acts", "acts_under_rules", "rules",
+                     "items", "active_items", "static_composite"):    # moved again once (VT-3): 10 -> 16
             self.assertIn(fold, members)                              # a shrink would fail here
         # grow is visible: a superset yields a DIFFERENT digest (the set is measured, not a bare list).
         grown = canonical_hash(tuple(sorted(FOLD_NAMES + ("a_new_fold",))))
@@ -291,9 +310,10 @@ class TestFoundingBump(unittest.TestCase):
                    and r["payload"].get("name")]
         # [§A57 sweep, EP-52 (FIREWALL-IN-THE-RECORD, FILTER-DECISION, 1.45.0 -> 1.46.0): this LIVE
         #  op-population census moved 92 -> 93 BY NAME — a new OP moves it, the same as EP-50's own
-        #  91 -> 92 above. Driven at the EP-52 dispatch, not carried.]
-        self.assertEqual(len(op_defs), 93)                            # the op-population census
-        self.assertEqual(len({r["payload"]["name"] for r in op_defs}), 93)   # distinct, no double
+        #  91 -> 92 above. Driven at the EP-52 dispatch, not carried.
+        #  C6a VT-2 (CREATE-RELATIONSHIP MINTED live, MINOR 1.51.0 -> 1.52.0) moved 93 -> 94 BY NAME (§A57).]
+        self.assertEqual(len(op_defs), 94)                            # the op-population census
+        self.assertEqual(len({r["payload"]["name"] for r in op_defs}), 94)   # distinct, no double
 
     def test_RW_NO_MOVE_a_byte_unchanged_founding_would_fail_and_RW_MAJOR_holds(self):
         """RW-NO-MOVE (§4): a founding that moved nothing fails — VIEW-SERVICE IS present (the move

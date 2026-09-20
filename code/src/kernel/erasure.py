@@ -734,3 +734,51 @@ def register_recover(gate, views):
         return False
     gate.register(RECOVER_OP, RECOVER_OP_META, recover_handler(gate, blobs, views))
     return True
+
+
+# ---- the interior-corruption route: a committed line that does not parse on reload ---------------
+# EP-MAINT-OUTSIDE-6 (F2). TWO record framing failures are distinct and are handled differently, and
+# the difference is a fact of the file, not a policy: a CRASH MID-WRITE leaves an unterminated FINAL
+# line (no closing newline — it was never committed), which the loader sets ASIDE and opens past
+# (store.py). An INTERIOR corruption is a line that ENDS IN A NEWLINE — a record the store already
+# committed — yet does not parse: that record WAS written whole and something later damaged it. The
+# loader must not silently drop it (a dropped committed record serves a subset that never happened)
+# and must not open pretending the interior is intact. It is REFUSED at open and ROUTED HERE, to the
+# recover ceremony's vocabulary — the SAME machine that adjudicates a chain break splices the store
+# forward to the last sound checkpoint over the broken range. This route REUSES `RECOVER_LAW` /
+# `register_recover`; it mints NO op and adds NO rule (RECOVER_OP_META is untouched).
+
+
+class LoadInteriorCorruption(Exception):
+    """A COMMITTED record line (its bytes end in a newline, so the record was fully written) does not
+    parse on reload. Raised out of `EventStore.__init__` so the store does NOT open pretending the
+    interior parsed. Carries the break location the recover fold consumes — the file, the zero-based
+    committed-line index that broke, that line's byte length — and names the remedy: the recover
+    ceremony (`register_recover` / RECOVER_LAW), which brings the sound prefix forward over the
+    broken range. This is corruption of a committed record, never a crash mid-write (that leaves an
+    unterminated final line, which the loader sets aside rather than refusing)."""
+
+    def __init__(self, message, file_path, line_index, byte_length, cause):
+        super().__init__(message)
+        self.__cause__ = cause
+        self.file_path = str(file_path)
+        self.line_index = line_index          # zero-based index of the committed line that broke
+        self.byte_length = byte_length        # that committed line's length in bytes
+        self.recover_law = RECOVER_LAW         # the remedy, by name — the law REUSED, never widened
+        self.recover_op = RECOVER_OP
+
+
+def interior_corruption_at_load(file_path, line_index, raw_line, cause):
+    """Build the interior-corruption refusal that routes a load-time parse failure of a COMMITTED
+    line to the recover ceremony. The loader calls this and raises the result; the message names the
+    file, the committed-line index, the underlying cause, and the recover remedy (`RECOVER_LAW` /
+    `register_recover`) by name so an operator reads the route off the refusal. The recover law is
+    REUSED — no op is minted and `RECOVER_OP_META` is not touched."""
+    message = (
+        "committed record line %d of %s does not parse (%s: %s) — this line ends in a newline, so "
+        "the record was committed whole; this is corruption of a committed record, not a crash "
+        "mid-write. The open is REFUSED (the interior is not opened-through and the record is not "
+        "silently dropped). Remedy: run the recover ceremony (%s / register_recover) to splice the "
+        "store forward past the broken range to the last sound checkpoint."
+        % (line_index, file_path, type(cause).__name__, cause, RECOVER_LAW))
+    return LoadInteriorCorruption(message, file_path, line_index, len(raw_line), cause)

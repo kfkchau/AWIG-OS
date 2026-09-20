@@ -47,6 +47,7 @@ sys.path.insert(0, os.path.join(REPO, "src"))
 
 from kernel import gate as gate_mod                              # noqa: E402
 from kernel import store as store_mod                            # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                     # noqa: E402
 from kernel.errors import OpError                                # noqa: E402
 
@@ -256,18 +257,18 @@ class OneBarrierPerBatchCase(WorldCase):
         """The appender's contract, at the gate level: N acts sharing one batch pay ONE
         barrier between them, and it is issued from the appender rather than from a decide."""
         syncs = []
-        real = store_mod.os.fdatasync
+        real = seam_mod.os.fdatasync
         gc = self.store.group_commit
         before = gc.batches                 # the founding's own batches are not this measure
 
         def spy(fd):
             syncs.append(gate_mod.decide_region_held())
             return real(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         try:
             self.concurrent_acts(8)
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         batches = gc.batches - before
         self.assertEqual(len(syncs), batches,
                          "%d barriers for %d batches — a batch shares exactly one"
@@ -283,13 +284,13 @@ class OneBarrierPerBatchCase(WorldCase):
         events, not on a clock."""
         events = []
         guard = threading.Lock()
-        real = store_mod.os.fdatasync
+        real = seam_mod.os.fdatasync
 
         def spy(fd):
             with guard:
                 events.append(("sync", len(self.store.all())))
             return real(fd)
-        store_mod.os.fdatasync = spy
+        seam_mod.os.fdatasync = spy
         gc = self.store.group_commit
         gc.closes_on_empty = False
         gc.window_s = 0.25
@@ -308,7 +309,7 @@ class OneBarrierPerBatchCase(WorldCase):
             for t in threads:
                 t.join(timeout=WEDGE_S)
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         for t in threads:
             self.assertFalse(t.is_alive(), "an act wedged")
         covered = 0

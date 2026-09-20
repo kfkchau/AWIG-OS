@@ -19,6 +19,7 @@ Enumeration of the registry IS the completeness guarantee.
 """
 
 import base64
+import json
 import threading
 from collections.abc import Mapping
 
@@ -138,6 +139,24 @@ def _encode_bytes_param(value):
     except UnicodeDecodeError:
         return {_XATTR_BYTES_TAG: base64.b64encode(raw).decode("ascii")}
 
+
+def _door_recordable(value):
+    """TRUE if `value` serialises the way the record write serialises it, FALSE otherwise
+    (EP-MAINT-OUTSIDE-7; ARCHI-READ-3.md F3). The door checks a declared param's value against the SAME
+    serialisation `store._append_one` performs — `json.dumps(..., default=frozen_default)` — so a value
+    the write cannot record (a `set`, a custom object, a circular structure) is a nonconforming call
+    refused AT THE DOOR, never carried to the append, where a TypeError would poison the store on the
+    decision row already decided. `frozen_default` is REUSED (imported store-locally, the way store.py
+    imports gate for `decide_region_held` — kept function-local so the gate<->store import edge stays
+    acyclic), never re-authored: it is the store's own serialisation contract, so the door and the write
+    agree BY CONSTRUCTION — a value the door admits, the write can record."""
+    from .store import frozen_default        # store-local import: keep the gate<->store edge acyclic
+    try:
+        json.dumps(value, separators=(",", ":"), default=frozen_default)
+        return True
+    except (TypeError, ValueError):
+        return False
+
 # AUTHORITY REGIME IS DATA (EP-17 Y2; the mentor's #1a, retiring the code constant that named the
 # four power-structure ops). The ops that WRITE the power structure — grant/revoke/space/role — are
 # governed by ATTENUATION, not a covering grant: gating the creation of a grant BY a covering grant
@@ -227,6 +246,26 @@ EFFECT_OUTCOME = "outcome"           # the attribute a raising effect may carry 
 # (§8-i): EP-35's store-minted invoker_sig/store_sig envelope is its own honest-degrade domain and
 # stays untouched.
 INVOKER_SIG = "invoker_sig"
+
+# THE MULTI-VIEW STAMP (C6a VT-6d; design/25 v2.4 rulings 13/14/15 and 17b, board :3869; design/53
+# B10). A stamp is a MASTER VIEW's witness on an act as it climbs — the view's identity, the hash of
+# what it saw, and the record version (the seq the master was folded at). The stamps ride the act's
+# OWN row as a GATE-ADDED field of the PROVENANCE CLASS: they live INSIDE the `provenance` envelope
+# (the same class as the invoking account's signature, INVOKER_SIG, which rides there too — :3869),
+# so the store carries them at the one write with NO store change (store copies `provenance` whole),
+# they are EXCLUDED from `_signed_content` (the invoker cannot know them) and from the store's
+# countersignature message (it covers the recording fact only), and a stamp altered in a stored row
+# is caught by the record CHAIN (prev_hash over the whole prior record) — there is NO decider's seal
+# over content (the :3866 wrong noun, corrected :3869). The gate WRITES the stamp, NEVER a caller: a
+# caller-supplied stamps key is refused for every op. STAMPS_STAGING is the gate-reserved DRAFT key a
+# handler / the climb pipeline (VT-6a, later) stages the pending stamps under; the gate lifts it off
+# and writes the durable `provenance["stamps"]`, so it never lands as a top-level key (the
+# IRREVERSIBLE_EFFECT idiom). VT-6d lays the FIELD, the RULE and the REFUSAL STEP only — it does not
+# build the climb (VT-6a).
+STAMPS = "stamps"                         # the durable field name, INSIDE provenance
+STAMPS_STAGING = "_stamps"                # the gate-reserved draft key the pending stamps ride in
+REQUIRED_STAMPS_RULE = "REQUIRED-STAMPS"  # the founding policy rule's id — the refusal cite
+REQUIRED_STAMPS_POLICY = "required-stamps"  # its policy_key: {act class (action) -> [required view ids]}
 
 
 def _signed_content(draft, deciding_time, seal):
@@ -763,6 +802,115 @@ class Gate:
                                 f"{act_space} — the negative space is the computed complement of the grant "
                                 f"set (default deny; power is the positive grant)", draft=result)
 
+    def _pairing_step(self, actor, opname, result):
+        """C6 P8b (design/52 L28; CELL-LAW; archi ruling :3726) — THE (actor class, task cell) PAIRING,
+        ENFORCED LIVE at the write chokepoint (EP-18 R-A: the leash lives where every write converges,
+        never in a handler, so no other op minting the same shape reaches past it). The pairing logic
+        is READ from `views` (pair / class_band / the op's cell / RECORDER_SYSTEM_ACTORS / CELL_SET /
+        class_domain) and NEVER re-authored — it is P8's, countersigned. Two edges wire here:
+
+        EDGE 1 — THE PAIRING. An act by a THIS-CONSTITUTION actor whose DECLARED class lacks the arm the
+        op's cell requires is refused BY NAME and the refusal recorded as a row (one pen). THREE bodies
+        are OUTSIDE the pairing (archi :3726):
+          * RECORDER_SYSTEM_ACTORS (PC_RUNTIME / SYSTEM) — the founding runtime's form-fill / validate /
+            route is not a judge's step (precision 3);
+          * a FOREIGN body's ASK / INPUT — a border SUBMIT (recognised by the record's own kind, the
+            chokepoint idiom, border.py) or any record admitted as a peer / world INPUT (record_class
+            INPUT, authority.py PEER_FACT_CLASS). B16: "the cut bounds who EXECUTES a rule, never who may
+            ASK"; the border owns submit eligibility as raise-not-mint (border.py:53). The RECEIPT (our
+            actor's transformation of that input) is a DECISION, so it is NOT foreign input and the
+            pairing DOES apply to it;
+          * a None band — an UNCLASSIFIED actor is not a declared class the pairing adjudicates
+            (admitted). Lawful because from the flip forward a None band cannot be WRITTEN (edge 2), so a
+            None band is historical (legacy ids) by construction. A pre-P8 world has no actor-classes
+            pack, so every band is None and this door is INERT (wire-at-birth).
+
+        EDGE 2 — THE CLASS-DOMAIN WRITE CLOSURE (K12; A6). CREATE-ACCOUNT may not WRITE an actor_class
+        outside the closed domain (a class not in the list cannot be written). ABSENT admits (backward
+        compatible — most accounts declare none); a canonical token admits; any other token (legacy or
+        novel) is refused and recorded. Reuses class_domain (K12) — NO new check kind.
+
+        FORWARD ONLY: the door changes behaviour for acts FROM the flip forward; no past record is
+        re-judged (the census read 0 before the flip, A5)."""
+        # EDGE 2 — the class-domain write closure (CREATE-ACCOUNT), reusing the K12 closed domain.
+        if opname == "CREATE-ACCOUNT":
+            written = (result.get("payload") or {}).get("actor_class")
+            if written is not None and written not in self.views.class_domain():
+                self.refuse(actor, opname, "CAP-IS-LAW",
+                            "actor_class %r may not be written: it is not a declared class (the domain is "
+                            "closed by K12: %s)" % (written, ", ".join(self.views.class_domain()) or "none"),
+                            draft=result)
+        # EDGE 1 — the pairing on THIS constitution's actors' EXECUTEs.
+        if actor in self.views.RECORDER_SYSTEM_ACTORS:
+            return                                          # A4 — the recorder-system is outside the pairing
+        pd = result.get("payload")
+        p = pd if isinstance(pd, dict) else {}              # a malformed non-dict payload is not foreign
+                                                            # input; it falls through to its own AR-2 refusal
+        from . import border as _border
+        if p.get("kind") == _border.SUBMIT_KIND or p.get("record_class") == "INPUT":
+            return                                          # B16 — a foreign body's ASK / INPUT: who-may-ASK, not who-EXECUTES
+        band = self.views.class_band(actor)
+        if band is None:
+            return                                          # an unclassified actor is not a declared class the pairing binds
+        entry = self.views.op_definitions().get(opname)
+        cell = (entry.get("definition") or {}).get("cell") if entry else None
+        if cell not in self.views.CELL_SET:
+            return                                          # no well-formed cell to pair against (the founding door owns cell-presence)
+        admit, reason = self.views.pair(band, cell)
+        if not admit:
+            self.refuse(actor, opname, "CELL-LAW", reason, draft=result)
+
+    def _relation_tree_step(self, actor, opname, result):
+        """THE ACTOR-TREE NO-ORPHAN / NO-LOOP BAR AT THE WRITE CHOKEPOINT (C6a VT-2b; design/25
+        v2.1 ruling 23; design/53 §7 row VT-2b, archi :3811). VT-2 laid this bar in the INTERPRETER
+        (opdefs, the data-born op path), keyed on the derived row's geometry + ends, and NAMED ITS
+        OWN CAP: a PASS-THROUGH / external executor minting a relation record would reach past an
+        interpreter-resident bar — the EP-18 R-A shape, a leash inside one op's path is reached past
+        by any other op minting the same record shape. VT-2b moves the bar to WHERE EVERY WRITE
+        CONVERGES: this step reads the DECIDED DRAFT's OWN geometry and both ends, so ANY op minting
+        a containment relation row — not only CREATE-RELATIONSHIP — is caught, and the interpreter
+        bar is retired (no gap: the DERIVED ROW is exactly what the grounding fold reads).
+
+        GENERAL, keyed on the DERIVED RECORD, never a per-op case: only a row whose payload geometry
+        is a DIRECTIONAL CONTAINMENT (NS nested / EM embedded) with BOTH ENDS established actors is a
+        GROUP EDGE (the subject nested in the group `object`); every other act is byte-untouched, so
+        the whole world that mints no containment relation is unchanged. The actor tree grounds every
+        chain at the constitution's root group (the founding anchors) exactly as the space tree
+        grounds at the mother space: the edge is barred when it would LOOP (subject already contains
+        object — a cycle never reaches the root) or when the group `object` does not itself GROUND
+        (the subject would be an ORPHAN). MANY PARENTS lawful.
+
+        NO new check kind, NO new law, NO founding move (YELLOW): the grounding rides the anchor
+        least-fixpoint (`views.actor_grounded`, the `_verified_accounts` shape) and the cycle rides
+        the existing ancestor walk (`authority.would_actor_cycle`) — both READ, never re-authored
+        (VT-2's grounding). The space guard (space_tree / mother_space / would_cycle) is UNTOUCHED.
+        Citations MIRROR the space tree and VT-2's interpreter bar exactly: a loop cites BOOT-INT, an
+        orphan cites CAP-IS-LAW.
+
+        Placed AFTER the authority step (like the pairing / crossing / border chokepoints, all in
+        `_decide`): a revoked chain refuses on AUTHORITY and never comes back labelled an orphan
+        (design/34 §2 — two verdicts, the order keeps them apart when both would fire). The step
+        reads the record AS IT STANDS before this draft's append (the draft is not yet on the store),
+        exactly as VT-2's interpreter bar did, so grounding is computed over the prior record."""
+        from . import authority as _authority
+        pd = result.get("payload")
+        p = pd if isinstance(pd, dict) else {}
+        if p.get("geometry") not in _authority.CONTAINMENT_GEOMETRIES:
+            return                                          # not a containment relation row — byte-untouched
+        subj, grp = p.get("subject"), p.get("object")
+        if not (_authority.is_established(self.store, subj)
+                and _authority.is_established(self.store, grp)):
+            return                                          # an end that is not an established actor: not an actor-tree edge
+        if _authority.would_actor_cycle(self.store, subj, grp):
+            self.refuse(actor, opname, "BOOT-INT",
+                        f"{subj} nested in {grp} would loop the actor tree — a group chain must "
+                        "reach the constitution's root group (design/25 ruling 23)", draft=result)
+        if not self.views.actor_grounded(grp):
+            self.refuse(actor, opname, "CAP-IS-LAW",
+                        f"group {grp!r} does not reach the constitution's root group — an actor never "
+                        "orphans (many parents lawful, but at least one chain must reach the root; "
+                        "ruling 23)", draft=result)
+
     def _full_form_pass(self, actor, opname, draft, rules=None):
         """The EXECUTABLE half of full form (design 28 §I6): a recorded law whose trigger matches
         this draft fires its outcome, read from the record — no rule is hardcoded. v1 executes the
@@ -971,6 +1119,120 @@ class Gate:
             }
         )
 
+    @staticmethod
+    def _well_formed_stamp(s):
+        """A master view's stamp is well-formed iff it carries all three witnesses of ruling 13:
+        the VIEW's identity, the HASH of what it saw, and the VERSION = the seq the master was
+        folded at (a record seq, so a positive integer — a bool is excluded FIRST, the quantity
+        door's idiom). A missing sub-field or a version that is not a seq is MALFORMED. This is the
+        shape check A1(b) exercises with a planted control — a check that cannot fail is not a
+        check (DIGEST-C2 §4)."""
+        if not isinstance(s, Mapping):
+            return False
+        view, saw_hash, version = s.get("view"), s.get("hash"), s.get("version")
+        if not view or not isinstance(saw_hash, str) or not saw_hash:
+            return False
+        return isinstance(version, int) and not isinstance(version, bool) and version >= 1
+
+    def _stamp_step(self, actor, name, params, result):
+        """THE STAMPS GATE-ADDED FIELD, THE REQUIRED-STAMPS RULE, AND ITS REFUSAL (C6a VT-6d;
+        design/25 v2.4 rulings 13/14/15/17b, board :3869; design/53 B10). Runs AFTER every decide
+        pass has decided the draft (provenance already set) and BEFORE the append — a decide step,
+        so a refusal here leaves NO effect and NO record for the act (DECIDE -> EFFECT -> APPEND).
+
+        FOUR things, no new verb, no opdefs edit, no store change:
+          (a) A CALLER MAY NEVER SUPPLY STAMPS (A1a), for EVERY op: the stamps are gate-written
+              (the climb's witnesses), so a `stamps` (or the reserved `_stamps`) key in the caller's
+              params is refused — before any class early-return, so it fires for stamped and
+              unstamped classes alike. The check can fail: a planted caller stamps key reds.
+          (b) THE GATE lifts the pending stamps off the reserved DRAFT key (staged by the climb
+              pipeline — VT-6a, later — or by a test), so it is the gate, never a caller, that
+              writes the field; the staging key is popped and never lands as a top-level key.
+          (c) THE REQUIRED-STAMPS RULE is a POLICY RULE (founding data, latest-effective-wins),
+              keyed by the ACT'S CLASS = its action; an UNSTAMPED class (no entry) passes UNTOUCHED
+              (early return, provenance unchanged, A3); a STAMPED class has its stamps' SHAPE
+              validated (A1b) and is REFUSED if a required view's stamp is missing (A3/B10).
+          (d) THE STAMP RIDES THE ACT'S OWN ROW as a field of the PROVENANCE CLASS — written INSIDE
+              `provenance` beside INVOKER_SIG (:3869), so it is durable at the one write with no
+              store change, EXCLUDED from `_signed_content` and the countersignature (both
+              MUST-NOT-TOUCH), its stored integrity the record CHAIN. Detection never legitimacy
+              (ruling 14): this step adds no legitimacy — an act refused on its merits by an EARLIER
+              pass never reaches here, so it stays refused however many stamps it carries."""
+        # (a) the caller may never supply stamps — gate-written only, EVERY op, before any early return.
+        if STAMPS in params or STAMPS_STAGING in params:
+            self.refuse(actor, name, REQUIRED_STAMPS_RULE,
+                        f"{name}: a caller may not supply stamps — the stamps are a gate-written "
+                        f"field of the provenance class (each a master view's witness as the act "
+                        f"climbs), never a caller param", draft=result)
+        # (b) the gate lifts the pending stamps off the reserved draft key (staged by the climb /
+        #     a test), so it never lands as a top-level key and the gate is the writer.
+        pending = result.pop(STAMPS_STAGING, None)
+        # (c) the required-stamps POLICY RULE, keyed by the act's class = its action.
+        required_by_class = self.views.policy_value(REQUIRED_STAMPS_POLICY) or {}
+        required = required_by_class.get(result.get("action")) if isinstance(required_by_class, Mapping) else None
+        if not required:
+            return                                  # UNSTAMPED class: the act passes untouched (A3)
+        stamps = pending if isinstance(pending, list) else ([] if pending is None else None)
+        if stamps is None:                          # a non-list where the gate writes the list (A1b)
+            self.refuse(actor, name, REQUIRED_STAMPS_RULE,
+                        f"{name}: the stamps field must be a list of master-view stamps — got "
+                        f"{type(pending).__name__}", draft=result)
+        for s in stamps:                            # (A1b) shape: view + hash + version=seq
+            if not self._well_formed_stamp(s):
+                self.refuse(actor, name, REQUIRED_STAMPS_RULE,
+                            f"{name}: a malformed stamp — every stamp carries the view identity, "
+                            f"the hash of what it saw, and the version (the seq the master was "
+                            f"folded at); got {s!r}", draft=result)
+        present = {s.get("view") for s in stamps}
+        missing = [v for v in required if v not in present]
+        if missing:                                 # (A3/B10) a stamped-class act missing a required stamp
+            self.refuse(actor, name, REQUIRED_STAMPS_RULE,
+                        f"{name} is of a stamped class that must carry the stamps {sorted(required)} "
+                        f"before the gate accepts it — missing {sorted(missing)} (detection never "
+                        f"legitimacy: no number of stamps makes an unlawful act lawful — ruling 14)",
+                        draft=result)
+        # (d) the stamp rides the act's own row, INSIDE provenance (durable, excluded from the
+        #     signed content and the countersignature; its stored integrity the record chain).
+        if isinstance(result.get("provenance"), dict):
+            result["provenance"][STAMPS] = stamps
+
+    def _stage_stamps(self, actor, name, params, result):
+        """THE CLIMB'S STAMP STEP (C6a VT-6a; design/25 v2.4 rulings 12/13/15, board :3869; design/53
+        B10). Runs in the decide chain BEFORE VT-6d's `_stamp_step` lift and the one write: for an act
+        of a STAMPED class, each RELEVANT master stamps the act as it climbs. The step STAGES the
+        relevant masters' stamps under the gate-reserved DRAFT key `_stamps` (STAMPS_STAGING) in the
+        working draft; VT-6d's lift then moves them into the durable `provenance["stamps"]` at the one
+        write, and they are EXCLUDED from `_signed_content` (VT-6d/archi :3869 — a stamp there breaks
+        every invoker's mark). This step never touches `_signed_content`, `params`, or the store.
+
+        FOUR properties, no new op/law/check kind, no new field, no pack edit:
+          - RELEVANCE IS COMPUTED PER FOLD (A2): the relevant masters are `self.views.relevant_folds`
+            — the SAME per-fold selection `_bump` invalidates memos on (`PROJECTIONS[proj]._selects`),
+            derived from what FOLDS the act's record touches, PER FOLD not per master name (a fold
+            carrying two master definitions counts ONCE) and NEVER a declared op-def field (VT-6b
+            collapsed, archi :3800/:3846).
+          - AN UNSTAMPED CLASS EARLY-RETURNS UNTOUCHED (A1): the required-stamps POLICY (VT-6d, keyed
+            by action) is EMPTY {} at the founding, so no production act is a stamped class and the
+            step stages nothing — day one byte-identical (RW2).
+          - THE STEP DEFERS TO A PRE-STAGED DRAFT: a handler/test that already staged `_stamps` (the
+            climb's stand-in — VT-6d's suite plants stamps this way) is respected; the climb never
+            overwrites a pre-staged draft.
+          - THE GATE STAYS THE SOLE PEN (A4; ruling 14/17): the step FILLS the draft and APPENDS
+            NOTHING; the in-flight PENDING copy is held in views' in-memory buffer (`record_pending_
+            stamps`), retired by the echo listener when the act's row appends (A3). The buffer is
+            pipeline state, NEVER read as a truth by any view/check/reply (archi :3885)."""
+        if not isinstance(result, dict):
+            return
+        if STAMPS_STAGING in result:                     # pre-staged (a handler/test): the climb defers
+            return
+        required_by_class = self.views.policy_value(REQUIRED_STAMPS_POLICY) or {}
+        if not isinstance(required_by_class, Mapping) or result.get("action") not in required_by_class:
+            return                                        # UNSTAMPED class: early-return, stage nothing (A1)
+        stamps = self.views.build_stamps(result)          # relevance COMPUTED per fold (A2), one stamp per fold
+        result[STAMPS_STAGING] = stamps                   # fill the draft only; the gate is the sole pen (A4)
+        if stamps:
+            self.views.record_pending_stamps(result, stamps)   # the in-flight pending copy, retired by the echo (A3)
+
     def execute(self, name, actor, params=None):
         """THE DECIDE REGION'S SPAN (EP-28G W1), wrapped around the act it protects.
 
@@ -1070,12 +1332,18 @@ class Gate:
         #               and a float is not a whole quantity.
         #   text      -> a UTF-8 STRING; a raw `bytes` value is not serialisable (json.dumps -> TypeError
         #               -> BatchFailed at the group commit), so it is refused HERE, before that crash.
+        #               (EP-MAINT-OUTSIDE-7 does NOT tighten this to strict `str`: CREATE-RULE lawfully
+        #               carries a numeric `value` — an int, which is serialisable — so the poison leak
+        #               F3 names is closed by the serialisability net below, not by a str requirement.)
         #   bytes     -> a byte payload legitimately carries non-UTF-8, but a RAW `bytes` value is not
         #               JSON-serialisable and crashes the group commit (BatchFailed). The door ENCODES it
         #               to the B8 tagged form (EP-MAINT-OUTSIDE-3 PART 1) BEFORE the handler, so the
         #               payload the handler records is serialisable. IDEMPOTENT: an already-encoded
         #               (`str`/tagged-dict) value is not `bytes`, so it is left untouched.
         #   measurement -> NO scalar guard: the op's own structured-field refusal stands (EP-30 custody).
+        #   EVERY kind -> its (possibly-encoded) value must be JSON-serialisable the way the append
+        #               serialises it (`_door_recordable`, below the per-kind branches); a non-recordable
+        #               value is an AR-2 refusal at the door, never a durability poison (EP-MAINT-OUTSIDE-7).
         for pname, kind in entry["meta"].get(opdefs.PARAM_KINDS, {}).items():
             pv = params.get(pname)
             if pv is None:
@@ -1097,6 +1365,28 @@ class Gate:
                 # `setxattr`) already B8-encodes, so this fires only on a raw-bytes value and is a no-op
                 # on an already-encoded one (idempotent).
                 params[pname] = _encode_bytes_param(pv)
+            # EVERY DECLARED KIND, SERIALISABLE AT THE DOOR (EP-MAINT-OUTSIDE-7; ARCHI-READ-3.md F3).
+            # The branches above cover the kinds' TYPE shape (text refuses raw bytes, quantity requires a
+            # non-negative int, bytes is encoded to the serialisable B8 form); `measurement` has no scalar
+            # guard by rule (its op's own structured-field refusal stands), and `text` admits any
+            # serialisable scalar (an int `value` for CREATE-RULE is lawful). But the door's contract is that a
+            # DECLARED value the record write cannot serialise is refused HERE, as a nonconforming call,
+            # never carried to the append — where `json.dumps(..., default=frozen_default)` raises
+            # TypeError INSIDE `_append_one` on the decision row already decided, the refusal path is
+            # skipped, no row lands, and `_poison` marks the store `_broken` so every later publish and
+            # batch is refused. A non-serialisable content value POISONS NOTHING: poisoning is RESERVED
+            # for a durability failure (a write that did not reach the disk), which is exactly what that
+            # `except` is for. So every declared kind's (possibly-encoded) value is checked against the
+            # SAME serialisation the append performs, and a value that cannot serialise is an AR-2
+            # refusal row. (`text`/`quantity` already refused a bad value above — `self.refuse` raises,
+            # so a refused branch never reaches here; `bytes` reaches here as its encoded, serialisable
+            # form — so this never double-refuses a value a branch admitted.)
+            if not _door_recordable(params.get(pname)):
+                self.refuse(actor, name, AR2,
+                            f'nonconforming call: {kind} param "{pname}" for {name} carries a value that '
+                            f'is not recordable — it is not JSON-serialisable, so the record write would '
+                            f'fail (a malformed call is a refusal at the door, not a store poisoning) — '
+                            f'got {type(params.get(pname)).__name__}')
         # R28 (EP-10): the brake's AUTHORITY refuses AT THE GATE — never accepted-and-inert (the R18
         # doctrine: an act the system will not honour REFUSES, cited + recorded; it does not
         # record-and-shrug). A4-style actor checks, no new check vocabulary; the fold's exemptions
@@ -1150,6 +1440,24 @@ class Gate:
             # The body moved to `_authority_step` at EP-26 so the sweep's counterfactual reach test
             # runs THE GATE'S OWN TEST rather than a copy of it. Nothing about the step changed.
             self._authority_step(actor, name, result)
+            # ---- THE (CLASS, CELL) PAIRING (C6 P8b; design/52 L28; archi :3726) ----
+            # After authority (who holds the grant) and before the crossing/border families: the
+            # pairing binds who may EXECUTE a rule of this constitution (B16). An actor whose declared
+            # class lacks the arm the op's cell requires is refused here by name and recorded; the
+            # recorder-system, a foreign body's border/crossing INPUT, and an unclassified (None) band
+            # are outside it (archi :3726). Placed AFTER the authority step on purpose: a revoked chain
+            # refuses on AUTHORITY, never comes back labelled a class-pairing refusal.
+            self._pairing_step(actor, name, result)
+            # ---- THE ACTOR-TREE NO-ORPHAN / NO-LOOP BAR (C6a VT-2b; design/25 ruling 23; design/53
+            # §7 row VT-2b, archi :3811) ----
+            # VT-2 laid this bar in the interpreter and named its cap: a pass-through / external
+            # executor minting a relation record would reach past an interpreter-resident bar (the
+            # EP-18 R-A shape). Here, at the write chokepoint keyed on the DERIVED row's geometry +
+            # both ends, ANY op minting a containment relation row is caught — the interpreter bar is
+            # retired with no gap (the derived row is what the grounding fold reads). GENERAL, not
+            # op-specific; a loop cites BOOT-INT, an orphan cites CAP-IS-LAW; many parents lawful.
+            # Placed AFTER the authority step: a revoked chain refuses on AUTHORITY, never orphan.
+            self._relation_tree_step(actor, name, result)
             # ---- THE CROSSING CHOKEPOINT (EP-23; design/36 K8, wall primitive 6) ----
             # Correlation integrity for any op minting a crossing-family record: the cited hand-out
             # must exist and be OPEN, and an answer must carry a fingerprint verdict. Here, not in a
@@ -1217,6 +1525,19 @@ class Gate:
                 if verified_sig is not None:
                     prov[INVOKER_SIG] = verified_sig
                 result["provenance"] = prov
+            # ---- THE CLIMB'S STAMP STEP (C6a VT-6a; design/25 v2.4 rulings 12/13/15; design/53 B10) ----
+            # BEFORE VT-6d's lift below and the one write: for an act of a STAMPED class, each RELEVANT
+            # master stamps the act as it climbs — the step STAGES the relevant masters' stamps under the
+            # gate-reserved DRAFT key `_stamps` (STAMPS_STAGING), which the lift lifts into the durable
+            # `provenance["stamps"]`. Relevance is computed PER FOLD; the step fills the draft and appends
+            # nothing (the gate stays the sole pen); an unstamped class early-returns untouched.
+            self._stage_stamps(actor, name, params, result)
+            # ---- THE MULTI-VIEW STAMP (C6a VT-6d; design/25 v2.4, board :3869; design/53 B10) ----
+            # After every decide pass, BESIDE the provenance assignment (which stays byte-identical),
+            # BEFORE the append: the gate writes the stamps as a field of the provenance class, refuses
+            # a caller-supplied stamps key, and refuses a stamped-class act missing a required stamp
+            # (an unstamped class passes untouched). No new verb, no opdefs edit, no store change.
+            self._stamp_step(actor, name, params, result)
             # ---- THE IRREVERSIBLE EFFECT RUNS AFTER THE DECISION, BEFORE THE APPEND (B1) ----
             # Every decide pass above has now DECIDED this draft — any refusal already raised and
             # this line is unreached — so the deferred effect (lifted off the draft after the

@@ -50,6 +50,8 @@ import hashlib
 import hmac
 import os
 
+from bridge.host_seam import host   # C7 P2 — entropy is a declared host act, routed through the seam
+
 # ---- THE ONE IMPORT SITE ---------------------------------------------------------------------
 # libsodium via PyNaCl. Imported in THIS place only; presence detected here and nowhere else. A
 # failure to import (absent, or a broken install) leaves the estate on the modelled path — never a
@@ -279,7 +281,7 @@ def aead_seal(plaintext, piece_key, aad=b""):
     if isinstance(aad, str):
         aad = aad.encode("utf-8")
     key = _aead_key(piece_key)
-    nonce = os.urandom(_NONCE_BYTES)
+    nonce = host().urandom(_NONCE_BYTES)
     ct = _sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, aad, nonce, key)
     return nonce + ct
 
@@ -311,4 +313,4 @@ def aead_tag_ok(sealed, piece_key, aad=b""):
 
 def new_signing_seed():
     """A fresh 32-byte Ed25519 signing seed — a SECRET, sealed in the vault, never recorded."""
-    return os.urandom(32)
+    return host().urandom(32)

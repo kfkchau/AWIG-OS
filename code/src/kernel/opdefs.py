@@ -236,6 +236,24 @@ PARAM_KINDS = "param_kinds"
 #: The closed kind set. A declaration naming a kind outside this refuses at the definition door.
 PARAM_KIND_SET = ("quantity", "text", "bytes", "measurement")
 
+# THE CELL DECLARATION (C6 P8; design/52 L28). Each operation declares its CELL as FOUNDING DATA
+# beside `param_kinds`, one of the closed set below, NEVER derived from the shapes of its fields. The
+# door's DEFINITION-TIME leash below validates a DECLARED cell's well-formedness (a declared cell must
+# be in the set) at all THREE doors; it is INERT ON ABSENCE, so a world before P8 founds exactly as
+# before. The PRESENCE requirement — every op in a CELL-LAW founding declares a cell — lives at the
+# FOUNDING door (founding.install._validate), because the cell is founding DATA and a runtime CREATE-OP
+# of a cell-less op in a live-CELL-LAW world is not the pack the law binds (a silent default of S is a
+# program holding judgment, which the law forbids — so the value-guard NEVER supplies one). The
+# (actor class, task cell) PAIRING and the census are kernel.views; they mint NO check kind here.
+CELL = "cell"
+#: The closed cell set (L28): S structured-both-sides, U judgment-both, U{s} judgment over structured
+#: input, S{u} structured over judgment input. A declared cell outside this refuses at the def door.
+CELL_SET = ("S", "U", "U{s}", "S{u}")
+#: The law whose PRESENCE in the live founding engages the founding-door cell-presence requirement
+#: (the wire-at-birth idiom, VOCAB_DOOR_LAW's precedent). Read from the pack's own rule records at the
+#: founding door; the value-guard below runs regardless (well-formedness is not law-gated).
+CELL_LAW = "CELL-LAW"
+
 OP_CHECKS = ("require_prior", "sight", "ceiling", "consistency", "sop", "definition_ref", "entry_ref",
              "space_tree", "fingerprint", "binding", "kind", "contains", "prior_value",
              "value_domain", "live_slot", "bound_field", "every_member",
@@ -1510,6 +1528,7 @@ def validate_definition_shape(gate, doorname, actor, name, d, peers=None, classi
     _require_wellformed_key_of(gate, doorname, actor, d)
     _require_wellformed_check_rows(gate, doorname, actor, d, peers)
     _require_wellformed_param_kinds(gate, doorname, actor, d)       # C-1/C-3: a declared kind is a declared param, a known kind
+    _require_wellformed_cell(gate, doorname, actor, d)             # C6 P8 / L28: a declared cell is a well-formed one
     if classify_law_live:
         _require_field_classification(gate, doorname, actor, d)     # EP-41A member 2, when lawed
     if d.get("executor") is not None:
@@ -1540,6 +1559,26 @@ def _require_wellformed_param_kinds(gate, doorname, actor, d):
             gate.refuse(actor, doorname, "AR-2",
                         f"a {PARAM_KINDS!r} kind {kind!r} for {name!r} is not one of the closed set "
                         f"{PARAM_KIND_SET} — the door validates only these kinds")
+
+
+def _require_wellformed_cell(gate, doorname, actor, d):
+    """THE CELL DECLARATION'S DEFINITION-TIME LEASH (C6 P8; design/52 L28). An op's `cell` is FOUNDING
+    DATA declaring its task cell — one of the closed set (`CELL_SET`). A DECLARED cell must be
+    well-formed (a value in the set) or the definition is malformed (AR-2, the shape rule its sibling
+    clauses cite). Runs at all THREE doors (the guard-at-all-doors theorem). INERT ON ABSENCE — a
+    definition declaring no cell passes this leash, so a world before P8 founds exactly as before; the
+    PRESENCE requirement (every op in a CELL-LAW founding declares a cell) is the FOUNDING door's, not
+    this value-guard's, because the cell is founding data and a silent default is what the law forbids
+    (founding.install._validate). This value-guard NEVER supplies a missing cell — it only refuses a
+    malformed one."""
+    cell = d.get(CELL)
+    if cell is None:
+        return
+    if cell not in CELL_SET:
+        gate.refuse(actor, doorname, "AR-2",
+                    f"a {CELL!r} declaration {cell!r} is not one of the closed set {CELL_SET} — the "
+                    "cell is founding data (design/52 L28), declared per operation and never derived "
+                    "from field shapes; a value outside the set is a malformed definition")
 
 
 def _content_home_params(d):
@@ -1957,8 +1996,24 @@ def _ceiling_check(gate, store, views, actor, opname, c, params):
     lets a holder exceed budget; a holder-filtered removal silently stops evictions freeing
     budget. Missing policy = None = unlimited (current behaviour). key-and-holder resolution
     matches the handler's `params.get("holder", actor)` — the caller already resolved it via
-    param_defaults, so check and recorded payload agree."""
-    holder = params.get(c["holder_param"])
+    param_defaults, so check and recorded payload agree.
+
+    LOCATE-BY-$actor (C6 P16, design/52 F4; the Reading-A door change). `holder_param` may name
+    the literal `"$actor"`, and then the holder IS the acting entity — the ENGINE'S FACT, resolved
+    here unconditionally, never the caller's claim. This is the SAME `$actor` locate source
+    `live_present` already admits (`_live_present_required`: `actor if src == "$actor" else
+    params.get(src)`, opdefs :2336; the engine's-fact precedent at :248/:970/:1847), reused for a
+    ceiling: a row keyed by `$actor` sums the ACTOR's own usage against the ACTOR's own policy and
+    cannot be forged by a caller-supplied `holder`. It is a DOOR CHANGE on an existing kind, NOT a
+    new check kind and NOT an op-META param (a locate source is not a param); the well-formedness
+    leash is unchanged — `"$actor"` is a non-empty string, so `_require_wellformed_ceiling` admits
+    it. The distinction from `param_defaults {"holder": "$actor"}` is the whole point: a default
+    fills only an ABSENT key (a caller may still pass `holder=someone_else`), while this locate is
+    the engine's fact and a caller-supplied `holder` cannot override it. If a driven `$actor`-keyed
+    ceiling row had NEEDED anything this door cannot express, that would be Reading B (one new kind
+    + the owner's word, F4) — a raise, never a silent mint; it does not (A4 drives it)."""
+    hp = c["holder_param"]
+    holder = actor if hp == "$actor" else params.get(hp)
     ceiling = views.policy_value(c["policy_key_prefix"] + str(holder))
     if ceiling is None:
         return  # no budget set -> unlimited
@@ -2939,6 +2994,20 @@ def _interpreter(gate, store, views, opname, d):
 
         for c in d.get("checks", []):
             _dispatch_check(gate, c, p_in)
+        # THE ACTOR-TREE BAR — RETIRED HERE (C6a VT-2b; design/25 v2.1 ruling 23; design/53 §7 row
+        # VT-2b, archi :3811). VT-2 laid the no-orphan / no-loop actor-tree bar HERE, in the
+        # interpreter (the data-born op path), keyed on the derived row's geometry + ends, and NAMED
+        # ITS OWN CAP: a PASS-THROUGH / external executor minting a relation record would reach past
+        # an interpreter-resident bar (the EP-18 R-A shape — a leash inside one op's path is reached
+        # past by any other op minting the same record shape). VT-2b moves the bar to WHERE EVERY
+        # WRITE CONVERGES: `gate._relation_tree_step`, a decide step keyed on the DECIDED DRAFT's own
+        # geometry + both ends, so ANY op minting a containment relation row — not only
+        # CREATE-RELATIONSHIP — is caught. The move leaves NO GAP: the derived row this interpreter
+        # would build is exactly the row the chokepoint bar reads (the payload copy below), and the
+        # grounding fold (actor_containment_edges / actor_grounded) reads that payload, not these
+        # params. VT-2's orphan/loop battery (tests/test_vt2_relation) stays green with the bar gone
+        # — the no-gap proof, driven against the live tree (planning/evidence/VT-2b-ACTOR-TREE-BAR/).
+        # The space guard (space_tree / mother_space / would_cycle) was and stays UNTOUCHED.
         fields = d.get("payload_from") or list((d.get("params") or {}).keys())
         payload = {p: p_in.get(p) for p in fields}
         # payload_derive: computed fields the generic copy can't build — a templated string

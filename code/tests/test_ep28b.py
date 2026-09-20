@@ -56,6 +56,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from kernel import opdefs                                        # noqa: E402
 from kernel import store as store_mod                           # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                    # noqa: E402
 from kernel.errors import OpError                               # noqa: E402
 
@@ -515,18 +516,18 @@ class TestTheAppendIsStillTheCommit(KernelCase):
         to the boundary the invariant is actually about. `store._append` still syncs before
         it returns, for every caller that uses it, and `test_ep28c_w1` asserts that."""
         order = []
-        real_fdatasync = store_mod.os.fdatasync
+        real_fdatasync = seam_mod.os.fdatasync
 
         def spy_sync(fd):
             order.append("fdatasync")
             return real_fdatasync(fd)
-        store_mod.os.fdatasync = spy_sync
+        seam_mod.os.fdatasync = spy_sync
         order.append("enter")
         try:
             self.gate.execute("FILE-CREATE", "owner", {"path": "/d.txt", "perm": "644",
                                                        "provenance": self.prov()})
         finally:
-            store_mod.os.fdatasync = real_fdatasync
+            seam_mod.os.fdatasync = real_fdatasync
         order.append("return")
         self.assertEqual(order, ["enter", "fdatasync", "return"])
         self.assertEqual(order.count("fdatasync"), 1,
@@ -554,19 +555,19 @@ class TestTheAppendIsStillTheCommit(KernelCase):
         synced before flushing would be syncing a file the record had not reached, and this
         read would not find it."""
         seen = []
-        real_fdatasync = store_mod.os.fdatasync
+        real_fdatasync = seam_mod.os.fdatasync
 
         def spy_sync(fd):
             with open(self.rec, encoding="utf-8") as fh:
                 seen.append(fh.read())
             return real_fdatasync(fd)
 
-        store_mod.os.fdatasync = spy_sync
+        seam_mod.os.fdatasync = spy_sync
         try:
             rec = self.gate.execute("FILE-CREATE", "owner", {"path": "/f.txt", "perm": "644",
                                                              "provenance": self.prov()})
         finally:
-            store_mod.os.fdatasync = real_fdatasync
+            seam_mod.os.fdatasync = real_fdatasync
         self.assertTrue(seen, "no barrier was issued at all, so there was no ordering to check")
         self.assertIn('"record_id":"%s"' % rec["record_id"], seen[-1],
                       "the barrier was issued while the record was still in user space")
@@ -591,9 +592,17 @@ class TestTheAppendIsStillTheCommit(KernelCase):
         which one a given record got."""
         with open(store_mod.__file__, encoding="utf-8") as fh:
             src = fh.read()
-        self.assertIn("os.fdatasync(f.fileno())", src)
-        self.assertNotIn("os.fsync", src)
-        self.assertNotIn('getattr(os, "fdatasync"', src)
+        with open(seam_mod.__file__, encoding="utf-8") as fh:
+            seam_src = fh.read()
+        # C7 P2 (:3927): the record pen's barrier is PERFORMED in the seam as a single
+        # unconditional fdatasync — no branch, no fallback — and store.py ISSUES it once with no
+        # rescue path. Re-pointed to the seam and STRENGTHENED with the absence assertion; the two
+        # "no rescue" absences stay on store.py where they still guard the pen's own issue site.
+        self.assertIn("os.fdatasync(fd)", seam_src)             # the seam performs the fdatasync barrier
+        self.assertIn("host().fdatasync(f.fileno())", src)      # store.py issues it, one unconditional form
+        self.assertNotIn("os.fdatasync(", src)                  # ABSENCE: no direct barrier remains in the pen
+        self.assertNotIn("os.fsync", src)                       # no metadata-sync rescue in the pen (unchanged)
+        self.assertNotIn('getattr(os, "fdatasync"', src)        # no dynamic barrier selection (unchanged)
 
     def test_the_held_descriptor_half_landed(self):
         """FLIPPED (EP-28C W3, 2026-08-01), TOGETHER WITH ITS TWIN in `tests/test_ep28_w8.py`

@@ -318,7 +318,7 @@ class A5GranterHoldsExpressibleCase(WorldCase):
             "tier": "owner", "text": "A5 scratch"})
         for a in ("alice", "mallory"):
             self.gate.execute("CREATE-ACCOUNT", "SYSTEM",
-                              {"account_id": a, "actor_class": "process"})
+                              {"account_id": a, "actor_class": "program"})
         self.gate.execute("MEM-GRANT", "alice", {"region": "shm:alices", "size": 4096})
 
     def grant(self, granter, region="shm:alices"):

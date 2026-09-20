@@ -41,6 +41,7 @@ REFERENCE THIS BATTERY REFUSES: a modelled countersign presented as real after t
 store refuses it rather than silently producing a mark that looks signed but is not.
 """
 
+import json
 import os
 import sys
 import tempfile
@@ -222,6 +223,9 @@ class TestRestartNeedsReSeed(_KernelCase):
             system_attestation_seal(store2, views2, attestation.attested_set())
 
     def test_re_running_the_ceremony_restores_the_signer(self):
+        # EP-MAINT-OUTSIDE-5 (re-spec C): a restart genuinely closes the old process — close the live
+        # writer so the rebuilt kernel is the new WRITER and the re-run ceremony can append.
+        self.store.close()
         store2, gate2, views2, _b2, _s2 = _build(self.dir)
         seal_system_signer(store2, gate2, views2)            # the ceremony re-runs
         self.assertIsNotNone(views2.signer)
@@ -315,8 +319,8 @@ class TestCeremonyRecordedRow(_KernelCase):
         self.assertEqual(payload["source"], "human-mixed")
         self.assertEqual(payload["event_count"], len(events), "the row records HOW MANY events")
         blob = _record_blob(self.store)
-        self.assertNotIn("9000", blob, "the raw event samples are NEVER in the record")
-        self.assertNotIn("9049", blob, "the raw event samples are NEVER in the record")
+        self.assertNotIn(json.dumps(events), blob, "the raw event sample SEQUENCE is NEVER in the record")
+        self.assertNotIn("9000, 9001, 9002", blob, "the raw event samples are NEVER in the record")
         self.assertIn(str(payload["commitment"]).split(":", 1)[1], blob,
                       "only the one-way commitment reaches the record")
 

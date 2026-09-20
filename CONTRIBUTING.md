@@ -22,7 +22,7 @@ Every commit carries a sign-off line, `Signed-off-by: Your Name <email>`, which 
 
 The runnable engine is in the [`code`](./code/) folder. It is generated from a private source repository and checked, never edited by hand. `code/README.md` explains how it is made and how to check it. To fix something in the engine, propose the fix through the flow above and it goes into the source. Documentation and the files at the root of this repository can be proposed directly.
 
-Keep it running on Python's standard library alone; the one optional library is PyNaCl, for real keys. `cd code && python3 check.py` and `python3 run_public_suite.py` must keep passing, and check 6 must keep being able to fail.
+Keep the governing layer running on Python's standard library alone; the one optional library is PyNaCl, for real keys. `cd code && python3 check.py` and `python3 run_public_suite.py` must keep passing, and check 6 must keep being able to fail. The kernel under `code/src/body` is freestanding C and assembly: it builds with `gcc` and `binutils`, links no library, and every self-check it prints has a planted fault in `build.sh` that makes it fail. A change that adds a check adds its plant.
 
 ---
 

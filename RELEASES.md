@@ -6,6 +6,19 @@ What each public marker contains, in plain words. Every figure names the machine
 
 The first runnable piece, kept as a tag on the last commit that carried the `seed` folder. Two files and Python 3. One rule runs in the common format, one permission runs and leaves a record you can verify, and a stranger can check both. The folder has since been replaced by the fuller `code` folder below. Its history stays under this tag.
 
+## `c7-close`: our own kernel, rulebook version 1.55.0, 20 September 2026
+
+The `code` folder is replaced whole. The previous contents stay under the tag `c5-close`. Campaigns 6, 6a and 7 arrive together. What they added, in plain words:
+
+- **The kernel (campaign 7).** The system boots on its own kernel in a virtual machine with no Linux beneath it; checks its own body, record, constitution and keys before its first act, witnessed by two bodies; pins the kernel and the interpreter in the record and refuses to start on a changed byte; runs the standard Python interpreter unmodified as sealed content; opens a network connection only after its own record grants it. The kernel's source is in `code/src/body`, and a stranger can build and boot the plain kernel with `gcc` and `qemu`. The numbers under Linux and under our kernel, side by side, are on [`STATUS.md`](./STATUS.md).
+- **Several machines, each its own record (campaigns 6 and 6a).** Each machine keeps its own record and its own gate; what one sends another arrives as input and is adopted under the receiver's own rules; the stage of governance each machine holds is derived from its rules; the tree of views and the loop a rule change climbs through it.
+- **The first tools of the side-by-side comparison** (`code/tools/sidebyside`), begun the day after the campaign closed: they run the same acts on Linux and on our kernel and compare the two records. The comparison itself is later work and `STATUS.md` says so.
+- **The four repairs from the third outside review**, listed on `STATUS.md`, with the tests that prove them. The shipped runner now recomputes the fingerprints of what it runs against and refuses an empty run.
+
+**Checked how.** On a Windows laptop under Debian in WSL 2 (Python 3.13.5), clean copy, nothing of ours installed, 20 September 2026: sixteen checks of sixteen; the shipped suite 170 test files run, 170 passed, 0 failed, 67 skipped; the same with the real locks installed (PyNaCl 1.6.2). The build team's leak scan and sixteen checks agree on its own render of the same commit. The plain kernel was built there with gcc 14.2.0 and booted in QEMU 10.0.13: 120 lines on the serial line, every check PASS, the last line `BODY-HALT`. Tests that need the build team's virtual machine skip here in three named classes, each skip saying what it needs.
+
+**What it does not claim.** The kernel runs in a virtual machine only and is narrow by design. It is slower than Linux and the page prints by how much. The record that matters still runs on Linux until a side-by-side stretch agrees whole. Every program born on the record with its rules sealed is campaign 8 and is not built. No bytes of anyone else's code are in this folder; the full kernel build takes two inputs from your own machine, named in [`THIRD-PARTY.md`](./THIRD-PARTY.md).
+
 ## `c5-close`: the engine after campaign 5, rulebook version 1.50.0, 13 September 2026 (3.1 the same day: one chance-prone test skipped, named in its skip row)
 
 The `code` folder is replaced whole. The previous contents stay under the tag `c4-close`. What campaign 5 added, in plain words:

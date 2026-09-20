@@ -195,3 +195,77 @@ def _walk(a, b, prefix, out):
             out.append(prefix or "/")
     else:
         out.append(prefix or "/")                                # two differing leaves (or one absent): this path diverges
+
+
+# ---- C6 P11 (N1): THE INCLUSION / AUDIT-PATH PRIMITIVE — ONE leaf under a root ------------------
+# SPIKE-3 §1c:50 and §3b:127 named this exact gap: `localize` needs TWO FULL trees, and no function
+# proves ONE leaf under a root with a sibling path. Without it MEMORY-SANE at HASHES-ONLY is a
+# signature-of-a-hash only, and I10's level-blindness fails for MEMORY-SANE (SPIKE-3 §3c). This is a
+# NEW FUNCTION on the EXISTING module, BESIDE merkle_tree/merkle_root/localize — the existing three
+# are UNCHANGED and this adds no module (the ATTESTED_MEMBERS rider does not fire for a function). It
+# folds the snapshot output through the SAME one fold (_structure/_annotate); it opens no record,
+# reads no blob, and calls no second serializer (the T-CANONICAL-ONE-SERIALIZER discipline). The
+# audit path folds to the SAME value merkle_root returns for the same tree and scheme, so a leaf is
+# spot-verifiable against a presented root WITHOUT the whole tree crossing (least disclosure — a
+# sibling crosses as its HASH, never its value; the directory's own metadata rides the path under
+# scheme 2, as the B11 hashing requires, and that is a property of the existing scheme, not this
+# primitive's leak).
+
+def inclusion_proof(tree, relpath, scheme=CURRENT_SCHEME):
+    """AN AUDIT PATH proving ONE leaf's inclusion under `merkle_root(tree, scheme)` (N1; SPIKE-3 §3b).
+
+    Returns `{leaf, leaf_hash, path, scheme}` where `path` is the sibling information at each directory
+    level from the leaf's PARENT up to the ROOT (leaf-first, so it folds leaf -> root); or None when
+    `relpath` names no FILE leaf in the tree (THE CHECK CAN FAIL — a leaf not in the tree yields no
+    proof; a directory path yields None because a directory is not one leaf — divergence of a whole
+    subtree is `localize`'s job, not an inclusion proof's). Each level records the target child's
+    `name`, the directory's OWN snapshot entry `node` (its mode/nlink — None for an intermediate dir;
+    folded beside the pairs under scheme 2, B11), and the `siblings` as sorted `[name, child_hash]`
+    pairs. One fold of the snapshot output via `_structure`/`_annotate`; no record read, no second
+    serializer. The path length equals the leaf's DEPTH in the tree."""
+    parts = [p for p in str(relpath).split("/") if p != ""]
+    if not parts:
+        return None
+    struct = _structure(tree)
+    annotated = _annotate(struct, scheme)
+    path = []
+    s_cur, a_cur = struct, annotated
+    for part in parts:
+        if a_cur.get("kind") != _DIR:
+            return None                                          # descended into a file before the path ended
+        a_child = a_cur["children"].get(part)
+        if a_child is None:
+            return None                                          # the path names no child here — not in the tree
+        siblings = [[name, a_cur["children"][name]["hash"]]      # every OTHER child's (name, hash), the audit path
+                    for name in a_cur["children"] if name != part]
+        path.append({"name": part, "node": s_cur.get("node"), "siblings": siblings})
+        s_cur = s_cur["children"].get(part)
+        a_cur = a_child
+    if a_cur.get("kind") != "file":
+        return None                                              # relpath resolves to a directory — not one leaf
+    path.reverse()                                               # leaf's parent first .. root last: folds leaf -> root
+    return {"leaf": "/".join(parts), "leaf_hash": a_cur["hash"], "path": path, "scheme": scheme}
+
+
+def verify_inclusion(proof, root, scheme=None):
+    """VERIFY an audit path against a root (N1). True iff folding the proof's leaf hash up its recorded
+    sibling path — reconstructing each directory's pairs and re-hashing through the estate's ONE hash
+    form under the SAME scheme `_annotate` used — reproduces `root` (which equals `merkle_root(tree,
+    scheme)` for the tree the proof came from). A tampered leaf hash, an altered sibling, a wrong root,
+    a wrong `node`, or a scheme mismatch ALL return False — THE CHECK THAT CAN FAIL, the whole reason an
+    inclusion proof exists. A None / malformed proof returns False (a leaf not in the tree has no proof
+    to verify). `scheme` defaults to the proof's own recorded scheme; passing a DIFFERENT scheme folds
+    under it (so a scheme mismatch fails, by construction)."""
+    if not isinstance(proof, dict) or proof.get("path") is None or proof.get("leaf_hash") is None:
+        return False
+    sch = scheme if scheme is not None else proof.get("scheme", CURRENT_SCHEME)
+    running = proof.get("leaf_hash")
+    for level in proof["path"]:
+        pairs = [list(s) for s in (level.get("siblings") or [])]
+        pairs.append([level.get("name"), running])              # substitute the running hash for this level's child
+        pairs.sort(key=lambda p: p[0])                          # the pairs are sorted by name, as _annotate builds them
+        if sch == SCHEME_CHILDREN_ONLY:
+            running = canonical_hash(pairs)                     # the pre-B11 spec: children only
+        else:
+            running = canonical_hash([level.get("node"), pairs])  # B11: the dir's own metadata beside the pairs
+    return running == root

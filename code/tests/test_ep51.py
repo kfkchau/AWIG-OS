@@ -203,7 +203,7 @@ class _World(unittest.TestCase):
             os.path.join(self.dir, "vault"))
         # the OUTSIDE entity founds itself on the record first — recorded establishment, never a
         # peer-minted token (BORDER-SUBMIT's require_prior over CREATE-ACCOUNT).
-        self.gate.execute("CREATE-ACCOUNT", "owner", {"account_id": "twc", "actor_class": "agentic"})
+        self.gate.execute("CREATE-ACCOUNT", "owner", {"account_id": "twc", "actor_class": "ai"})
         self.pack = derive_twc_pack()
 
     def a_submit(self, pack=None):
@@ -369,7 +369,7 @@ class TestChainHashExcludesRecordTime(_World):
         d2 = tempfile.mkdtemp(prefix="ep51-b2-")
         store2, gate2, _v, _b, _s = build_full_kernel(
             os.path.join(d2, "record.jsonl"), os.path.join(d2, "blobs"), os.path.join(d2, "vault"))
-        gate2.execute("CREATE-ACCOUNT", "owner", {"account_id": "twc", "actor_class": "agentic"})
+        gate2.execute("CREATE-ACCOUNT", "owner", {"account_id": "twc", "actor_class": "ai"})
         sub2 = border.submit(gate2, "twc", {"pack": self.pack})
 
         self.assertIsNotNone(sub1.get("record_time"))                     # record_time IS minted
@@ -504,11 +504,26 @@ class TestNoKindMinted(unittest.TestCase):
         guarded by the existing quantity door — no new kind). Moves this base to c196d430. OP_CHECKS
         UNCHANGED at 19 (the `quantity` guard already exists, EP-MAINT-OUTSIDE-2 — a re-kind mints none);
         op-population UNCHANGED at 93 (a param re-kind adds no op). Read from a command: sha256 of the
-        live founding-pack.json.]"""
+        live founding-pack.json.
+
+        [BASE RE-PINNED AGAIN — C6 P8 (THE TWO AMENDMENTS AND THE TWO DECLARATIONS), 2026-09-09, at the
+        founding mover's hand (this row is re-pinned by the last founding mover, per its own rule above).
+        A MINOR 1.50.0 -> 1.51.0: VERIFY-ACCOUNT gains OPTIONAL structural target + evidence_kind (B17);
+        RECEIPT gains OPTIONAL structural checks + disclosure_level + address_form (SPIKE-3 N2 / SPIKE-5);
+        the actor-classes founding data (B16, K12) and CELL-LAW with a cell on every op (L28). Moves this
+        base to 460d691c. OP_CHECKS UNCHANGED at 19 (NO new check kind — a class is a computed ceiling,
+        B18); op-population UNCHANGED at 93 (no op added or removed — two ops amended, two declarations).]"""
         self.assertEqual(len(OP_CHECKS), 19)
         pack_sha = _sha256_file(os.path.join(REPO, "src", "founding", "founding-pack.json"))
         self.assertEqual(
-            pack_sha, "c196d430036c0d14e320ed1fe5d4ca098977b4b32f1af70f3b92db06e7f7b46c",
+            # C6a VT-2 (CREATE-RELATIONSHIP MINTED live, 1.51.0 -> 1.52.0) moved this base to 80068a15.
+            # C6a VT-3 (THE TREE SEEDED AS ROWS — 35 view-definition rows + one MINOR 1.52.0 -> 1.53.0)
+            # moved this base to 5d663143. C6a VT-6d (THE STAMP FOUNDING — the required-stamps policy rule,
+            # one MINOR 1.53.0 -> 1.54.0) moved this base to 1ace3482 BY NAME. C7 P3 (THE KERNEL FROM THE
+            # RECORD — the twelve act-kind CREATE-RULE rows, one MINOR 1.54.0 -> 1.55.0) moved this base to
+            # 95631e8f BY NAME (§A57 sha re-pin — "this row is re-pinned by the last founding mover", per the
+            # rule above). OP_CHECKS still 19; no op minted.
+            pack_sha, "95631e8f00ed18233dc3bdc4fe6207495b78bd5cb26dbee96db53a47dd6c179b",
             "founding-pack.json moved — this tracer is NOT a founding move (RW-KIND-MINTED / stop-f)")
 
     def test_the_candidate_kinds_are_named_by_source_never_minted(self):

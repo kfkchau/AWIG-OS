@@ -287,3 +287,194 @@ def m1_observe_ops(gate):
     nothing else."""
     return {name: entry["meta"] for name, entry in gate.ops.items()
             if entry["meta"].get("observe_window")}
+
+
+# =============================================================================================
+# C7 P9 — THE OBSERVE WINDOWS UNDER OUR CORE (the B10 window census)
+# =============================================================================================
+#
+# The five observe windows each open ONE Linux host facility our core does not present (L1 —
+# the governance core names no Linux facility: the effect seam's twelve act kinds carry no
+# /proc, inotify, netlink or sysfs). After the C7 swap a window that simply opened its facility
+# would read something that is not there. B10 requires each window be SETTLED under our core,
+# and NEVER left silently empty. This census names EACH of the five, DERIVED from OP_FOR_WINDOW
+# (never hand-listed), and settles it one of two ways:
+#
+#   RE-SOURCED FROM THE CORE — the core presents the equivalent observation from ITS OWN state
+#     (the record / the effect seam), NOT by adding a Linux facility (L1/L21). The settlement
+#     names the CORE ROUTE; a re-sourced window whose route names a Linux facility is a body
+#     widening and is REFUSED (the A3 guard).
+#   DECLARED ABSENT AS A RECORD — the core presents no equivalent that is SERVED to a window
+#     today. The settlement names the host facility (not presented under our core) and the
+#     MEASURED reason: the named re-source route that would serve it is a body-lane slice not
+#     wired into observe here. Never quietly skipped, never silently empty.
+#
+# A window that is NEITHER re-sourced NOR declared-absent-with-reason is a SILENT-EMPTY window,
+# and the census REFUSES it (SilentEmptyWindow). That refusal is B10's own failing check: a new
+# observe op added to OP_FOR_WINDOW without settling its window under our core reds the census.
+
+#: Grow-only registry: window -> the CORE ROUTE that serves it from the core's OWN state (the
+#: record / the effect seam), never a Linux facility. A body-lane slice that wires a window's
+#: observation to the core's own state registers its route here and the census flips that
+#: window to RE-SOURCED. EMPTY TODAY, and that is the MEASURED truth of the observe (Python)
+#: lane: no window is served from the core's own state here — each re-source is a named
+#: body-lane slice not taken in this unit (WINDOW_ABSENT_ROUTE). Grow-only like ACT_KINDS.
+#:
+#: THE FILE WINDOW IS RE-SOURCED FROM THE RECORD (C7-MAINT-FILE-WINDOW-FROM-RECORD, the B10
+#: demonstration ruled at P9's close): a file change under our core IS a recorded write act,
+#: so the file window's route under our core is the record's OWN write acts — read from the
+#: record, never from a host facility (L21). windows.RecordFileWindow realizes this route;
+#: this entry flips the census for the file window to RE-SOURCED. The route text names the
+#: core's own state only and NO Linux facility token (or the census's own A3 guard,
+#: _route_names_linux_facility, would refuse it as a body widening).
+#: THE DEVICE WINDOW IS RE-SOURCED FROM THE RECORD'S DISCOVERY ROWS (C7 P7b): at bring-up the
+#: freestanding body records one discovery row per device it performs over the settled three-device
+#: list (block, network, clock; Q4 :3919), each riding the record-pen act. windows.RecordDeviceWindow
+#: realizes this route; this entry flips the census for the device window to RE-SOURCED. The route
+#: text names the core's own state (the discovery rows) and the identity the body EXPORTS at bring-up
+#: — and NO Linux facility token (or the census's own A3 guard, _route_names_linux_facility, would
+#: refuse it as a body widening).
+CORE_ROUTES = {
+    "file": ("the core's own record of write acts (append a record, write-once a file by "
+             "temp-and-swap, declare a directory, remove, the writer's lock — L21): the file "
+             "window reads the record's own write-act entries, not a host facility"),
+    "device": ("the body's own device-discovery rows (C7 P7b): at bring-up the freestanding body "
+               "records one discovery row per device it performs over the settled three-device "
+               "list — its own block (the ata verdict), network (the wire self-check's class plus "
+               "the offered MAC) and clock (the RTC's presence + epoch) drivers — each row riding "
+               "the record-pen act; the device window reads those discovery rows from the record, "
+               "not a host scan"),
+}
+
+#: Per-window MEASURED reason its re-source is not served under our core today: the specific
+#: core route (the core's own state) that WOULD re-source it, named so the absent record is
+#: measured, never a blanket "unavailable". Keyed by the OP_FOR_WINDOW window name.
+WINDOW_ABSENT_ROUTE = {
+    "process": ("a core execution-state surface (the core keeps a RECORD of acts by actors, "
+                "not a live process table), a body-lane surface not built and not wired to a "
+                "window here"),
+    "file": ("the core's OWN record of write acts (append / write-once / remove) — under our "
+             "core a file change IS a recorded write act, so the re-source would read the "
+             "record, not inotify — a body-lane wiring not taken in this unit"),
+    "mount": ("worlds-as-namespaces on the record disk (L21; C7 P3b-5a — a mount under our "
+              "core is a world/namespace), state not wired to a window here"),
+    "device": ("the body's own device-discovery rows (C7 P7b): the body records one discovery row "
+               "per device it performs at bring-up (block/network/clock), so the re-source reads "
+               "those rows from the record, not a host scan — realized by RecordDeviceWindow (this "
+               "is the live re-source; consulted only when a test overrides the core routes)"),
+    "connection": ("the socket act, the one connection (C7 P3b-6) — the core's own network "
+                   "state not wired to a window here yet"),
+}
+
+#: Tokens that name a Linux host facility. A settlement claiming RE-SOURCED whose core route
+#: contains one of these is re-sourcing a window BY ADDING A HOST FACILITY to the body — the
+#: exact L1/L21 widening B10 forbids — so the census refuses it (the A3 guard, able to fire).
+_LINUX_FACILITY_TOKENS = ("/proc", "inotify", "mountinfo", "/sys", "netlink", "sock_diag",
+                          "uevent", "procnet", "/proc/net", "sysfs")
+
+WINDOW_STATE_RESOURCED = "re-sourced"
+WINDOW_STATE_ABSENT = "absent"
+
+
+class SilentEmptyWindow(Exception):
+    """A window enumerated by the census that is NEITHER re-sourced NOR declared-absent-with-
+    reason — it would yield nothing and say nothing. B10's forbidden state; the census's own
+    failing check (a new observe op with no under-our-core settlement reds here)."""
+
+
+class BodyWideningWindow(Exception):
+    """A window settled RE-SOURCED whose core route names a Linux host facility — re-sourcing a
+    window by ADDING a host facility to the body, refused by L1/L21 (the A3 guard)."""
+
+
+def _route_names_linux_facility(route):
+    text = str(route)
+    return any(tok in text for tok in _LINUX_FACILITY_TOKENS)
+
+
+def _derived_window_names():
+    """The five window names, DERIVED from OP_FOR_WINDOW and CROSS-CHECKED against the window
+    classes in windows.py — never hand-listed. Raises if the two disagree (the set could not
+    be derived: STOP condition (b) of the plan). Import is deferred to avoid the windows<->seam
+    import cycle."""
+    from . import windows as _windows                                     # deferred: cycle
+    op_names = set(OP_FOR_WINDOW)
+    #: the window classes whose `name` is one of the observation-surface windows.
+    class_names = {type(w).name for w in _windows.default_windows()
+                   if type(w).name in op_names}
+    if class_names != op_names:
+        raise ValueError(
+            "the observe windows cannot be DERIVED: OP_FOR_WINDOW names %s but windows.py "
+            "presents %s for those names — the census set is derived from the registry, never "
+            "guessed (C7 P9 STOP (b))" % (sorted(op_names), sorted(class_names)))
+    #: preserve OP_FOR_WINDOW's declared order.
+    return [w for w in OP_FOR_WINDOW]
+
+
+def _host_facility_for(window):
+    """The Linux host facility the window reads, from its OWN static descriptor in windows.py
+    (windows.<Window>.host_facility) — read, never probed, so the census names the facility
+    without opening it. Deferred import (cycle)."""
+    from . import windows as _windows                                     # deferred: cycle
+    for w in _windows.default_windows():
+        if type(w).name == window:
+            fac = getattr(type(w), "host_facility", None)
+            if fac:
+                return fac
+    raise ValueError("window %r declares no host_facility descriptor in windows.py — the "
+                     "census cannot name what it reads (C7 P9 STOP (b))" % (window,))
+
+
+def settle_window(window, core_routes=None):
+    """Settle ONE window under our core. Returns a settlement record:
+
+        {'window', 'state': 're-sourced', 'core_route'}                      (re-sourced)
+        {'window', 'state': 'absent', 'host_facility', 'reason'}             (declared absent)
+
+    Raises SilentEmptyWindow when the window is neither re-sourced nor declared-absent-with-
+    reason (B10's forbidden silent-empty state); raises BodyWideningWindow when a re-sourced
+    route names a Linux host facility (the L1/L21 widening — the A3 guard)."""
+    routes = CORE_ROUTES if core_routes is None else core_routes
+    if window in routes:
+        route = routes[window]
+        if _route_names_linux_facility(route):
+            raise BodyWideningWindow(
+                "the %r window is settled RE-SOURCED but its core route %r names a Linux host "
+                "facility — re-sourcing a window by adding a host facility to the body is "
+                "refused (L1/L21; C7 P9 A3)" % (window, route))
+        return {"window": window, "state": WINDOW_STATE_RESOURCED, "core_route": route}
+    reason = WINDOW_ABSENT_ROUTE.get(window)
+    if not reason:
+        raise SilentEmptyWindow(
+            "the %r window is neither re-sourced (no core route registered) nor declared "
+            "absent (no measured re-source route) under our core — a SILENT-EMPTY window, "
+            "which B10 refuses: settle it (a core route, or a measured absent reason)" % (window,))
+    facility = _host_facility_for(window)
+    return {
+        "window": window,
+        "state": WINDOW_STATE_ABSENT,
+        "host_facility": facility,
+        "reason": ("the host facility %r is not presented under our core (the governance core "
+                   "names no Linux facility, L1); the core route that would re-source it is %s"
+                   % (facility, reason)),
+    }
+
+
+def window_census(extra_windows=(), core_routes=None):
+    """The B10 window census under our core. Enumerates the five windows DERIVED from
+    OP_FOR_WINDOW (cross-checked against windows.py) and settles EACH — re-sourced with its
+    core route, or absent with its measured reason — so no window is silently empty.
+
+    Returns a list of settlement records in OP_FOR_WINDOW order. Raises SilentEmptyWindow /
+    BodyWideningWindow on the forbidden states (the census's own failing checks).
+
+    `extra_windows` appends window NAMES the caller wants settled beside the five — used to
+    PLANT a silent-empty window (a name with no settlement) and drive the census's failing
+    check. `core_routes` overrides the live CORE_ROUTES so a test can drive the re-sourced
+    arm (a valid core route settles re-sourced; a Linux-facility route reds) without the live
+    registry claiming a route the body does not serve."""
+    names = _derived_window_names()
+    for extra in extra_windows:
+        if extra not in names:
+            names.append(extra)
+    return [settle_window(w, core_routes=core_routes) for w in names]

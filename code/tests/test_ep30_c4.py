@@ -177,7 +177,7 @@ class Founded:
 
     def establish(self, *account_ids):
         for a in account_ids:
-            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": a, "actor_class": "process"})
+            self.gate.execute("CREATE-ACCOUNT", "SYSTEM", {"account_id": a, "actor_class": "program"})
 
     def found_region(self, region, size=4096):
         self.gate.execute("MEM-GRANT", "SYSTEM", {"region": region, "size": size})

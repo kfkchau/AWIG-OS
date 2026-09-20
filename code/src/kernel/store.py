@@ -31,14 +31,12 @@ schema change (design for the stretch, 02 §2).
 """
 
 import atexit
-import datetime
 import json
-import os
-import threading
 import weakref
 from pathlib import Path
 from types import MappingProxyType
 
+from bridge.host_seam import host   # C7 P2 — the record pen / single-writer lock / clock / concurrency routed through the seam
 from .canonical import canonical_hash
 from .commit import BatchFailed, GroupCommit
 from . import keys                          # KeyProjection reads keys.KEY_KINDS/ACCOUNT (one
@@ -60,7 +58,7 @@ SIG_PENDING = "pending"
 
 def _now_iso():
     """UTC ISO-8601. record_time uses this at append (the total-order anchor)."""
-    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+    return host().recorded_now_iso()
 
 
 #: DESCRIPTOR NUMBERS THIS PROCESS HAS LET GO OF WITHOUT CLOSING (EP-28C W4c). A store whose
@@ -99,7 +97,7 @@ def _close_handle(fh, fd, ident):
     or a test can read which of the three worlds it was in.
     """
     try:
-        st = os.fstat(fd)
+        st = host().fstat(fd)
     except OSError:
         # ALREADY CLOSED AND NOT REUSED. There is nothing of ours here and nothing to do;
         # closing again would be a second release of a number we no longer hold.
@@ -118,15 +116,44 @@ def _close_handle(fh, fd, ident):
 
 
 def _pid_alive(pid):
-    if pid <= 0:
-        return False
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True  # exists, owned by another user
-    return True
+    # The host-PID single-writer liveness probe — the LEAST-PORTABLE crossing (archi :3919),
+    # routed through the seam. RealHost performs the identical os.kill(pid, 0) and reads its
+    # exceptions the same way; the lock PROTOCOL (compare the pid, refuse a live foreign writer)
+    # stays here in the store.
+    return host().pid_alive(pid)
+
+
+# THE IN-PROCESS LIVE-WRITER MAP -> READER DEMOTION (EP-MAINT-OUTSIDE-5, re-spec C; archi :4199).
+#
+# "One writer at a time" is a property of the RECORD, not of a process or a `Store` object. The
+# seam's held OS advisory lock (host_seam.lock_write) closes the race ACROSS processes (A1), but
+# POSIX record locks are PROCESS-associated — a second writer opened over one record in the SAME
+# process does NOT conflict at the OS, and it also passes `_pid_alive(pid) and pid != getpid()`
+# (the pid is our own). So a second same-process open while a writer is LIVE is a second writer the
+# OS lock cannot refuse.
+#
+# It is NOT REFUSED — refusing ANY second same-process open reddened the estate, because the
+# dominant reconstruction idiom (build_full_kernel AGAIN over a live record to prove replay) is
+# exactly such a second open (the earlier in-process registry was struck at :4199). It is DEMOTED
+# TO A READER: it takes no OS lock, registers nothing, computes every view (the record is read),
+# and any APPEND through it is refused BY NAME (`_require_fh` -> `ReaderCannotAppend`). The
+# reconstruction idiom READS and compares — it never appends — so it runs transparently as a
+# reader; only a site that genuinely WRITES through a second live instance trips the refusal, which
+# is the true two-writer case (the property the demotion protects).
+#
+# A process-local map, resolved-record-path -> the owning LIVE-WRITER store's id, never persisted
+# (like `_write_lock`/`group_commit`). ADDED when a writer acquires, CLEARED when it releases
+# (release-on-close, A4), so a CLOSED writer frees the path and the next open is a WRITER again. The
+# PLANT (the reader outcome's falsifiability) neuters this map so the second open is not demoted —
+# it takes the writer role too, two live writers are admitted and the append is NOT refused — the
+# check can fail.
+#
+# Keyed by `str(self.file_path)`: every estate caller (and the test) passes the same record-path
+# string to both opens, so the key matches. PROPOSED hardening, cost-if-wrong low (two spellings of
+# one path in ONE process both taken as writers): canonicalise the key — deferred because it would
+# route path resolution through the seam (a mechanism widening) for a case the estate never exhibits
+# and the acceptance does not name.
+_live_writers = {}
 
 
 def _freeze(obj):
@@ -139,6 +166,20 @@ def _freeze(obj):
     if isinstance(obj, list):
         return tuple(_freeze(v) for v in obj)
     return obj
+
+
+def _split_committed_prefix(raw):
+    """Split record-file BYTES into (committed_prefix, incomplete_tail, tail_offset). A record is
+    COMMITTED when its line ends in a newline (the append writes the line and its newline as one
+    flushed unit — store.py:1242 — so the newline is the commit marker). The committed prefix is
+    every byte up to and INCLUDING the last newline; the incomplete tail is any bytes AFTER it — a
+    FINAL line a crash cut short before its newline landed. A file that ends in a newline, or is
+    empty, has no incomplete tail (tail == b""). Splitting on the newline byte needs no decode, so a
+    tail truncated mid-multibyte-character is found rather than raising (EP-MAINT-OUTSIDE-6, F2)."""
+    if raw == b"" or raw.endswith(b"\n"):
+        return raw, b"", len(raw)
+    nl = raw.rfind(b"\n")                     # -1 when there is no newline at all: whole file is the tail
+    return raw[:nl + 1], raw[nl + 1:], nl + 1
 
 
 def frozen_default(o):
@@ -264,6 +305,15 @@ class RegionHeldAtBarrier(RuntimeError):
 class StaleIndex(RuntimeError):
     """A projection could not prove it is current against the record. It refuses; it never
     serves (design/36 K3's coherent-or-refuse — a hop never lies)."""
+
+
+class ReaderCannotAppend(RuntimeError):
+    """A READER KERNEL CANNOT APPEND (EP-MAINT-OUTSIDE-5, re-spec C; archi :4199). A store DEMOTED
+    to a reader — a second same-process open over a record a live writer already holds — computes
+    every view but takes no writer role, so any attempt to open the record for append is refused BY
+    NAME. Raised at the append funnel (`_require_fh`), so a reader that only READS never reaches it
+    and pays nothing. A reader stays a reader for its life; the writer that holds the path frees it
+    on close and the next open is a writer again."""
 
 
 def stream_of(e):
@@ -561,19 +611,51 @@ class EventStore:
 
     def __init__(self, file_path, lock=False, require_rule_cited=False):
         self.file_path = Path(file_path)
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        host().mkdir_p(self.file_path.parent)
         self.events = []
         self._lock_path = None
         # H3: when True, every appended record must cite a rule (fail loud, ST-A).
         self.require_rule_cited = require_rule_cited
+        # A DEMOTED READER (re-spec C): a lock=True open over a record a LIVE writer already holds in
+        # THIS process opens as a reader — no OS lock, views compute, any append refused BY NAME.
+        # Stays False for the WRITER and for an explicit lock=False store (the disposable-world
+        # default, which still appends); `_acquire_lock` sets it True only on the demotion path.
+        self._reader = False
         if lock:
             self._acquire_lock()
-        if self.file_path.exists():
-            with self.file_path.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        self.events.append(_freeze(json.loads(line)))  # H1: deep read-only
+        # THE COMMITTED TAIL, MADE A STATED CONTRACT (EP-MAINT-OUTSIDE-6, F2). The append writes
+        # `json.dumps(record) + "\n"` as one flushed unit (:1242), so the CLOSING NEWLINE is the
+        # commit marker: a crash mid-write leaves either a whole newline-terminated line or an
+        # unterminated FINAL line — never a committed record missing its newline. The loader reads
+        # the file as BYTES (the incomplete tail may be truncated mid-multibyte, which text-mode
+        # decoding would raise on before json.loads was ever reached) and loads the COMMITTED PREFIX:
+        # every line up to and including the last newline. This makes the ":1196" comment true at
+        # EVERY byte offset of a crash — the incomplete final line is set ASIDE beside the record for
+        # diagnosis (never over it, never truncating it) and a row states it; an INTERIOR line that
+        # ends in a newline yet does not parse is corruption of a COMMITTED record: refused at open
+        # and routed to the recover ceremony, never silently dropped.
+        self.set_aside_tail = None       # a ROW stating an incomplete final line kept aside (A2)
+        if host().path_exists(self.file_path):
+            raw = host().read_bytes(self.file_path)
+            if isinstance(raw, str):                             # a text-based host double stores/returns
+                raw = raw.encode("utf-8")                        # str; the real host returns bytes — normalise
+            committed, tail, tail_offset = _split_committed_prefix(raw)
+            for idx, line_bytes in enumerate(committed.split(b"\n")[:-1]):  # drop the b"" after the last \n
+                try:
+                    line = line_bytes.decode("utf-8").strip()
+                except UnicodeDecodeError as exc:                    # a committed line whose bytes are not text
+                    from .erasure import interior_corruption_at_load  # lazy, mirrors the gate import at commit
+                    raise interior_corruption_at_load(self.file_path, idx, line_bytes, exc)
+                if not line:
+                    continue                                         # a blank line: skipped, exactly as before
+                try:
+                    obj = json.loads(line)
+                except ValueError as exc:                            # a COMMITTED line (ends in \n) that does not
+                    from .erasure import interior_corruption_at_load  # parse == interior corruption: refuse + route
+                    raise interior_corruption_at_load(self.file_path, idx, line_bytes, exc)
+                self.events.append(_freeze(obj))                     # H1: deep read-only
+            if tail:                                                 # an unterminated FINAL line: a crash mid-write
+                self._set_aside_incomplete_tail(tail, tail_offset)
         # Derived caches: rebuilt on load, maintained on append. Delete them and
         # replay yields identical answers (round-trip law; no state lives here).
         self._by_action = {}
@@ -620,12 +702,12 @@ class EventStore:
         #
         # RE-ENTRANT because the dual-audit mirror appends from inside an on-append listener,
         # which runs inside a publish on this same thread.
-        self._write_lock = threading.RLock()
+        self._write_lock = host().new_rlock()
         #: Per-thread: is this thread currently inside a publish? A listener that appends is,
         #: and its record rides the enclosing act's barrier rather than waiting for one of its
         #: own — which is what happened before the split, when a nested submission was
         #: committed inline into the outer batch.
-        self._publishing = threading.local()
+        self._publishing = host().new_local()
         # MANY SUBMITTERS, ONE APPENDER (EP-28C W1). The queue is process-local mechanism and
         # is never persisted; `commit.GroupCommit` carries the derivation.
         self.group_commit = GroupCommit(self._commit_batch, self._verify_echo,
@@ -633,30 +715,114 @@ class EventStore:
                                         publishing_here=self.publishing_here)
         self._finalizer = None
 
+    # ---- the committed tail: keep an incomplete final line aside (EP-MAINT-OUTSIDE-6, A2) ----
+    def _set_aside_incomplete_tail(self, tail, tail_offset):
+        """An unterminated FINAL line — bytes a crash wrote before their newline landed — is NOT part
+        of the record. Keep its bytes ASIDE beside the record in a sidecar the loader writes (a
+        DIFFERENT file — the record file's bytes are NEVER truncated and NEVER deleted) and STATE the
+        set-aside in a row on this store: the byte offset it began at in the record file, its byte
+        length, and the sidecar path. The store has already opened on the committed prefix; the
+        incomplete bytes are preserved for diagnosis, neither lost nor replayed. Idempotent: re-opening
+        the same file re-writes the identical sidecar and states the identical row."""
+        sidecar = self.file_path.with_name(self.file_path.name + ".incomplete-tail")
+        host().write_bytes(sidecar, tail)                # a sidecar beside the record; the record is untouched
+        self.set_aside_tail = {"offset": tail_offset, "length": len(tail), "sidecar": str(sidecar)}
+
     # ---- single-writer lock (the single-writer ruling; one writer per data dir) ----
     def _acquire_lock(self):
+        # THE ONE-WRITER RULE ACROSS PROCESSES, MADE REAL (EP-MAINT-OUTSIDE-5, archi F1 :4177). It
+        # WAS a CHECK-THEN-WRITE on a pid file with a race window: two processes that read before
+        # either WROTE were both admitted and each minted `seq = len(events)+1` from the same empty
+        # record (the seq-166 collision the reviewer's headline names). NOW the AUTHORITATIVE gate
+        # is the seam's HELD OS advisory lock — `lock_write` takes an exclusive, non-blocking
+        # fcntl.lockf on the lock file and keeps the fd open for this writer's lifetime, so two
+        # copies opened at the same instant can no longer both be admitted (the race is closed at
+        # the OS, not by a check).
+        #
+        # THE PID CHECK STAYS as a fast, NAMED early refusal (a live FOREIGN holder) and to keep the
+        # foreign-pid smoke probe green (A3, tests/test_maint_outside_4.py): it refuses a live
+        # foreign pid and PASSES our own — which is exactly what the estate's reconstruction idiom
+        # relies on (build_full_kernel over the same record, in one process, to prove replay from
+        # the record; POSIX record locks are process-associated, so the held lock admits that reopen
+        # too). With the OS lock present the check is no longer the gate; it cannot admit two racers.
+        #
+        # THE IN-PROCESS SECOND WRITER IS DEMOTED TO A READER (EP-MAINT-OUTSIDE-5, re-spec C; archi
+        # :4199). Refusing it (the earlier registry, struck at :4199) reddened the reconstruction
+        # idiom — the same-process reopen it depends on. Instead: a second open while a LIVE writer
+        # holds this record in this process takes NO OS lock, registers NOTHING, and becomes a reader
+        # (`self._reader`); its appends are refused by name at `_require_fh`. The reconstruction idiom
+        # reads and compares — it never appends — so it runs transparently as a reader; only a true
+        # two-writer site (an append through a second live instance) trips the refusal.
         self._lock_path = self.file_path.with_name(self.file_path.name + ".lock")
-        if self._lock_path.exists():
+        self._lock_held = False
+        self._reg_key = str(self.file_path)
+        # A LIVE FOREIGN HOLDER (cross-process) IS REFUSED FIRST — BEFORE the in-process demotion.
+        # The foreign-pid check is the CROSS-PROCESS gate (A1/A3): a different live pid in the lock
+        # file means another OS process owns the record, and that is a HARD refusal — a reader is not
+        # admitted against a foreign writer either. It runs before the demotion so a foreign holder is
+        # refused even when THIS process also has a live writer registered — the precedence the A3
+        # foreign-pid probe (`tests/test_maint_outside_4.py`) relies on. It PASSES OUR OWN pid (a
+        # reconstruction reopen's lock file carries it), so a same-process reopen falls through to the
+        # demotion below rather than being refused here. HONEST CAP: `lock_read` opens and closes its
+        # own fd on the lock inode, and a POSIX record lock is dropped by closing ANY fd on that inode,
+        # so a same-process reopen releases the first writer's held OS lock here and — as a READER —
+        # does NOT re-take it (the re-spec's "the OS lock is not taken"). This is invisible in
+        # production, which opens ONE kernel per process and never reconstructs the LIVE record
+        # in-process; it surfaces only in the test reconstruction idiom, where cross-process contention
+        # is not the subject. It is the same read-drops-lock property A1/A4 already carried (there the
+        # writer re-took it); a reader, by its rule, does not.
+        if host().path_exists(self._lock_path):
             try:
-                pid = int(self._lock_path.read_text())
+                pid = int(host().lock_read(self._lock_path))
             except ValueError:
                 pid = -1
-            if _pid_alive(pid) and pid != os.getpid():
+            if _pid_alive(pid) and pid != host().getpid():
                 raise RuntimeError(
                     f"event log locked by pid {pid} ({self._lock_path}) — "
                     f"one writer per data dir"
                 )
-        self._lock_path.write_text(str(os.getpid()))
+        # NO FOREIGN HOLDER. A LIVE writer in THIS process holds the record -> DEMOTE to a reader
+        # (re-spec C). A same-process second `lockf` would NOT conflict (POSIX record locks are
+        # process-associated) and the pid check above passed our own pid, so the OS lock cannot refuse
+        # it, and it must not be refused (that reddens the reconstruction idiom). Take no lock, register
+        # nothing; a reader for its life (the writer frees the path on close — release-on-close, A4).
+        if _live_writers.get(self._reg_key) is not None:
+            self._reader = True
+            return
+        try:
+            host().lock_write(self._lock_path, str(host().getpid()))     # take + HOLD the OS lock
+        except OSError:
+            holder = "?"
+            try:
+                holder = host().lock_read(self._lock_path).strip()
+            except Exception:
+                pass
+            raise RuntimeError(
+                f"event log locked by pid {holder} ({self._lock_path}) — one writer per data dir"
+            )
+        self._lock_held = True
+        _live_writers[self._reg_key] = id(self)     # a LIVE writer now holds this record in-process
         atexit.register(self._release_lock)
 
     def _release_lock(self):
+        # RELEASE ON CLOSE, not only at exit (EP-MAINT-OUTSIDE-5, A4): closing frees the held OS
+        # advisory lock (the seam closes the fd) and unlinks the file, so a later writer over the
+        # same record is admitted. Idempotent — `close()`, `__exit__` and the atexit backstop may
+        # each call it; the first does the work. Reads NO fd on the lock file (a POSIX record lock is
+        # dropped by closing ANY fd on its inode, so the holder never opens a second one). GARBAGE
+        # COLLECTION never calls this (the file finalizer closes the record fd only), so a store
+        # collected without closing keeps the writer role until process exit, as before.
+        if not getattr(self, "_lock_held", False):
+            return
+        self._lock_held = False
+        # CLEAR the in-process live-writer map (re-spec C / A4): a closed writer frees this record,
+        # so the next open in this process is a WRITER again (not demoted to a reader). Popped only
+        # if the entry is still ours (guard a later writer that re-registered after this one closed).
+        key = getattr(self, "_reg_key", None)
+        if key is not None and _live_writers.get(key) == id(self):
+            _live_writers.pop(key, None)
         try:
-            if (
-                self._lock_path
-                and self._lock_path.exists()
-                and int(self._lock_path.read_text()) == os.getpid()
-            ):
-                self._lock_path.unlink()
+            host().lock_unlink(self._lock_path)
         except Exception:
             pass
 
@@ -835,8 +1001,21 @@ class EventStore:
         conformance surface passing on an accident of timing that nobody promises is a
         surface that will move without anyone changing it.
         """
+        # A READER KERNEL CANNOT APPEND (EP-MAINT-OUTSIDE-5, re-spec C): a store demoted to a reader
+        # (a second same-process open over a record a live writer holds) computes every view but
+        # takes no writer role, so opening the record for append is refused BY NAME. This is the ONE
+        # `open_append` site, so it is the single funnel every publish must cross; the refusal rides
+        # the store's normal append-error path (`_publish_one` carries it to its submitter, which
+        # re-raises), and a reader that only READS never reaches here — reads cost nothing and never
+        # risk a false refusal.
+        if getattr(self, "_reader", False):
+            raise ReaderCannotAppend(
+                f"a reader kernel cannot append ({self.file_path}) — a second open of a record a "
+                f"live writer already holds in this process is a reader for its life; one writer "
+                f"per data dir"
+            )
         if self._fh is None:
-            self._fh = self.file_path.open("a", encoding="utf-8")
+            self._fh = host().open_append(self.file_path)
             # Closed when this store is collected — IF THE NUMBER IS STILL OURS. The finalizer
             # holds the FILE, never the store, so registering it creates no reference that
             # would keep the store alive; and it carries the descriptor's IDENTITY, taken here
@@ -844,17 +1023,20 @@ class EventStore:
             # is not a stable identity and this call may run at an arbitrary later collection
             # point (EP-28C W4c; `_close_handle` carries the derivation).
             fd = self._fh.fileno()
-            st = os.fstat(fd)
+            st = host().fstat(fd)
             self._finalizer = weakref.finalize(self, _close_handle, self._fh, fd,
                                                (st.st_dev, st.st_ino))
         return self._fh
 
     def close(self):
-        """Release the held descriptor. Idempotent; a store may be closed and then read."""
+        """Release the held descriptor AND the writer lock. Idempotent; a store may be closed and
+        then read. The writer lock now frees ON CLOSE (EP-MAINT-OUTSIDE-5, A4), not only at exit,
+        so a later writer over the same record is admitted once this one closes."""
         if self._finalizer is not None:
             self._finalizer()
             self._finalizer = None
         self._fh = None
+        self._release_lock()
 
     def __enter__(self):
         return self
@@ -955,7 +1137,7 @@ class EventStore:
                 "monotone seq; durability needs neither.")
         f = self._require_fh()
         try:
-            os.fdatasync(f.fileno())
+            host().fdatasync(f.fileno())
         except BaseException as exc:                      # noqa: BLE001 — the store is done
             raise self._poison(exc, "the record's barrier failed")
         return batch

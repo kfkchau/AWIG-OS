@@ -651,6 +651,14 @@ WHOLE_RECORD_ON_PATH_BY_DESIGN = {
         "shape, but a whole-record read in the worst case. `src/kernel/gate.py` is outside "
         "this EP's fence — the EP says a guard needing that file is a finding about where the "
         "per-act path lives, and this is that finding, stated rather than acted on. RAISED.",
+    # views.class_capabilities RETIRED (P8B-HARDENING delta 1, archi Resolution A :3735): THE FIX this
+    # row named ("a memoised capabilities projection served like op_definitions") LANDED. The (class,
+    # cell) pairing's capability read is now head-memoised on the category_packs subset generation and
+    # reads THROUGH the category_packs projection (a subset), so it no longer walks the whole record. The
+    # operation-rate walk this row disclosed no longer exists, so the row is retired (its reader is gone
+    # from the observed raw reads). The read is served from the memo at the pre-write gate chokepoint, so
+    # it is not an OBSERVED per-act fold either — but a regression to a raw store.all() walk would still
+    # surface here as an undeclared whole-record read, so this guard still protects it.
 }
 
 

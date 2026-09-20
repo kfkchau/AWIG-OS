@@ -188,8 +188,9 @@ class _Live(unittest.TestCase):
         #  1.44.0), 91 -> 92, this live-census pin moved BY NAME at dispatch (the era-pinned pins do not).
         #  EP-52 (FIREWALL-IN-THE-RECORD, C5 P7) added ONE more — FILTER-DECISION — as founding data
         #  (MINOR 1.45.0 -> 1.46.0), 92 -> 93, this live-census pin moved BY NAME at dispatch (the §A57
-        #  sweep; the era-pinned pins in test_ep28j/k/n/n2/ep51 do not).]
-        self.assertEqual(len(drove), 93, "the population is 93 ops, enumerated from the pack")
+        #  sweep; the era-pinned pins in test_ep28j/k/n/n2/ep51 do not).
+        #  C6a VT-2 (CREATE-RELATIONSHIP MINTED live, MINOR 1.51.0 -> 1.52.0) moved 93 -> 94 BY NAME (§A57).]
+        self.assertEqual(len(drove), 94, "the population is 94 ops, enumerated from the pack")
         return drove
 
     def clause_the_door_is_never_erased(self, door, stream):
@@ -256,8 +257,9 @@ class TestDefaultPreservesTheWorld(_Live):
         #  RECEIPT, 90 -> 91 — the second live-census pin the EP-49D builder missed, widened at mgr's hand.
         #  EP-50 (VIEW-SERVICING, 1.43.0 -> 1.44.0) added VIEW-SERVICE, 91 -> 92 — the SECOND census pin
         #  moved BY NAME at dispatch (the EP-49D lesson folded: a founding op-mint moves BOTH census pins).
-        #  EP-52 (FILTER-DECISION, 1.45.0 -> 1.46.0) moved 92 -> 93 — BOTH census pins moved by name (§A57).]
-        self.assertEqual(len(set(drove)), 93)
+        #  EP-52 (FILTER-DECISION, 1.45.0 -> 1.46.0) moved 92 -> 93 — BOTH census pins moved by name (§A57).
+        #  C6a VT-2 (CREATE-RELATIONSHIP MINTED, 1.51.0 -> 1.52.0) moved 93 -> 94 — BOTH census pins by name (§A57).]
+        self.assertEqual(len(set(drove)), 94)
 
     def test_THE_RED_WORLD_an_engine_that_honours_the_key_unconditionally(self):
         """R1, produced THROUGH the real append path (§A42). The plant makes every record
@@ -535,6 +537,10 @@ W1B_STREAM = "BIND-DEVICE"
 W1B_SEPARATOR = {
     "description": "EP-30-W1b: E1's separator shape over the device family",
     "params": {"device": "required"}, "law_cited": "CAP-IS-LAW",
+    # C6 P8 (L28): a probe op founded against the SHIPPED pack (which declares CELL-LAW) must declare
+    # a cell or the founding door refuses it — this probe is a structured record-mechanic, cell "S",
+    # like every gov-os op (the inversion below inherits it via dict(W1B_SEPARATOR, ...)).
+    "cell": "S",
     # `device` is a device identifier ("dev0") — STRUCTURAL, matching the shipped census
     # (BIND-DEVICE/UNBIND/DEVICE-IO-WINDOW-WRITE all declare device structural).
     "structural_params": ["device"],

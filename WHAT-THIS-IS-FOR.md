@@ -1,6 +1,6 @@
 # What this is for
 
-Dated 14 September 2026. `STATUS.md` says what is true today; where this page and the code disagree, the code is right.
+Dated 20 September 2026. `STATUS.md` says what is true today; where this page and the code disagree, the code is right.
 
 Every organisation keeps five things in five places: a rulebook, an audit log, an institution, a constitution, and the machine that acts. None of the five is the one that does the acting, and each is kept by a different profession with its own tools. Here they are one record and five names for it. The record is the definitive. Everything else, every screen, every log, every report, is derived from it and can be thrown away and rebuilt, hash for hash. Fix the definitive and the derivative follows.
 
@@ -45,6 +45,22 @@ You want an AI to work inside the organisation, and you have read the warning th
 Here an AI organisation meets the world at two openings only: what it is asked, and what it asks for. Nothing arriving at the second executes until a rule says so, and the pass or the refusal is a row. A turned document arrives at the first opening. Whatever the organisation then wants arrives at the second as a proposal, and taking data out needs a grant nobody wrote, so the proposal comes back as a refusal citing the rule. Contained is not the same as safe: an organisation with a grant can be turned to misuse that grant, and the damage is bounded to what was granted, not to nothing. The page says contained.
 
 Run it: not yet from this repository. The border that makes an outside request a draft the gate decides is built and proven in test worlds between a host and a guest; those tests read a private file and are skipped in the public copy, each skip naming why. The organisation between the two openings is a stand-in pack today. Design 39 section 3 and design 49 to 51 in `design/` state the contract.
+
+### 6. The machine that cannot lie about what it runs
+
+You are told a machine runs the approved software. Today that is a claim: a changed file, a swapped library, a quiet update, and the machine goes on saying the same thing.
+
+Here the kernel and the interpreter it carries are pinned in the record by their fingerprints, and the machine checks itself against them before its first act. Change one byte of either and it does not start, and the refusal is a row.
+
+Run it: build and boot the kernel from `code/src/body` (the commands are on [`STATUS.md`](./STATUS.md)), then build it again with one planted change, `./build.sh . /tmp/awig-body PLANT_WORKER_IMAGE_TAMPER`, and watch the matching check fail. Runs today, in a virtual machine.
+
+### 7. The file that became a program, and the program nobody can see
+
+A document runs a macro. A background program does things no window shows. An AI model "does things". On a desktop today, information quietly becomes something that acts, and what acts is often invisible.
+
+Here a thing is either information or an actor. Information never acts. A program exists as an actor only from the moment the system loads it, by one row you can read, with its rules sealed on that row; it cannot ask for more than it declared when it was installed. A background program has no hiding place, because it was born by a row and every act it makes is a row. An AI model is a file until a program loads it.
+
+Run it: not yet. Every act already crosses the gate and is a row, so what a program did is readable today. The birth row for every program, with its rules sealed, is campaign 8: designed, not built. [`STATUS.md`](./STATUS.md) lists it under what comes next.
 
 ---
 

@@ -606,7 +606,9 @@ class TestFoundingBump(unittest.TestCase):
         move alone; (3) OP_CHECKS UNCHANGED at 19 (no new check kind). No op added or removed, no
         law created — the :3069 discriminator: a data-born MINOR, not a new-surface one."""
         _d, _s, gate, views = _world()
-        self.assertEqual(len(views.op_definitions()), 93)                  # op-population +0
+        # EP-48G's own move is +0 (a rule-errno level is not an op); the LIVE base moved 93 -> 94 when
+        # C6a VT-2 MINTED CREATE-RELATIONSHIP (1.51.0 -> 1.52.0) — this live-census pin tracks it BY NAME (§A57).
+        self.assertEqual(len(views.op_definitions()), 94)                  # live op-population (EP-48G +0; VT-2 +1)
         self.assertEqual(len(OP_CHECKS), 19)                              # no check kind
         self.assertEqual(len(views.category_packs()["rule-errno"]["levels"]), 8)  # the data move
         # NO op or law was added by this move: the pack's op/law populations are unchanged from

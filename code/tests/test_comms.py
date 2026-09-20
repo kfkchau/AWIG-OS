@@ -43,7 +43,7 @@ class TestComms(unittest.TestCase):
         self.store, self.gate, self.views = build_kernel(self.record, blobs=self.blobs)  # comms ops via genesis (EP-05)
         self.cv = CommsView(self.store)
         self.gate.execute("CREATE-ACCOUNT", "SYSTEM",
-                          {"account_id": self.ENTITY, "actor_class": "process"})
+                          {"account_id": self.ENTITY, "actor_class": "program"})
 
     def open_channel(self, channel, **over):
         """One opening, under the contract the live founding declares. Named once so the

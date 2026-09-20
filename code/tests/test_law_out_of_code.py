@@ -9,6 +9,7 @@ T-NO-LAW-IN-CODE    — first cut: root-law text lives only in the genesis seed,
 """
 
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -24,10 +25,12 @@ from kernel.errors import OpError  # noqa: E402
 # guarantee tightens accordingly: the law text and full-form literals must live ONLY under
 # founding/, and a hit anywhere else in src/ (boot.py now INCLUDED) fails.
 from founding.install import root_laws, load_pack, PACK_PATH  # noqa: E402
+from kernel.attestation import ATTESTED_MEMBERS  # noqa: E402  (C7 P3b-1: the one attested list)
 ROOT_RULES = root_laws()
 
 SRC = os.path.join(os.path.dirname(__file__), "..", "src")
 FOUNDING_DIR = os.path.join(SRC, "founding")
+BODY_DIR = os.path.join(SRC, "body")
 
 
 def _read(rel):
@@ -35,17 +38,33 @@ def _read(rel):
         return f.read()
 
 
-def _src_py_outside_founding():
-    """Every .py under src/ EXCEPT those under founding/ — the tightened scan surface:
-    the law lives only in founding/, so a law literal anywhere here is a leak."""
-    for root, _dirs, files in os.walk(SRC):
-        if os.path.abspath(root).startswith(os.path.abspath(FOUNDING_DIR)):
+def _src_py_outside_founding(src_dir=None):
+    """The governed-source surface under src/ — the tightened scan surface, walked the same way
+    kernel/attestation.law_guard_surface walks it.
+
+    Every .py under src/ EXCEPT founding/ (the law lives only in founding/, so a law literal
+    anywhere else is a leak), PLUS every file under src/body/ regardless of extension (C7 P3b-1,
+    §9 mechanism 1): the first merged body's C/.h/.S/build files are not .py but they ARE governed
+    source in the signed base (read whole, no opaque code, I3), so an UNRECORDED file under
+    src/body/ is caught here exactly as a stray .py is. `src_dir` walks a mutated mirror tree so
+    the planted-red control can drive the extension."""
+    src = src_dir or SRC
+    founding = os.path.join(src, "founding")
+    body = os.path.join(src, "body")
+    for root, _dirs, files in os.walk(src):
+        ar = os.path.abspath(root)
+        if ar.startswith(os.path.abspath(founding)):
             continue
+        if "__pycache__" in ar.split(os.sep):
+            continue                      # bytecode cache is not governed source
+        under_body = ar.startswith(os.path.abspath(body))
         for name in files:
-            if name.endswith(".py"):
+            if name.endswith(".pyc") or name.endswith(".pyo"):
+                continue
+            if name.endswith(".py") or under_body:
                 p = os.path.join(root, name)
                 with open(p, encoding="utf-8") as f:
-                    yield os.path.relpath(p, SRC).replace(os.sep, "/"), f.read()
+                    yield os.path.relpath(p, src).replace(os.sep, "/"), f.read()
 
 
 def _pack_record(name, levels):
@@ -211,6 +230,43 @@ class TestNoLawInCode(unittest.TestCase):
         # the six trigger dimensions are ONE named surface (views.VIEW_FILTER_DIMENSIONS); the gate's
         # full-form pass reuses it and must not carry a second copy (no duplicate governance vocab).
         self.assertNotIn("LAW_TRIGGER_DIMENSIONS", _read("kernel/gate.py"))
+
+
+class TestBodySourceIsAttested(unittest.TestCase):
+    """C7 P3b-1, §9 mechanism 1 (archi :4009): the FIRST MERGED body — the walk-guard is extended
+    so the property "nothing under src/ outside the attested list" holds for the body's non-.py
+    files too. Every governed source file under src/body/ (C/.h/.S/build/generator) is an attested
+    member, and a planted UNRECORDED src/body/foo.c reds the walk-guard (the check that can fail)."""
+
+    def test_every_governed_source_file_under_src_is_in_the_attested_list(self):
+        # the real tree: the walk-guard surface (now including src/body/ non-.py files) has NOTHING
+        # outside the attested list — one list, no second plane.
+        surface = {rel for rel, _src in _src_py_outside_founding()}
+        self.assertEqual(surface - set(ATTESTED_MEMBERS), set(),
+                         "a governed source file under src/ sits outside the attested list")
+        # and the body's own files are actually IN the surface (the extension caught the non-.py)
+        for rel in ("body/boot.S", "body/pmm.c", "body/vmm.c", "body/heap.c", "body/serial.c",
+                    "body/kmain.c", "body/body.h", "body/linker.ld", "body/build.sh",
+                    "body/rows_digest.h", "body/gen_rows_digest.py"):
+            self.assertIn(rel, surface, f"{rel} is not caught by the extended walk-guard")
+            self.assertIn(rel, ATTESTED_MEMBERS, f"{rel} is not an attested member")
+
+    def test_a_planted_unrecorded_body_c_file_reds_the_walk_guard(self):
+        # drive the extension: a mirror tree with an UNRECORDED src/body/foo.c, and a recorded
+        # (attested-by-name) neighbour. The walk-guard catches foo.c and NOT the recorded one.
+        tmp = tempfile.mkdtemp(prefix="p3b1-walkguard-")
+        self.addCleanup(shutil.rmtree, tmp, True)
+        os.makedirs(os.path.join(tmp, "body"))
+        with open(os.path.join(tmp, "body", "foo.c"), "w", encoding="utf-8") as f:
+            f.write("/* an unrecorded body source file — not in ATTESTED_MEMBERS */\n")
+        with open(os.path.join(tmp, "body", "serial.c"), "w", encoding="utf-8") as f:
+            f.write("/* stands in for the recorded, attested-by-name body source */\n")
+        surface = {rel for rel, _src in _src_py_outside_founding(src_dir=tmp)}
+        uncovered = surface - set(ATTESTED_MEMBERS)
+        self.assertIn("body/foo.c", uncovered,
+                      "a planted unrecorded src/body/foo.c must red the walk-guard")
+        self.assertNotIn("body/serial.c", uncovered,
+                         "an attested-by-name body source must NOT be flagged (the check can also pass)")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ process it describes.
 
 The project is presently maintained by its author. Until a contributor
 community forms, decisions are the maintainer's, and decisions of
-consequence are recorded in the open in this repository — including
+consequence are recorded in the open in this repository, including
 rejections. A community that keeps its refusals honest keeps its
 acceptances meaningful.
 
@@ -21,8 +21,7 @@ acceptances meaningful.
 ## Amendment
 
 Changes to this file follow the same flow as any other decision of
-consequence, and take effect when merged. The naming commitments (README
-§4) and the licensing structure (LICENSING.md) are standing commitments
+consequence, and take effect when merged. The naming commitments (NAMING.md) and the licensing structure (LICENSING.md) are standing commitments
 and are not weakened by any amendment to this file.
 
 ## The transition

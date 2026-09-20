@@ -59,6 +59,7 @@ mechanism is proven only in the TEST founding worlds that call `register_attesta
 
 import os
 
+from bridge.host_seam import host   # C7 P2 — the member body-read + the S-plane walk routed through the seam
 from .canonical import canonical_hash
 from . import crypto  # the ONE vetted-library boundary — the attestation seal is real when present
 
@@ -82,6 +83,105 @@ ATTESTATION_RULE = "BOOT-INT"
 # this list ever falls behind the guard's grep surface, so a new S-plane .py cannot slip in
 # outside attestation coverage.
 ATTESTED_MEMBERS = (
+    # grow-only add under C7 P3b-1 — THE BODY: MEMORY, the FIRST MERGED body code (design/54 §7
+    # P3b-1; §9 mechanism 1, archi :4009): ONE ATTESTED LIST, no second plane. Every file the body
+    # is built from — the hand-written C (read whole, no opaque code in the signed base, I3), the
+    # asm entry, the linker script, the generated rows-digest header, the derive-from-the-rows
+    # generator .py, and the guest build script — joins the attested set BY NAME, under the SAME
+    # digest and the SAME grow-only discipline. The C source is not a .py, so the law guard's walk
+    # (law_guard_surface / test_law_out_of_code._src_py_outside_founding) is extended to catch an
+    # UNRECORDED file under src/body/ too — the property "nothing under src/ outside the attested
+    # list" now holds for the body's files. The count-pins (test_ep40:259/:260, test_ep46:481,
+    # test_keymat:330, test_c7_p4_wake:384, test_c7_p6_genesis_pair:351) move 57 -> 68 by name (the
+    # 11 body files). The built .elf is NEVER a member (§9 mechanism 3 — the signed base is source).
+    #
+    # grow-only add under C7 P3b-2 — THE BODY: THE DISK AND THE RECORD ACTS (design/54 §7 P3b-2;
+    # archi :4019). The body's own disk C — a polled ATA/PIO block driver (ata.c), the bespoke
+    # append-only filesystem the record maps onto (bodyfs.c), the five-act self-check (diskcheck.c),
+    # their shared header (disk.h) — plus the seam-routed disk-image build tool (mkdisk.py) join the
+    # SAME one attested list. The walk-guard (law_guard_surface) already covers src/body's C/.h/.S/
+    # build kinds, so an unrecorded body file reds either way; these are recorded here BY NAME. The
+    # count-pins move 68 -> 73 (the 5 new files). Neither the built .elf nor the formatted disk image
+    # is ever a member (§9 mechanism 3 — the signed base is source, not a built kernel or a disk).
+    #
+    # grow-only add under C7 P3b-3 — THE BODY: CLOCK, INTERRUPTS AND ENTROPY (design/54 §7 P3b-3;
+    # archi :4049). The body's own interrupt + clock + entropy C — a flat GDT + a 256-gate IDT (idt.c),
+    # the exception/IRQ stubs (isr.S), the two clock acts (clock.c: the CMOS wall clock + the rdtsc
+    # monotonic window), the seeded ChaCha20 CSPRNG for the entropy act (entropy.c), their shared header
+    # (clock.h), and the interrupt/clock/entropy self-check (clkcheck.c) join the SAME one attested
+    # list. The walk-guard (law_guard_surface) already covers src/body's C/.h/.S/build kinds, so an
+    # unrecorded body file reds either way; these are recorded here BY NAME. The count-pins move 73 -> 79
+    # (the 6 new files: clkcheck.c/clock.c/clock.h/entropy.c/idt.c/isr.S). The built .elf is never a
+    # member (§9 mechanism 3). No new act (recording-clock, commit-window and entropy all pre-exist),
+    # NO founding — the pack is byte-unchanged.
+    #
+    # grow-only add under C7 P3b-4a — THE WORKER'S ENCLOSURE (design/54 §7 P3b-4a; §5 L18; archi :4085).
+    # The body's own enclosure C — user privilege (a TSS + user segments + the return into ring 3) and the
+    # SYSCALL/SYSRET crossing (the driver enclosure.c + the entry stub / recovery / incbin enclosure.S), the
+    # ELF64 loader of a sealed image (enclosure.c), the request→row crossing trail and the out-of-set native
+    # refusal (enclosure.c), the sealed-image digest folded on the metal (sha256.c), and OUR small
+    # hand-written test worker (worker.S + its linker script worker.ld) join the SAME one attested list BY
+    # NAME. The walk-guard (law_guard_surface) already covers src/body's C/.h/.S/.ld/build kinds, so an
+    # unrecorded body file reds either way; these are recorded here by name. The count-pins move 79 -> 85
+    # (the 6 new files: enclosure.S/enclosure.c/enclosure.h/sha256.c/worker.S/worker.ld). The built worker
+    # IMAGE (worker.elf, incbin'd) is NEVER a member (§9 mechanism 3, like the body .elf); no borrowed
+    # worker enters this slice, so the enclosure/act-witnessed list gains no member (I7). No new act (the
+    # crossing is HOW acts are requested, not a new act — ACT_KINDS stays twelve), NO founding — the pack
+    # is byte-unchanged.
+    #
+    # grow-only add under C7 P3b-4b — THE FORTY-NINE SERVED (design/54 §7 P3b-4b; §5 L18; precision (a)/(b)
+    # of archi :4085). The body's own forty-nine-serve C — the request classifier that routes each measured
+    # crossing by PURPOSE to the act machinery / floor / designed-refusal / stub and witnesses it as one
+    # UNSIGNED row of the body's serve trail (serve.c), and its shared header (serve.h) — join the SAME one
+    # attested list BY NAME. OUR test worker (worker.S) is EXTENDED with the forty-nine run (an edit to an
+    # existing member — moves no count); the enclosure driver + phase branch are edits to enclosure.c/.h/
+    # kmain.c/build.sh (edits, no count move). The walk-guard (law_guard_surface) already covers src/body's
+    # C/.h kinds, so an unrecorded body file reds either way; these are recorded here by name. The count-pins
+    # move 85 -> 87 (the 2 new files: serve.c/serve.h); the src/body on-disk count 28 -> 30. The body holds
+    # NO key: every serve row is unsigned (sig==0/chain==0), never a row in the estate's signed chain — the
+    # per-act signed gate row is the gate's, ABOVE the seam, DEFERRED to P3b-4c (precision a). No new act
+    # (ACT_KINDS stays twelve — serving the measured requests realizes existing acts + their floor), NO
+    # founding — the pack is byte-unchanged. The built worker IMAGE is never a member (§9 mechanism 3).
+    "body/ata.c",
+    "body/body.h",
+    "body/bodyfs.c",
+    "body/boot.S",
+    "body/build.sh",
+    "body/clkcheck.c",
+    "body/clock.c",
+    "body/clock.h",
+    "body/disk.h",
+    "body/diskcheck.c",
+    "body/enclosure.S",
+    "body/enclosure.c",
+    "body/enclosure.h",
+    "body/entropy.c",
+    "body/gen_rows_digest.py",
+    "body/heap.c",
+    "body/idt.c",
+    "body/isr.S",
+    "body/kmain.c",
+    "body/linker.ld",
+    "body/mkdisk.py",
+    # grow-only add under C7 P3b-6a — OUR NIC ON THE WIRE (design/54 §7 P3b-6a; archi :4250). The body's
+    # own virtio-net driver — the network device driven by OUR code as its transport (I3, no borrowed
+    # code; the borrowed TCP stack is 6b's enclosed worker), plus the ring-0 wire self-check that proves
+    # it by an address round trip answered by the guest gateway — joins the SAME one attested list BY
+    # NAME. The walk-guard (law_guard_surface) already covers src/body's C kind, so an unrecorded body
+    # file reds either way; recorded here by name. The count-pins move 87 -> 88 (the 1 new file net.c);
+    # the src/body on-disk count 30 -> 31. NO served shape added (serve.c untouched — the frame-crossing
+    # is 6b's, archi :4247); no new act (ACT_KINDS stays twelve, :4248), NO founding — the pack is
+    # byte-unchanged. The built .elf/.img is never a member (§9 mechanism 3).
+    "body/net.c",
+    "body/pmm.c",
+    "body/rows_digest.h",
+    "body/serial.c",
+    "body/serve.c",
+    "body/serve.h",
+    "body/sha256.c",
+    "body/vmm.c",
+    "body/worker.S",
+    "body/worker.ld",
     "bridge/__init__.py",
     "bridge/auto_recover.py",   # grow-only add under EP-43-AUTO-AMEND-BUILD (archi :3031/:3041,
                                 # carried in-fence): a new src/bridge/*.py the law guard greps (the
@@ -90,12 +190,27 @@ ATTESTED_MEMBERS = (
     "bridge/checkpoint.py",
     "bridge/custody.py",
     "bridge/fuse_files.py",
+    "bridge/host_seam.py",   # grow-only add under C7 P2-SEAM-AS-A-CONTRACT (design/54 §7 P2; §5 fence
+                             # "the interface + its ATTESTED_MEMBERS line and count-pin companion"): the
+                             # NEW effect-seam performer interface — the closed act set the core asks its
+                             # host to perform, declared as one contract with the real + stub performers, a
+                             # src/bridge/*.py the law guard greps, so the F4 twin requires it here — same
+                             # precedent as bridge/seal.py (EP-46) and bridge/reconstruct.py (P12). The
+                             # count-pins (test_ep40/46/keymat) move 54 -> 55 by name.
     "bridge/kernel_port.py",
     "bridge/merkle.py",   # grow-only add under EP-45-BUILD (archi :3031, carried in-fence): a new
                           # src/bridge/*.py the law guard greps (the Merkle over a checkpoint's
                           # tree-state), so the F4 twin requires it here — same precedent as
                           # kernel/keys.py (:2781/:2782) and kernel/erasure.py (:2842).
     "bridge/mount.py",
+    "bridge/reconstruct.py",   # grow-only add under P12-CONSTITUTION-SURVIVES-BUILD (C6 P12,
+                               # B6/I15; §5 count-pin companion driven at the fence amendment,
+                               # mgr :3631): the NEW cross-body reconstruction routine (union the
+                               # children's held sealed segments, verify each against the parent
+                               # key + chain-verify), a src/bridge/*.py the law guard greps, so the
+                               # F4 twin requires it here — same precedent as bridge/auto_recover.py
+                               # (:3031/:3041) and bridge/merkle.py (:3045). The count-pins
+                               # (test_ep40/46/keymat) move 53 -> 54 by name.
     "bridge/records_fs.py",
     "bridge/replay_snapshot.py",
     "bridge/run_fuse_files.py",
@@ -103,6 +218,16 @@ ATTESTED_MEMBERS = (
                         # src/bridge/*.py the law guard greps (the content-at-rest sealer, the key
                         # family's read direction), so the F4 twin requires it here — same precedent
                         # as bridge/merkle.py (:3045) and kernel/keys.py (:2781/:2782).
+    "hosting/__init__.py",         # grow-only add under C7 P7a — THE INTERPRETER-HOSTING LAYER (design/54
+    "hosting/interpreter_host.py",  # §7 P7; §5 fence "the layer module(s) + ... the ATTESTED_MEMBERS rider
+                                    # if a NEW attested src module"): the NEW src/hosting/ package — our own
+                                    # code, read whole and signed, that supplies CPython's host surface wired
+                                    # to the seam (the BORROWED libc/CPython stay OUTSIDE the signed base as
+                                    # sealed enclosed workers, design/47 §2 I3). Two src/*.py the law guard
+                                    # greps, so the F4 twin requires them here — same precedent as
+                                    # bridge/host_seam.py (C7 P2) and bridge/seal.py (EP-46). The count-pins
+                                    # (test_ep40:259/:260, test_ep46:481, test_keymat:330, test_c7_p4_wake:380,
+                                    # test_c7_p6_genesis_pair:347) move 55 -> 57 by name.
     "kernel/__init__.py",
     "kernel/attestation.py",
     "kernel/authority.py",
@@ -191,7 +316,7 @@ def _member_digest(rel, src_dir):
     this surface exists to make loud."""
     p = os.path.join(src_dir, rel)
     try:
-        with open(p, "rb") as f:
+        with host().open_read_binary(p) as f:
             return canonical_hash(f.read())
     except OSError:
         return None
@@ -241,19 +366,30 @@ def verify_attestation_seal(attested, seal, public_key):
 
 
 def law_guard_surface(src_dir=None):
-    """Every .py under src/ EXCEPT founding/ — the surface T-NO-LAW-IN-CODE greps, walked here
-    the same way `tests/test_law_out_of_code._src_py_outside_founding` walks it. The F4 twin
-    holds this against `ATTESTED_MEMBERS`; on the real tree the two sets are EQUAL by
-    construction (the manifest IS this walk, frozen), so the twin's coverage claim is exactly
-    true and a planted extra .py surfaces immediately."""
+    """The governed-source surface under src/ — walked here the same way
+    `tests/test_law_out_of_code._src_py_outside_founding` walks it. EVERY .py under src/ EXCEPT
+    founding/ (the surface T-NO-LAW-IN-CODE greps), PLUS EVERY file under src/body/ regardless of
+    extension (C7 P3b-1, §9 mechanism 1): the first merged body's C/.h/.S/build files are not .py,
+    but they ARE governed source in the signed base (read whole, no opaque code, I3), so they join
+    the same one attested list and the same walk. The F4 twin holds this against `ATTESTED_MEMBERS`;
+    on the real tree the two sets are EQUAL by construction (the manifest IS this walk, frozen), so
+    the twin's coverage claim is exactly true and a planted extra .py — OR an unrecorded file under
+    src/body/ — surfaces immediately."""
     src = src_dir or _SRC
     founding = os.path.join(src, "founding")
+    body = os.path.join(src, "body")
     out = []
-    for root, _dirs, files in os.walk(src):
-        if os.path.abspath(root).startswith(os.path.abspath(founding)):
+    for root, _dirs, files in host().walk(src):
+        ar = os.path.abspath(root)
+        if ar.startswith(os.path.abspath(founding)):
             continue
+        if "__pycache__" in ar.split(os.sep):
+            continue                      # bytecode cache is not governed source
+        under_body = ar.startswith(os.path.abspath(body))
         for name in files:
-            if name.endswith(".py"):
+            if name.endswith(".pyc") or name.endswith(".pyo"):
+                continue
+            if name.endswith(".py") or under_body:
                 p = os.path.join(root, name)
                 out.append(os.path.relpath(p, src).replace(os.sep, "/"))
     return sorted(out)

@@ -870,6 +870,10 @@ class TestADefaultCannotReachARouter(_TestWorld):
                     param_defaults={"at": self.FABRICATED_TIME},
                     structural_params=["subject", "at"])
         live = self.gate.execute("REPLAYED-DEFAULT-A2", OWNER, {"subject": "thing:29"})
+        # EP-MAINT-OUTSIDE-5 (re-spec C): close the live writer before the reboot so the replayed
+        # kernel is a WRITER able to invoke the replayed op (release-on-close); a second live open
+        # would be demoted to a reader and its append refused by name.
+        self.store.close()
         store, gate, views, _b, _s = build_full_kernel(
             self.record, os.path.join(self.dir, "blobs"), os.path.join(self.dir, "vault"))
         replayed = gate.execute("REPLAYED-DEFAULT-A2", OWNER, {"subject": "thing:30"})

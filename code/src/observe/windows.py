@@ -40,6 +40,7 @@ import os
 import select
 import socket
 import struct
+from collections.abc import Mapping
 
 from .seam import Observation, TIME_SUBMISSION_SUBSTITUTED, TIME_WINDOW_REPORTED
 
@@ -251,6 +252,11 @@ def scan_processes():
 class ProcessWindow(DiffWindow):
     name = "process"
     route = "proc"
+    #: The Linux host facility this window reads. STATIC descriptor (not probed) — read by the
+    #: under-our-core census (seam.window_census) so the census names the facility a window
+    #: reads WITHOUT opening it. The core presents no such facility (L1), which is why the
+    #: census settles this window re-sourced-from-the-core or absent, never by reading here.
+    host_facility = "/proc (directory scan, polled)"
     act_appeared = "process-created"
     act_removed = "process-exited"
     act_changed = "process-credentials-changed"
@@ -340,6 +346,8 @@ class FileWindow(Window):
 
     name = "file"
     route = "inotify"
+    #: STATIC host-facility descriptor for the census (see ProcessWindow.host_facility).
+    host_facility = "inotify"
 
     def __init__(self, paths=(), source=None, exclude=()):
         super().__init__(source)
@@ -526,6 +534,146 @@ class FileWindow(Window):
 
 
 # =============================================================================================
+# 2a. The file window RE-SOURCED FROM THE RECORD (C7-MAINT-FILE-WINDOW-FROM-RECORD)
+# =============================================================================================
+#
+# Under our core there is no inotify to open — the governance core presents no host facility
+# (L1 / the P1 seam-census finding). But a file change under our core IS a recorded write act:
+# the body's writable surface is EXACTLY the seam's declared write acts (append a record,
+# write-once a file by temp-and-swap, declare a directory, remove, the writer's lock — L21),
+# and every one of them lands in the record itself. So the file window's route under our core
+# is THE RECORD: it reads the record's OWN write-act entries and yields file-change
+# observations from them, its version string naming the record route (never inotify). The
+# inotify FileWindow above is the HOST reader C7 is moving off of; this is the same "file"
+# observation surface, RE-SOURCED from the core's own state (B10). No Linux facility is added
+# to the body — the window reads the record the body already serves (L21).
+#
+# THE SELF-AUDIT EXCLUSION, INVERTED FOR THE RECORD SOURCE. FileWindow above excludes the
+# observer's own artifact PATH so that observing an append does not become an append that is
+# then observed. The record-sourced window carries the SAME concern from the other side: its
+# OWN observations, once submitted, append `observed-file` records to the record; were it to
+# read those back as write acts it would observe its own observation-writes and the record
+# would inflate on every read. So it excludes its own observation-writes (the `observed-file`
+# records) from the write acts it reads — a DECLARED, COUNTED blind spot, so a reader sees
+# that the audit does not audit its own writing.
+
+RECORD_ROUTE = "record"
+OBSERVED_FILE_KIND = "observed-file"
+
+
+class RecordFileWindow(FileWindow):
+    """The file window RE-SOURCED FROM THE RECORD. It opens no host facility: its source is
+    the record's own write-act entries, read through a caller-supplied read-only reader. Each
+    write act appended to the record since the last read is a file change under our core, and
+    the window yields it as a file-change observation whose version names the record route and
+    whose data carries the record seq it traces to (so a fabricated observation with no
+    matching write act does not trace). Its own observation-writes are excluded (the inverted
+    self-audit exclusion), so reading does not inflate the record with observations of itself."""
+
+    name = "file"
+    route = RECORD_ROUTE
+    #: This window reads the record, not a Linux facility. It carries no host-facility
+    #: descriptor because the census settles it RE-SOURCED (a core route), never absent.
+    host_facility = None
+
+    def __init__(self, record_reader=None, record_name="the-record", source=None):
+        # No inotify paths and no watches — the source is the record, never a host facility.
+        super().__init__(paths=(), source=source, exclude=())
+        #: A read-only reader over the record's committed entries: a callable returning the
+        #: list of record dicts (each with 'seq' and, for the observer's own writes, a
+        #: 'payload.kind'). The window NEVER appends — reading the record is not writing it.
+        self._record_reader = record_reader
+        self._record_name = record_name
+        #: The highest record seq already yielded, so each read yields only NEW write acts.
+        self._last_seq = 0
+
+    # ---- availability: the record is the source, not a facility to probe -----------------
+    def _probe(self):
+        if self._record_reader is None and self._injected is None:
+            return False, "no record reader wired to the file window (route %r)" % self.route
+        return True, "ok"
+
+    def _entries(self):
+        if self._injected is not None:
+            return list(self._injected() or [])
+        if self._record_reader is None:
+            return []
+        return list(self._record_reader() or [])
+
+    @staticmethod
+    def is_own_observation_write(entry):
+        """THE INVERTED SELF-AUDIT EXCLUSION. The window's own observation-writes are the
+        `observed-file` records it produced; reading them back as write acts is what would
+        make the audit audit itself, so they are excluded (and counted, and declared)."""
+        payload = entry.get("payload") if isinstance(entry, Mapping) else None
+        return isinstance(payload, Mapping) and payload.get("kind") == OBSERVED_FILE_KIND
+
+    def read(self):
+        ok, reason = self.available()
+        if not ok:
+            self._unavailable_reason = reason
+            return []
+        out = []
+        high = self._last_seq
+        for entry in self._entries():
+            seq = entry.get("seq") if isinstance(entry, Mapping) else None
+            if seq is None or seq <= self._last_seq:
+                continue                       # only NEW write acts since the last read
+            if seq > high:
+                high = seq
+            if self.is_own_observation_write(entry):
+                self.excluded_events += 1      # counted, so the blind spot is measurable
+                continue
+            when, src = self._occurrence_from_record(entry)
+            out.append(Observation(
+                window=self.name, window_version=self.version,
+                act="file-modified",           # every write act GROWS the append-only record
+                object="file:%s" % self._record_name,
+                occurrence_time=when, time_source=src,
+                data={"path": self._record_name, "record_seq": seq,
+                      "record_action": entry.get("action"), "source": self.route}))
+        self._last_seq = high
+        return out
+
+    @staticmethod
+    def _occurrence_from_record(entry):
+        # The write act's own recorded time IS the window-reported occurrence — the record
+        # carries it (record_time), so unlike inotify this window never has to substitute.
+        rt = entry.get("record_time") if isinstance(entry, Mapping) else None
+        if rt:
+            return rt, TIME_WINDOW_REPORTED
+        return None, TIME_SUBMISSION_SUBSTITUTED
+
+    def open(self):
+        # The record window opens no descriptor; availability is the reader, not a syscall.
+        return self
+
+    def close(self):
+        pass
+
+    def coverage(self):
+        return {
+            "facility": "the record's own write acts (route %r; NOT a host facility)" % self.route,
+            "sees": [
+                "every write act appended to the record since the last read — a file change "
+                "under our core IS a recorded write act (append, write-once, declare, remove, "
+                "the writer's lock; L21), read from the record and never from inotify",
+                "each observation traces to a real record entry by its seq, so it cannot be a "
+                "fabricated event",
+            ],
+            "does_not_see": [
+                "the window's OWN observation-writes (the %r records it produced): excluded so "
+                "the act of recording does not become the thing recorded — the audit does not "
+                "audit its own writing (%d event(s) dropped by this exclusion so far). The "
+                "self-audit exclusion inverted for the record source, DECLARED and never silent"
+                % (OBSERVED_FILE_KIND, self.excluded_events),
+                "any change the record never captured — this window's reach IS the record; a "
+                "write that did not become a record is outside it, honestly and by construction",
+            ],
+        }
+
+
+# =============================================================================================
 # 3. The mount window — /proc/self/mountinfo
 # =============================================================================================
 
@@ -552,6 +700,8 @@ def scan_mountinfo():
 class MountWindow(DiffWindow):
     name = "mount"
     route = "mountinfo"
+    #: STATIC host-facility descriptor for the census (see ProcessWindow.host_facility).
+    host_facility = "/proc/self/mountinfo"
     act_appeared = "mount-added"
     act_removed = "mount-removed"
     act_changed = "mount-attr-changed"
@@ -636,6 +786,8 @@ class DeviceWindow(DiffWindow):
 
     name = "device"
     route = "sysfs"
+    #: STATIC host-facility descriptor for the census (see ProcessWindow.host_facility).
+    host_facility = "/sys/bus/*/devices scan (+ the netlink uevent socket, second route)"
     act_appeared = "device-capability-registered"
     act_removed = "device-capability-removed"
     act_changed = "device-bound"          # refined per-change in read(), below
@@ -769,6 +921,168 @@ class UeventSource(Window):
 
 
 # =============================================================================================
+# 4a. The device window RE-SOURCED FROM THE RECORD (C7 P7b — the device drivers)
+# =============================================================================================
+#
+# Under our core there is no /sys/bus to scan and no uevent socket to bind — the governance core
+# presents no host facility (L1 / the P1 seam-census finding). But the freestanding body DISCOVERS
+# each device it performs at bring-up — its OWN block (ata), network (the NIC self-check) and clock
+# (the RTC) drivers — and RECORDS one discovery row per device, each riding the record-pen act (C7
+# P7b, the body-lane emitter). So the device window's route under our core is THE RECORD: it reads
+# the discovery rows the body wrote and yields a device observation per discovered device, its
+# version string naming the record route (never sysfs). The sysfs DeviceWindow above is the HOST
+# reader C7 is moving off of; this is the same "device" observation surface, RE-SOURCED from the
+# core's own state (B10). No Linux facility is added to the body — the window reads the record the
+# body already serves (L21). It mirrors RecordFileWindow (the file-window re-source precedent).
+#
+# WHAT THE ROW HOLDS IS WHAT THE BODY EXPORTS AT BRING-UP (the archi :4605 precision). The block
+# row is ata_present's verdict; the network row is the wire self-check's class (PASS/ABSENT/FAIL)
+# plus the MAC net_nic_bringup exports — NEVER the file-static PCI vendor/device id, slot or BAR
+# (net.c keeps those static and never exports them; re-probing them would edit a driver or add a
+# parallel probe). The clock row is the RTC's presence + its epoch. This window reads whatever the
+# body recorded; it invents no identity of its own.
+#
+# THE SELF-AUDIT EXCLUSION, INVERTED FOR THE RECORD SOURCE (as RecordFileWindow). Its own
+# observations, once submitted, append `observed-device` records to the record; it excludes those
+# from the discovery rows it reads, so reading does not inflate the record with observations of
+# itself — a DECLARED, COUNTED blind spot, so a reader sees the audit does not audit its own writing.
+
+DEVICE_DISCOVERY_KIND = "device-discovery"
+OBSERVED_DEVICE_KIND = "observed-device"
+
+
+class RecordDeviceWindow(DeviceWindow):
+    """The device window RE-SOURCED FROM THE RECORD. It opens no host facility: its source is the
+    body's device-discovery rows (C7 P7b), read through a caller-supplied read-only reader. Each
+    discovery row the body wrote at bring-up is a device under our core, and the window yields it as
+    a device observation whose version names the record route and whose data carries the discovery
+    row's seq (so a fabricated observation with no matching discovery row does not trace). Its own
+    observation-writes are excluded (the inverted self-audit exclusion), so reading does not inflate
+    the record with observations of itself."""
+
+    name = "device"
+    route = RECORD_ROUTE
+    #: This window reads the record's discovery rows, not a Linux facility. It carries no
+    #: host-facility descriptor because the census settles it RE-SOURCED (a core route), never absent.
+    host_facility = None
+
+    def __init__(self, record_reader=None, record_name="the-record", source=None):
+        # No sysfs scan and no uevent socket — the source is the record, never a host facility.
+        super().__init__(source=source)
+        #: A read-only reader over the record's committed entries: a callable returning the list of
+        #: record dicts (each with 'seq' and, for a discovery row, a 'payload.kind' of
+        #: DEVICE_DISCOVERY_KIND). The window NEVER appends — reading the record is not writing it.
+        self._record_reader = record_reader
+        self._record_name = record_name
+        #: The highest record seq already yielded, so each read yields only NEW discovery rows.
+        self._last_seq = 0
+        #: Own observation-writes dropped by the inverted self-audit exclusion (counted, declared).
+        self.excluded_events = 0
+
+    # ---- availability: the record is the source, not a facility to probe -----------------
+    def _probe(self):
+        if self._record_reader is None and self._injected is None:
+            return False, "no record reader wired to the device window (route %r)" % self.route
+        return True, "ok"
+
+    def _entries(self):
+        if self._injected is not None:
+            return list(self._injected() or [])
+        if self._record_reader is None:
+            return []
+        return list(self._record_reader() or [])
+
+    @staticmethod
+    def is_own_observation_write(entry):
+        """THE INVERTED SELF-AUDIT EXCLUSION. The window's own observation-writes are the
+        `observed-device` records it produced; reading them back as discovery rows is what would
+        make the audit audit itself, so they are excluded (counted, declared)."""
+        payload = entry.get("payload") if isinstance(entry, Mapping) else None
+        return isinstance(payload, Mapping) and payload.get("kind") == OBSERVED_DEVICE_KIND
+
+    @staticmethod
+    def is_discovery_row(entry):
+        """A device-discovery row the body wrote at bring-up — the window's ONLY source. A record
+        entry that is not a discovery row (an ordinary act, a self-check row) is not a device."""
+        payload = entry.get("payload") if isinstance(entry, Mapping) else None
+        return isinstance(payload, Mapping) and payload.get("kind") == DEVICE_DISCOVERY_KIND
+
+    def read(self):
+        ok, reason = self.available()
+        if not ok:
+            self._unavailable_reason = reason
+            return []
+        out = []
+        high = self._last_seq
+        for entry in self._entries():
+            seq = entry.get("seq") if isinstance(entry, Mapping) else None
+            if seq is None or seq <= self._last_seq:
+                continue                       # only NEW discovery rows since the last read
+            if seq > high:
+                high = seq
+            if self.is_own_observation_write(entry):
+                self.excluded_events += 1      # counted, so the blind spot is measurable
+                continue
+            if not self.is_discovery_row(entry):
+                continue                       # a non-discovery record is not a device
+            payload = entry.get("payload") or {}
+            device = payload.get("device")
+            present = bool(payload.get("present"))
+            # A discovered device that the probe found present is a capability under our core; one
+            # the probe found ABSENT is a capability the body performs over but does not have — read
+            # from the row's own `present`, never guessed (mirrors DeviceWindow's per-change act pick).
+            act = self.act_appeared if present else self.act_removed
+            when, src = self._occurrence_from_record(entry)
+            out.append(Observation(
+                window=self.name, window_version=self.version, act=act,
+                object="device:%s" % device,
+                occurrence_time=when, time_source=src,
+                data={"device": device, "present": present, "record_seq": seq,
+                      "identity": payload.get("identity"), "source": self.route}))
+        self._last_seq = high
+        return out
+
+    @staticmethod
+    def _occurrence_from_record(entry):
+        # The discovery row's own recorded time IS the window-reported occurrence — the record
+        # carries it (record_time), so unlike sysfs this window never has to substitute.
+        rt = entry.get("record_time") if isinstance(entry, Mapping) else None
+        if rt:
+            return rt, TIME_WINDOW_REPORTED
+        return None, TIME_SUBMISSION_SUBSTITUTED
+
+    def close(self):
+        pass
+
+    def coverage(self):
+        return {
+            "facility": "the body's own device-discovery rows (route %r; NOT a host facility)" % self.route,
+            "sees": [
+                "every device the body discovered at bring-up over the settled three-device list "
+                "(block, network, clock; Q4 :3919) — each a discovery row the body recorded, read "
+                "from the record and never from sysfs or the uevent socket",
+                "each observation traces to a real discovery row by its seq, so it cannot be a "
+                "fabricated event",
+                "the identity the body EXPORTS for each device (the block verdict, the network "
+                "self-check class + the offered MAC, the clock presence + epoch) — never the "
+                "file-static PCI id/slot/BAR the driver keeps to itself",
+            ],
+            "does_not_see": [
+                "the window's OWN observation-writes (the %r records it produced): excluded so the "
+                "act of recording does not become the thing recorded — the audit does not audit its "
+                "own writing (%d event(s) dropped by this exclusion so far). The self-audit "
+                "exclusion inverted for the record source, DECLARED and never silent"
+                % (OBSERVED_DEVICE_KIND, self.excluded_events),
+                "any device the body never discovered a row for — this window's reach IS the "
+                "record's discovery rows; a device outside the settled list is outside it, honestly "
+                "and by construction",
+                "device traffic, interrupts and I/O completions — those are the INPUT/STREAM classes "
+                "(the deferred arrival window), never a discovery row",
+            ],
+        }
+
+
+# =============================================================================================
 # 5. The connection window — netlink sock_diag, with /proc/net as the declared fallback
 # =============================================================================================
 
@@ -862,6 +1176,10 @@ def scan_connections_procnet():
 
 class ConnectionWindow(DiffWindow):
     name = "connection"
+    #: STATIC host-facility descriptor for the census (see ProcessWindow.host_facility). The
+    #: live `route` is probed (sock_diag vs procnet); this descriptor names the facility class
+    #: WITHOUT probing, so the census reads it without opening a host facility.
+    host_facility = "netlink sock_diag (/proc/net fallback)"
     act_appeared = "connection-opened"
     act_removed = "connection-closed"
     act_changed = "connection-state-changed"

@@ -51,6 +51,12 @@ from bridge import merkle                                        # noqa: E402  �
 from kernel.canonical import canonical_hash                      # noqa: E402  — the estate's one hash form ("sha256:<hex>")
 from kernel.attestation import latest_attestation, ATTESTATION_ACTION  # noqa: E402
 from founding.install import load_pack, PACK_PATH                # noqa: E402  — the pack's one reader (the pack is DATA)
+# C6 P11 (N3): the cross-body verdict CONSUMES the kernel READ-ONLY (bridge -> kernel is the estate's
+# layering; the reverse would invert it, merkle.py's stop (g)). WHO / graded-admission live in
+# border, the attestation SEAL in attestation — READ and INVOKED here, never re-authored.
+from kernel import border as _border                             # noqa: E402  — WHO (verify_from_sig), admitted_level (P8, DERIVED at read)
+from kernel.attestation import verify_attestation_seal           # noqa: E402  — BODY: the presented set-digest's seal, real-or-refused
+from kernel import crypto as _crypto                             # noqa: E402  — the real-or-refused era check (N10; library ABSENT -> REFUSED, never faked)
 
 
 #: The artifact kind marker. A checkpoint is data; this names what the data is.
@@ -353,6 +359,124 @@ def pairing_verdict(cp_a, record_path_a, blob_dir_a, cp_b, record_path_b, blob_d
         "a_confirms_b": a_confirms_b, "b_confirms_a": b_confirms_a,
         "independent": independent,
         "ok": a_self and b_self and a_confirms_b and b_confirms_a and independent,
+    }
+
+
+# ---- C6 P11 (N3): THE CROSS-BODY THREE-CHECK VERDICT — WHO, BODY, MEMORY-SANE, GRADED ------------
+# SPIKE-3 §2:86-94 named the gap: the local `verify`/`match_probe` RECOMPUTE from sources the verifier
+# holds, which do NOT transfer cross-body — a cross-body verifier holds none of the counterpart's
+# sources. The ONE thing that transfers at every level is the counterpart's KEY vouching for a
+# PRESENTED value (§2:85). So this verdict runs the three checks OVER WHAT THE COUNTERPART PRESENTS at
+# a disclosure level, anchored on its key (WHO, C5's substance), NEVER over a recompute of code the
+# verifier cannot run and NEVER a read INTO the counterpart's record (one pen per record, I1; stop
+# (b)). It EXTENDS checkpoint.py beside `pairing_verdict` — a FUNCTION on an existing module, NO new
+# src engine module (the ATTESTED_MEMBERS rider is INERT; stop (e) discharged). It is view-shaped: it
+# appends nothing (pairing_verdict's discipline). The RECORDED graded row is the RECEIPT the caller
+# writes carrying `checks` + `disclosure_level` (P8's structural fields); `admitted_level` is DERIVED
+# AT READ from that receipt, NEVER stored (I10; stop (d)).
+
+#: The three cross-body checks (SPIKE-3 N2; border.CHECK_NAMES). A check is True (verified pass),
+#: False (presented but FAILED — the check can fail), or None (not presented, or REFUSED because the
+#: real crypto library is ABSENT — N10: refused, NEVER a modelled pass). Only True counts toward
+#: admission (border.admitted_level reads border._PASS), so None is fail-closed.
+def _verify_or_refused(fn):
+    """Attempt a REAL crypto verification, returning its bool — or None when the vetted library is
+    ABSENT (N10, the real-or-refused discipline: the box refuses to model a seal it cannot check, and
+    a refused check does NOT count toward admission). Never fabricates a pass."""
+    try:
+        return bool(fn())
+    except _crypto.LibraryAbsent:
+        return None
+
+
+def _who_check(presentation):
+    """WHO — the counterpart's SIGNATURE against its PRESENTED / attested key (C5's substance,
+    referenced not re-proven). Real-or-refused: True iff `from_sig` verifies over the crossing's
+    `content_hash` under `from_body`'s key; False on a wrong key/signature; None when unpresented or
+    the library is absent. `verify_from_sig` is READ and INVOKED from border, never re-authored."""
+    fb, sig, ch = presentation.get("from_body"), presentation.get("from_sig"), presentation.get("content_hash")
+    if fb is None or sig is None or ch is None:
+        return None
+    return _verify_or_refused(lambda: _border.verify_from_sig(fb, sig, ch))
+
+
+def _body_check(presentation, verifier_founding_version):
+    """BODY — the counterpart's KEY vouches for a SELF-CONSISTENT attested set at a founding version
+    the verifier can read (SPIKE-3 §3a — provenance + internal consistency, never proof of executed
+    code, which is impossible cross-body). True iff: the attestation SEAL verifies over the presented
+    set-digest under `from_body`'s key (real-or-refused), AND — when members are presented (SHELLS+) —
+    `canonical_hash(members)` recomputes the presented `set_digest` (RW-FORGE transfers across bodies:
+    a member added/renamed/removed after sealing reddens), AND the presented founding version is
+    present (readable). None when unpresented/refused; False when presented but inconsistent."""
+    attested = presentation.get("attested")
+    seal = presentation.get("seal")
+    fb = presentation.get("from_body") or {}
+    if attested is None or seal is None or fb.get("key") is None:
+        return None
+    seal_ok = _verify_or_refused(lambda: verify_attestation_seal(attested, seal, fb.get("key")))
+    if seal_ok is None:
+        return None                                              # REFUSED (library absent) — never a modelled pass
+    if not seal_ok:
+        return False
+    members = attested.get("members") if isinstance(attested, dict) else None
+    if members is not None and canonical_hash(members) != attested.get("set_digest"):
+        return False                                             # RW-FORGE: the seal does not bind THESE members
+    if presentation.get("founding_version") is None:
+        return False                                             # a founding version the verifier cannot read
+    return True
+
+
+def _memory_sane_check(presentation):
+    """MEMORY-SANE — a spot-verification of ONE leaf under the PRESENTED merkle root, using N1 at
+    HASHES-ONLY (SPIKE-3 §3b, the named-absent primitive now built). True iff the presented inclusion
+    proof verifies against the presented `merkle_root`; False when it does not (a planted bad proof or
+    a leaf not under the root reddens — the check can fail); None when no proof/root is presented. PURE
+    (no crypto) — level-blind for MEMORY-SANE in BOTH eras, closing SPIKE-3 §3c's I10 gap."""
+    proof = presentation.get("inclusion")
+    root = presentation.get("merkle_root")
+    if proof is None or root is None:
+        return None
+    return bool(merkle.verify_inclusion(proof, root, presentation.get("merkle_scheme")))
+
+
+def handshake_verdict(presentation, verifier_founding_version=None):
+    """THE CROSS-BODY, THREE-CHECK, GRADED verdict (B3, I10, N3) over what the OTHER body PRESENTS at
+    a disclosure level. Runs WHO (signature vs the presented/attested key), BODY (the presented
+    attested set's seal + self-consistency + a readable founding version) and MEMORY-SANE (a leaf
+    proven under the presented root, N1 at HASHES-ONLY) — each over the PRESENTATION, never a recompute
+    of the counterpart's code nor a read into its record (I1; stop (b)). Returns a view-shaped dict
+    (appends nothing):
+
+        checks           {who, body, memory_sane} each True | False | None
+        disclosure_level the presented level (HASHES-ONLY | SHELLS | FULL)
+        admitted_level   border.admitted_level(checks, level) — DERIVED here, the caller re-derives it
+                         at read from the recorded receipt (I10; NEVER stored, stop (d))
+        passed / failed  the checks that verified / that were presented and FAILED — the row names both
+        founding_version / founding_match  the counterpart's presented version and whether it equals
+                         the verifier's own (a datum surfaced, per SPIKE-3 §3a)
+        from_body        the counterpart's NAME (key + genesis)
+
+    ADMISSION IS GRADED, NEVER binary (SPIKE-3 §3d): a crossing is not refused outright when ANY check
+    passes; the admitted level is the presented level bounded by the confidence the passed checks
+    support (border.admitted_level). A PLANTED failure of one check drops it from `passed`, names it in
+    `failed`, and LOWERS the admitted level. When the real crypto library is ABSENT (this era), WHO and
+    BODY are REFUSED (None, never faked) and MEMORY-SANE alone can carry admission to HASHES-ONLY."""
+    level = presentation.get("disclosure_level")
+    checks = {
+        "who": _who_check(presentation),
+        "body": _body_check(presentation, verifier_founding_version),
+        "memory_sane": _memory_sane_check(presentation),
+    }
+    presented_fv = presentation.get("founding_version")
+    return {
+        "checks": checks,
+        "disclosure_level": level,
+        "admitted_level": _border.admitted_level(checks, level),
+        "passed": [k for k in _border.CHECK_NAMES if checks.get(k) in _border._PASS],
+        "failed": [k for k in _border.CHECK_NAMES if checks.get(k) is False],
+        "founding_version": presented_fv,
+        "founding_match": (presented_fv is not None and presented_fv == verifier_founding_version),
+        "from_body": presentation.get("from_body"),
     }
 
 

@@ -57,6 +57,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from kernel import commit as commit_mod                          # noqa: E402
 from kernel import store as store_mod                            # noqa: E402
+from bridge import host_seam as seam_mod                          # C7 P2 — the barrier now issues from the seam (:3927)
 from kernel.compose import build_full_kernel                     # noqa: E402
 
 
@@ -356,12 +357,29 @@ class OneAppenderCase(StoreCase):
         this row exists to catch."""
         with open(store_mod.__file__, encoding="utf-8") as fh:
             src = fh.read()
+        with open(seam_mod.__file__, encoding="utf-8") as fh:
+            seam_src = fh.read()
+        # the write to the held descriptor is NOT a host crossing — it stays in store.py, one site.
         self.assertEqual(src.count("self._fh.write("), 1,
                          "the record file is written from more than one site")
-        self.assertEqual(src.count("os.fdatasync("), 1,
+        # C7 P2 (:3927): the barrier and the append-open are host crossings, so they followed the
+        # routing INTO the seam. The pin is re-pointed to where the host call now lives and
+        # STRENGTHENED with an absence assertion on store.py — the routing is proven by the same
+        # pin that used to pin the location, so this row is stronger after, not looser.
+        self.assertEqual(seam_src.count("os.fdatasync("), 1,
+                         "the barrier is performed from more than one site in the seam")
+        self.assertEqual(seam_src.count('path.open("a"'), 1,
+                         "the record file is opened for append from more than one site in the seam")
+        # ABSENCE on the old file: store.py no longer holds the host call itself.
+        self.assertEqual(src.count("os.fdatasync("), 0,
+                         "store.py still holds the barrier literal — it was not routed to the seam")
+        self.assertEqual(src.count('self.file_path.open("a"'), 0,
+                         "store.py still opens the record file directly — it was not routed to the seam")
+        # the record pen still ISSUES each act through the seam from exactly one site.
+        self.assertEqual(src.count("host().fdatasync("), 1,
                          "the barrier is issued from more than one site")
-        self.assertEqual(src.count('self.file_path.open("a"'), 1,
-                         "the record file is opened for append from more than one site")
+        self.assertEqual(src.count("host().open_append("), 1,
+                         "the record file's append is issued from more than one site")
 
     def test_the_record_file_is_opened_once_and_held(self):
         """THE HELD DESCRIPTOR, BEHAVIOURALLY (W3's carried-in item). Twenty appends, one
@@ -572,12 +590,12 @@ class DecideReadsAppendedCase(unittest.TestCase):
         def watching(fd):
             seen["visible"] = [e["action"] for e in self.store.all()][-1:]
             return real(fd)
-        store_mod.os.fdatasync = watching
+        seam_mod.os.fdatasync = watching
         try:
             self.store._append({"actor": "SYSTEM", "action": "late-probe",
                                 "rule_cited": "M1-OBSERVATION"})
         finally:
-            store_mod.os.fdatasync = real
+            seam_mod.os.fdatasync = real
         self.assertEqual(seen["visible"], ["late-probe"],
                          "the record was not visible to the folds at the moment its batch "
                          "synced — the decide path can be blind for a whole window")

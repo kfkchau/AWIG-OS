@@ -63,6 +63,8 @@ import os
 import threading
 import time
 
+from bridge.host_seam import host   # C7 P2 — the commit window (monotonic/sleep) + the concurrency substrate routed
+
 
 class BatchFailed(RuntimeError):
     """The covering sync did not happen, so nothing in this batch is durable and no reply in
@@ -166,7 +168,7 @@ class Submission:
         #: rules arrives here as pipeline rather than as an effect-license.
         self.echo = None
         self.error = None
-        self.done = threading.Event()
+        self.done = host().new_event()
 
 
 class GroupCommit:
@@ -200,7 +202,7 @@ class GroupCommit:
         #: Per-thread: the submissions this thread has published and not yet awaited. A list
         #: rather than one, because an act publishes more than one record — the mirror's, the
         #: sweep's overturns — and every one of them owes its echo check.
-        self._pending = threading.local()
+        self._pending = host().new_local()
         #: `verify_echo(submission)` is the SUBMITTER's side of the echo-retire discipline:
         #: it recomputes the hash from the draft this thread still holds and refuses loud on
         #: any difference. It runs after the covering sync and after the reply is released,
@@ -208,8 +210,8 @@ class GroupCommit:
         #: passes through. Supplied by the store; absent only in the bare-queue tests.
         self._verify_echo = verify_echo
         self._queue = collections.deque()
-        self._qlock = threading.Lock()
-        self._appender = threading.Lock()
+        self._qlock = host().new_lock()
+        self._appender = host().new_lock()
         self._leader = None                  # the thread ident currently holding the role
         self.width, self.window_s = _calibration()
 
@@ -304,7 +306,7 @@ class GroupCommit:
 
         while not sub.done.is_set():
             if self._appender.acquire(blocking=False):
-                self._leader = threading.get_ident()
+                self._leader = host().thread_ident()
                 try:
                     self._drain()
                 finally:
@@ -345,14 +347,14 @@ class GroupCommit:
                 return []
             batch = [self._queue.popleft()]
         self.touched += 1
-        deadline = time.monotonic() + self.window_s
+        deadline = host().monotonic() + self.window_s
         while len(batch) < self.width:
             with self._qlock:
                 if self._queue:
                     batch.append(self._queue.popleft())
                     self.touched += 1
                     continue
-            if self.closes_on_timeout and time.monotonic() >= deadline:
+            if self.closes_on_timeout and host().monotonic() >= deadline:
                 self.closed_on_timeout += 1
                 return batch
             if self.hold_open is not None and not self.hold_open.is_set():
@@ -366,7 +368,7 @@ class GroupCommit:
             if not self.closes_on_timeout:
                 # Both closes disabled: this is a red world and it is the world where a held
                 # batch never closes. Yielding keeps it observable instead of spinning hot.
-                time.sleep(0.001)
+                host().sleep(0.001)
         self.closed_on_width += 1
         return batch
 

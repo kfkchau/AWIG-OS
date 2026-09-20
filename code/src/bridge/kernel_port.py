@@ -57,6 +57,7 @@ from kernel import erasure                                 # noqa: E402  — GS-
 
 from . import custody                                      # noqa: E402
 from .custody import KIND_DIR, KIND_FIFO, KIND_LINK        # noqa: E402
+from .host_seam import host                                # noqa: E402  — C7 P2: the one socket is the seam's network act
 
 #: This port's own window identity, recorded in every act's provenance so a reader can
 #: tell WHICH port asserted the uid it is looking at. The EP-22 window@version precedent,
@@ -875,7 +876,7 @@ def open_real_socket_under_grant(gate, entity, socket_id, family, *, guest_check
     fam = _SOCKET_FAMILY.get(family)     # a family the grant law does not name never reaches here
     if fam is None:
         raise RealSocketOnHostRefused("unknown socket family: %r" % (family,))
-    real = socket.socket(fam, socket.SOCK_STREAM)
+    real = host().open_stream_socket(fam)   # the guest-gated network act, routed through the seam (guest gate above unchanged)
     return decision, real
 
 

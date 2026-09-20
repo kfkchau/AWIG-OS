@@ -231,6 +231,11 @@ _REFUSE = [
     ("claude_projects_path", _re.compile(rb"\.claude/" rb"projects[A-Za-z0-9_./-]*"), (b".claude/", b"projects/example")),
     ("private_email", _re.compile(rb"[A-Za-z0-9._%+-]+@gmail\.com"), (b"someone@", b"gmail.com")),
 ]
+# THE ONE FILE-SCOPED EXEMPTION, per class (RELEASE-4 round 3, owner :4656): SUBSTITUTED AT RENDER from
+# render.py's LOOPBACK_PORT_EXEMPT_BASENAMES -- the very tuple the rewrite applied -- so this check and
+# the renderer cannot disagree. A file named here keeps its loopback literals raw (its own test data);
+# every other file's were scrubbed at render, and any raw one left is a leak this battery refuses.
+_REFUSE_EXEMPT = {"loopback_port": ('test_p17_honest_state.py',)}
 
 
 def _refuse_scan_bytes(data):
@@ -249,6 +254,8 @@ def _refuse_scan_trees():
                 if n.endswith((".pyc", ".pyo")):
                     continue
                 for name in _refuse_scan_bytes(open(os.path.join(r, n), "rb").read()):
+                    if n in _REFUSE_EXEMPT.get(name, ()):
+                        continue                      # the exempt file's own data, by basename
                     hits.setdefault(name, []).append(os.path.relpath(os.path.join(r, n), HERE))
     return hits
 
