@@ -2,7 +2,7 @@
 
 # AWIG OS
 
-*An operating system that follows a thousand-year-old way of governing.*
+*An operating system with its own kernel. It follows a thousand-year-old way of governing.*
 
 ---
 
