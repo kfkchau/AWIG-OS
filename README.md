@@ -16,6 +16,7 @@
 | Runs without Linux | Yes |
 | The record today | Still on the Linux-hosted governing layer; the kernel runs the same acts beside it, and the move waits on the side-by-side |
 | Boots in | QEMU (multiboot). Real hardware: not yet |
+| Formally verified | No. Tested by checks that can fail, not proven; seL4 is the bar not reached |
 | Written in | C and assembly, about 11,600 lines, in [`code/src/body`](./code/src/body) |
 | Memory | Physical, virtual and heap management, each checked at boot |
 | User-mode isolation | Built. A program the kernel does not trust runs in ring 3 and crosses by one door; its trespass and its refusal are checked at boot |

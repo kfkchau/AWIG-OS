@@ -4,7 +4,7 @@ Dated 26 September 2026. `STATUS.md` says what runs. This page says how it was m
 
 **Most operating systems start with the machine.** You write the boot code, then memory, then the scheduler, then files, then drivers, and rules about who may do what come last, as a permission bit here and a policy engine there. That is how every kernel you have read was built, and it is a good way to build a kernel.
 
-**This one started with the rules of the rules.** Before any code, before the code about memory or the code about scheduling, before a single line of C, the first thing written down was how a rule may change and who may change it. Then the smallest things everything else is computed from. The kernel came last, and it took nine days, because by then it had a definition to derive from. This page is the story of that order.
+**This one started with the rules of the rules.** Before any code, before the code about memory or the code about scheduling, before a single line of C, the first thing written down was how a rule may change and who may change it. Then the smallest things everything else is computed from. The kernel came last, and it took nine days, because by then it had a definition to derive from. All of it, from the first row to the kernel, took two months, from 24 July 2026. This page is the story of that order.
 
 ## What was written before the first line of code
 
@@ -15,7 +15,7 @@ Four things, in this order, all on paper before any code:
 3. **The truth of actor and static.** A thing that can originate change in itself is an actor; a thing that cannot is static information. A person, a program, a driver and an AI are actors; a file, a rule and a model's weights are static. Everything the system does with an AI follows from that one line.
 4. **A standard governance grammar that works in both languages.** One form for every rule, whether it is written in the vague language of policy ("act responsibly") or the exact language of code ("encrypt before sending"), because those are two ends of one gradient of structure, not two kinds of rule. The same grammar describes a ministry's policy and a kernel's memory, so law, procedure and code can say one governed thing in compatible terms.
 
-Behind those four sits a root theory of same and different, ten years old and published open (the links are at the end of this page). The questions it answers are ones a kernel never asks, and each one decided a piece of this system:
+Behind those four sits a root theory of same and different, ten years old and published open (the links are at the end of this page). It is the author's own, not peer-reviewed, and this build is its first implementation test; the section below on where the theory ran ahead says how that test is scored. The questions it answers are ones a kernel never asks, and each one decided a piece of this system:
 
 - **What can act?** A thing that can originate change in itself is an actor. A thing that cannot is a resource. A person, a program, a driver and an AI are actors; a file, a rule and a model's weights are resources. That one line is why "an AI model is a file, and a file cannot act" is on the front page.
 - **What is "the same"?** Same and different are what an observer reports, never a property of the thing. Two observers who disagree hold two pieces of information, not a contradiction. That is why two frames' verdicts are kept apart here and never merged.
