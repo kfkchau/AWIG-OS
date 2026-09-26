@@ -12,7 +12,7 @@ That is the whole idea. Here is what it is for.
 
 Eleven months after the fact, an auditor, a court or a freedom-of-information officer asks why a thing was allowed. Today the answer is assembled from emails, memory, and a log that someone with the right access could have edited.
 
-Here the decision is a row. The row names the rule that allowed the act, it was written before the act took effect, and the act happened because the row exists. There is nothing to assemble; you read the row.
+Here the decision is a row. The row names the rule that allowed the act, it was written before the act took effect, and the act happened because the row exists. There is nothing to assemble; you read the row. Every authority-sensitive act is recorded, explained, and replayable against the rules that were in force that day.
 
 Run it: `cd code && python3 seed_demo.py`. Step 2 asks the gate for a new law, shows the check that ran and the row that was appended, and prints the rule the decision cites. Runs today, in the governing layer, on stock Python.
 

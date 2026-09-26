@@ -4,6 +4,8 @@
 
 *An operating system with its own kernel. It follows a thousand-year-old way of governing.*
 
+*A machine that has to show why an action was authorised.*
+
 ---
 
 ## Kernel status, 21 September 2026
@@ -36,7 +38,7 @@ Every check prints PASS or FAIL on the serial line, and the last line is `BODY-H
 
 ## 0. Read this first
 
-Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason.
+Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason. Who may change the rules is itself a rule, so the question who has authority to change authority has a recorded answer.
 
 All of it is kept in one book that is only ever added to. The one book does five jobs that are normally five separate systems:
 
@@ -66,7 +68,7 @@ The questions a careful reader asks next, one line each:
 - **Is this a blockchain?** No consensus, no token, one pen. Many records, each its own institution, exchanging signed receipts; no chain shared by all.
 - **Is this SELinux, or capabilities?** Those answer "may this happen". This answers "under which rule, granted by whom, changed how, still in force", and can answer it for any day in the past.
 - **Why a kernel, and not a layer on seL4 or Linux?** A layer hosted on another kernel has a third door it cannot close: the host's own. So the kernel is ours, it is written, and it boots: it does the twelve kinds of work the seam declares and nothing reaches the hardware another way. seL4 is the nearest precedent and its proofs are the bar. Section 2 of [`ARCHITECTURE.md`](./ARCHITECTURE.md).
-- **Where is the AI?** An AI model is a file of numbers, and a file cannot act. What acts is the program that loads it, and here that program meets the world at two doors only. The doors are built and tested between two machines; nobody lives between them yet. [`STATUS.md`](./STATUS.md) says so.
+- **Where is the AI?** An AI model is a file of numbers, and a file cannot act. What acts is the program that loads it, and here that program meets the world at two doors only. The doors are built and tested between two machines; nobody lives between them yet. [`STATUS.md`](./STATUS.md) says so. Intelligence level does not imply authority: an AI here holds exactly the grants on the record and cannot create authority by deciding it has it.
 - **Can data be deleted?** Not here. Content changes hands by a handover with a receipt; there is no destroy. What that means for personal data is an open contract and [`STATUS.md`](./STATUS.md) lists it under what is not true yet.
 - **What is true today?** [`STATUS.md`](./STATUS.md), dated, machine by machine. Where it and the code disagree, the code is right.
 - **What comes next?** [`ROADMAP.md`](./ROADMAP.md): what is being built now and what follows, in order, with no dates.

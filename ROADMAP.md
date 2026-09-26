@@ -13,7 +13,7 @@ Next, in order, each started only when the work before it closes:
 1. A real organisation living on the system end to end: its constitution loaded as rows, every seat an actor in its own box.
 2. A shared working environment: several people and AI actors acting on one record at the same time, every act attributed, instead of separate sessions side by side.
 3. Scale and time: very large records, old rows readable years later, keys rotating, records outliving their machines.
-4. Reach: separate records joining by signed handshake, and entry versions of the system that run inside other operating systems, on desktops and phones.
+4. Reach: separate records joining by signed handshake, and entry versions of the system that run inside other operating systems, on desktops and phones, each a different performer beneath the same seam, so the meaning of an act does not change with the host.
 
 Further out, designed on paper, not scheduled: recovery of a working system from any surviving fragment of its record, and many-to-many hosting of organisations. The theory these steps implement is in [`ARCHITECTURE.md`](./ARCHITECTURE.md); what you can run today is in [`STATUS.md`](./STATUS.md).
 
