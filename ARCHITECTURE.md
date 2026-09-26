@@ -56,7 +56,7 @@ AWIG OS is built record-first. The kernel's definition lives as rows in the reco
 
 An earlier route, replacing a minimal Linux core subsystem by subsystem, is history and is marked as history in `design/16`. The route in force is `design/47` and `design/54`, and the design map at `design/README.md` says which is which.
 
-The governing layer is an executable specification in the sense that the kernel is tested against it, act for act. It is not a proof. Nothing here is formally verified; seL4 is the precedent for that and the bar this project has not reached.
+The governing layer is an executable specification in the sense that the kernel is tested against it, act for act. It is not a proof. Nothing here is formally verified; seL4 is the precedent for that and the bar this project has not reached. How the making itself was run, by the system's own rules and in what order, is on [`METHOD.md`](./METHOD.md).
 
 ## 2a. Why a kernel of our own, and not seL4 or Linux
 
@@ -64,7 +64,7 @@ Because the claim is about the record, not the scheduler. seL4 proves isolation;
 
 ## 3. The theory it runs on
 
-The [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) is the home of the theory, and under it the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/) is a kernel for governing rules themselves: rules about rules, who may make them, how they change, and how a change is recorded. AWIG OS is that kernel as an operating system: the rule lifecycle becomes the system's change process, the ontology becomes its information schema, and the roles (rule users, rule makers, decision makers) become accounts with recorded, traceable permissions.
+The [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) is the home of the theory; its root is the [Same Coin Ontological Thesis (SCOT)](https://github.com/kfkchau/SCOT), and its grammar is the [Common Governance Language (CGL)](https://github.com/kfkchau/Common-Governance-Language). Under it the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/) is a kernel for governing rules themselves: rules about rules, who may make them, how they change, and how a change is recorded. AWIG OS is that kernel as an operating system: the rule lifecycle becomes the system's change process, the ontology becomes its information schema, and the roles (rule users, rule makers, decision makers) become accounts with recorded, traceable permissions.
 
 OMGS is CC BY 4.0. Anyone can implement it, in any system, open or closed, without contacting this project.
 

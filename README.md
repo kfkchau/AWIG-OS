@@ -73,6 +73,7 @@ The questions a careful reader asks next, one line each:
 - **Can data be deleted?** Not here. Content changes hands by a handover with a receipt; there is no destroy. What that means for personal data is an open contract and [`STATUS.md`](./STATUS.md) lists it under what is not true yet.
 - **What is true today?** [`STATUS.md`](./STATUS.md), dated, machine by machine. Where it and the code disagree, the code is right.
 - **What comes next?** [`ROADMAP.md`](./ROADMAP.md): what is being built now and what follows, in order, with no dates.
+- **How was it built?** [`METHOD.md`](./METHOD.md): the rules of the rules before any code, then the smallest things, then the kernel last; by one person directing AI agents under the same rules.
 
 Four things a stranger would watch for, and where each stands: a kernel that boots without Linux and runs a program it does not trust (done in campaign 7: it boots in a virtual machine, refuses to start on a changed byte, and runs the standard Python interpreter as sealed content; you can build and boot the plain kernel from `code/src/body`; real hardware is campaign 9); a hostile security review (three rounds, findings and repairs on `STATUS.md`); an outside contributor landing something substantial (none yet); one system that is not AWIG OS using the same rules and record (none yet). When all four are true this page will say so.
 
