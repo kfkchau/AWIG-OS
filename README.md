@@ -14,6 +14,7 @@
 |---|---|
 | Architecture | x86-64, one processor |
 | Runs without Linux | Yes |
+| The record today | Still on the Linux-hosted governing layer; the kernel runs the same acts beside it, and the move waits on the side-by-side |
 | Boots in | QEMU (multiboot). Real hardware: not yet |
 | Written in | C and assembly, about 11,600 lines, in [`code/src/body`](./code/src/body) |
 | Memory | Physical, virtual and heap management, each checked at boot |
@@ -38,7 +39,7 @@ Every check prints PASS or FAIL on the serial line, and the last line is `BODY-H
 
 ## 0. Read this first
 
-Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason. Who may change the rules is itself a rule, so the question who has authority to change authority has a recorded answer.
+Everything that can change something on a computer is an actor: a program, a driver, an AI, a person. AWIG OS is being built so that every actor is known, boxed and answerable. It is built by one person directing AI agents under the same kind of written rules the system enforces. Until it runs, a program is only a file, and a file cannot act. When it runs, it acts only through written rules, and every yes and every no is written down with its reason. Who may change the rules is itself a rule, so the question who has authority to change authority has a recorded answer.
 
 All of it is kept in one book that is only ever added to. The one book does five jobs that are normally five separate systems:
 
@@ -48,7 +49,7 @@ All of it is kept in one book that is only ever added to. The one book does five
 4. The institution: who holds which seat and which power right now.
 5. The machine's blueprint: the kernel's own definition, from which its code is made.
 
-Because it is one book, the five cannot disagree.
+Because it is one book, the five cannot drift apart: a view that disagrees with the book is a defect, and the book wins.
 
 Today the book and its gate run, and our own kernel boots in a virtual machine with no Linux beneath it. Every program being born on the record with its rules sealed is being built now. What is true today is in [`STATUS.md`](./STATUS.md); what comes next is in [`ROADMAP.md`](./ROADMAP.md).
 
