@@ -64,7 +64,7 @@ The founding pack's own version log in `code/src/founding`. The render stamp, an
 
 ## What it cost
 
-Two AI subscriptions, about AU$600 a month, and about ten hours a day of one person's direction beside a full-time job, from 24 July. No money has been taken from the project.
+Two AI subscriptions, about AU$600 a month, and about seven hours a day of one person's direction beside a full-time job, from 24 July. No money has been taken from the project.
 
 ## The papers behind this page, and what each holds
 
