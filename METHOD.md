@@ -4,7 +4,7 @@ Dated 26 September 2026. `STATUS.md` says what runs. This page says how it was m
 
 **Most operating systems start with the machine.** You write the boot code, then memory, then the scheduler, then files, then drivers, and rules about who may do what come last, as a permission bit here and a policy engine there. That is how every kernel you have read was built, and it is a good way to build a kernel.
 
-**This one started with the rules of the rules.** Before any code, before the code about memory or the code about scheduling, before a single line of C, the first thing written down was how a rule may change and who may change it. Then the smallest things everything else is computed from. The kernel came last, and it took nine days, because by then it had a definition to derive from. All of it, from the first row to the kernel, took two months, from 24 July 2026. This page is the story of that order.
+**This one started with the rules of the rules.** The reason is short: a rule is information, and information integrity is what every process stands on, so the rules that govern the rules had to be whole before anything could be built on them. Before any code, before the code about memory or the code about scheduling, before a single line of C, the first thing written down was how a rule may change and who may change it. Then the smallest things everything else is computed from. The kernel came last, and it took nine days, because by then it had a definition to derive from. All of it, from the first row to the kernel, took two months, from 24 July 2026. This page is the story of that order.
 
 ## What was written before the first line of code
 

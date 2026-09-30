@@ -20,6 +20,16 @@ Every act reaches the record through one gate, which writes a decision citing it
 
 Where each is written, so a reader can check: the founding rows in `src/kernel/gate.py` (the constitution guard); the two audit streams in `src/kernel/protection.py`; the chain anchor in `src/kernel/store.py`; the refusal and effect-failure rows in `src/kernel/gate.py` (`refuse` and `_record_effect_failure`).
 
+## 0b. What the rules stand on
+
+A rule is information: a row in the book, and a row never acts. So the first thing to keep whole is the information. If the book is whole, every process can be rebuilt from it; if a process is whole and the book is not, nothing downstream can be trusted. Information integrity comes first, and process integrity stands on it.
+
+Above the working rules sit the rules of the rules: how a rule comes to exist, how it is told to those it binds, who can see it, how it is enforced, how it changes, and who may change it. Because every outcome is derived from the book, a change at that tier reaches every outcome downstream with no other edit. That is why they were written before any code, and why they are the most protected information in the system: a rule the world was founded on refuses retirement while the world runs.
+
+Actors are the only things that change information, and they do it under rules, which are information. A rule never acts. An actor is never a rule. A static never changes anything.
+
+Every decision applies a rule at a moment and is written down before its act happens. The act is the row: nothing takes effect before its row exists. The row carries two times, when it was decided and when it was written, so the order of everything can be checked afterwards and never has to be reconstructed. A process is decisions in time order, every one a row, and that is what makes it rebuildable from the book.
+
 ## 1. Eight architectural commitments
 
 Each carries its status in the build side's words: BUILT (running, tested), PROVEN IN TEST WORLDS (running between test machines), DESIGNED (on paper).
