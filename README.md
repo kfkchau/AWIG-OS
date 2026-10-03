@@ -8,14 +8,14 @@
 
 ---
 
-## Kernel status, 21 September 2026
+## Kernel status, 3 October 2026
 
 | | Today |
 |---|---|
 | Architecture | x86-64, one processor |
 | Runs without Linux | Yes |
 | The record today | Still on the Linux-hosted governing layer; the kernel runs the same acts beside it, and the move waits on the side-by-side |
-| Boots in | QEMU (multiboot). Real hardware: not yet |
+| Boots in | QEMU (multiboot), and one real laptop from a USB stick on 3 October 2026, at the author's hands. A stranger's machine: not yet |
 | Formally verified | No. Tested by checks that can fail, not proven; seL4 is the bar not reached |
 | Written in | C and assembly, about 11,600 lines, in [`code/src/body`](./code/src/body) |
 | Memory | Physical, virtual and heap management, each checked at boot |
@@ -76,7 +76,7 @@ The questions a careful reader asks next, one line each:
 - **What comes next?** [`ROADMAP.md`](./ROADMAP.md): what is being built now and what follows, in order, with no dates.
 - **How was it built?** [`METHOD.md`](./METHOD.md): the rules of the rules before any code, then the smallest things, then the kernel last; by one person directing AI agents under the same rules.
 
-Four things a stranger would watch for, and where each stands: a kernel that boots without Linux and runs a program it does not trust (done in campaign 7: it boots in a virtual machine, refuses to start on a changed byte, and runs the standard Python interpreter as sealed content; you can build and boot the plain kernel from `code/src/body`; real hardware is campaign 9); a hostile security review (three rounds, findings and repairs on `STATUS.md`); an outside contributor landing something substantial (none yet); one system that is not AWIG OS using the same rules and record (none yet). When all four are true this page will say so.
+Four things a stranger would watch for, and where each stands: a kernel that boots without Linux and runs a program it does not trust (done in campaign 7: it boots in a virtual machine, refuses to start on a changed byte, and runs the standard Python interpreter as sealed content; you can build and boot the plain kernel from `code/src/body`; it booted one real laptop at the author's hands on 3 October 2026; a stranger's machine and the install to disk are campaign 9); a hostile security review (three rounds, findings and repairs on `STATUS.md`); an outside contributor landing something substantial (none yet); one system that is not AWIG OS using the same rules and record (none yet). When all four are true this page will say so.
 
 The rest of this page is why. It starts with water.
 
