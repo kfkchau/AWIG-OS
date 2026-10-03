@@ -54,7 +54,7 @@ Until this copy, everything above ran on Linux. Campaign 7 wrote the kernel unde
 - The machine boots into our own kernel in a virtual machine, with no Linux beneath it.
 - Before its first act it checks its own body, its record chain, its constitution and its keys, and writes down that two separate witnesses agreed it woke sane. One witness alone cannot write that row.
 - The kernel and the interpreter it carries are pinned in the record by their fingerprints. Change one byte of either and the machine refuses to start, and each of those refusals was tested by planting the change.
-- The kernel's own definition is rows in the record. The code is derived from them at build; delete it and regenerate it and the same bytes come back.
+- The kernel's definition, the twelve kinds of work it may do, lives as rows in the record. At build, the kernel's tie to those rows, their digest and their count, is generated into its source; the kernel's own code is written by hand and read whole. At every waking the kernel checks its running parts against that digest, or refuses its first act. Delete the generated tie and regenerate it, and the same bytes come back.
 - It runs the standard Python interpreter, unmodified, as sealed content, and runs the gate on it.
 - It opens a network connection only after its own record grants it: the grant row first, then the socket. On a refusal there is no socket, and the refusal is a row. The network code it borrows runs unmodified inside an enclosure; every device it finds and every device effect is a row.
 - Nothing above the kernel changed. The same acts run on Linux and on our kernel through one declared seam.
