@@ -1,4 +1,4 @@
-# Governance of the AWIG OS project
+# Governance of the Awig OS project
 
 This file is the project's own awig-awig: how decisions about this
 repository are proposed, discussed, and made. It can be amended only by the
@@ -32,4 +32,4 @@ governance, the way a rulebook grows with its village.
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

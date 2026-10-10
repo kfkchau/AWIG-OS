@@ -1,4 +1,4 @@
-# Contributing to AWIG OS
+# Contributing to Awig OS
 
 Code, design review, documentation, translation (Bahasa Indonesia especially), and criticism of the governance model itself are all welcome. A project about governance keeps a written record of its own decisions, and contributing here works the same way.
 
@@ -27,4 +27,4 @@ Keep the governing layer running on Python's standard library alone; the one opt
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

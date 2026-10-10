@@ -1,4 +1,4 @@
-# Licensing of AWIG OS
+# Licensing of Awig OS
 
 This document explains, in plain language, how this project is licensed and why. It is the licensing map for the whole repository. The legally binding texts are the license files it points to; where this explanation and a license text differ, the license text governs.
 
@@ -14,7 +14,7 @@ The license is this project's first rule: written down, legible to everyone, bin
 | **Ring** | SDKs, client libraries, rule-format tooling, examples. No Ring component ships in this release; `LICENSE-APACHE` is included as the standing text for them. | **Apache License 2.0** | Do anything, including building closed commercial products on top. Keep the notices. Contributors grant patent rights. |
 | **Text** | Documentation and specification text: this file, the README, `ARCHITECTURE.md`, `GOVERNANCE.md`, `STATUS.md`, `ROADMAP.md`, `METHOD.md`, `RELEASES.md`, `SECURITY.md`, `CONTRIBUTING.md`, `NAMING.md`, `WHAT-THIS-IS-FOR.md`, `THIRD-PARTY.md`, the papers under `design/`, the project mark at `assets/awig-mark.png`, and the docs shipped under `code/` (`code/README.md`, `code/LICENSING.md`). | **CC BY 4.0** | Share and adapt freely for any purpose, with attribution. |
 
-**Using AWIG OS does not make your software GPL.** Running programs on AWIG OS, calling its interfaces, writing rules in its rule format, or building applications and services on top of it does not extend GPLv3 to your code. The copyleft obligation applies only to modified versions of the Core itself that you distribute. This is the same boundary promise that lets the whole software industry run on Linux.
+**Using Awig OS does not make your software GPL.** Running programs on Awig OS, calling its interfaces, writing rules in its rule format, or building applications and services on top of it does not extend GPLv3 to your code. The copyleft obligation applies only to modified versions of the Core itself that you distribute. This is the same boundary promise that lets the whole software industry run on Linux.
 
 ## 2. What each license means in practice
 
@@ -24,10 +24,10 @@ Plain meaning:
 
 - **You may** use it for anything, including commercially; study it, modify it, redistribute it, and charge for distribution and services.
 - **You must**, if you distribute a modified version, release your modifications under GPLv3, with source code, keeping notices intact.
-- **You may not** take the Core private. No one, individual or giant, can ship a closed, modified AWIG OS. The anti-lockdown terms also mean it cannot be sealed inside hardware its users are forbidden to modify. A system whose promise is inspectable governance cannot be sold in a sealed box.
+- **You may not** take the Core private. No one, individual or giant, can ship a closed, modified Awig OS. The anti-lockdown terms also mean it cannot be sealed inside hardware its users are forbidden to modify. A system whose promise is inspectable governance cannot be sold in a sealed box.
 - **Patents**: every contributor grants the patents needed for their contribution; suing users over those patents forfeits your license.
 
-Why GPLv3 for the Core: the product of AWIG OS is not capability. It is a guarantee: one rule format, traceable permission, glass-box AI. A closed fork would carry the brand of accountability with the accountability removable. GPLv3 is the tamper-seal that makes the guarantee travel with the code.
+Why GPLv3 for the Core: the product of Awig OS is not capability. It is a guarantee: one rule format, traceable permission, glass-box AI. A closed fork would carry the brand of accountability with the accountability removable. GPLv3 is the tamper-seal that makes the guarantee travel with the code.
 
 Canonical text: the file [`LICENSE`](./LICENSE) in this repository must contain the **verbatim** GPLv3 text from <https://www.gnu.org/licenses/gpl-3.0.txt>. Do not retype or reformat it. Copy it exactly.
 
@@ -35,7 +35,7 @@ Canonical text: the file [`LICENSE`](./LICENSE) in this repository must contain 
 
 Plain meaning: take it, use it, modify it, embed it in closed commercial products. Keep the copyright and attribution notices, and the NOTICE file if present. Contributors grant patent rights; patent aggression against users forfeits the license.
 
-Why Apache for the Ring: everything that helps others build on AWIG OS should travel with as little friction as possible. The Ring is how the mission spreads. The Core is how it stays honest.
+Why Apache for the Ring: everything that helps others build on Awig OS should travel with as little friction as possible. The Ring is how the mission spreads. The Core is how it stays honest.
 
 Canonical text: the file [`LICENSE-APACHE`](./LICENSE-APACHE) must contain the verbatim Apache 2.0 text from <https://www.apache.org/licenses/LICENSE-2.0.txt>.
 
@@ -62,10 +62,10 @@ Every source file in the Core under `code/src` begins with the SPDX header the r
 
 ```
 SPDX-License-Identifier: GPL-3.0-or-later
-Copyright (C) 2026 Kelvin Chau and AWIG OS contributors
+Copyright (C) 2026 Kelvin Chau and Awig OS contributors
 
-This file is part of AWIG OS.
-AWIG OS is free software: you can redistribute it and/or modify it under
+This file is part of Awig OS.
+Awig OS is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
 Software Foundation, either version 3 of the License, or (at your option)
 any later version. See the LICENSE file for details.
@@ -77,10 +77,10 @@ Ring files use `SPDX-License-Identifier: Apache-2.0`. Documentation files carry 
 
 - It does **not** grant or imply any trademark rights. There are none. See the Naming Commitments in the [README](./README.md).
 - It does **not** restrict anyone's traditional, cultural, or community use of the words *awig*, *awig-awig*, or *subak*. Those words belong to their communities, not to this project.
-- It does **not** make software that merely runs on, targets, or interoperates with AWIG OS subject to the GPL.
+- It does **not** make software that merely runs on, targets, or interoperates with Awig OS subject to the GPL.
 
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
+Part of the [Awig OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
 For attribution, citation, or inquiries: [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau)

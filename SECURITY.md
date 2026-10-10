@@ -6,7 +6,7 @@ You will get an acknowledgement within a few days. We agree a disclosure date wi
 
 ## Read this before you report
 
-AWIG OS is at an early stage. Do not put real secrets behind it yet. The kernel in `code/src/body` runs in a virtual machine only; do not run it on a real computer.
+Awig OS is at an early stage. Do not put real secrets behind it yet. The kernel in `code/src/body` runs in a virtual machine only; do not run it on a real computer.
 
 The locks are real when you install them. Nothing is installed by default, and by default the keys are stand-ins of the right shape, as before. Install the named library and signing and sealing are real cryptography. Either way, whoever holds the disk or administers the running machine can read what it holds. In the build team's exact words:
 
@@ -34,4 +34,4 @@ The locks are real when you install them. Nothing is installed by default, and b
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

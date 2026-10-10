@@ -14,4 +14,4 @@ The plain kernel needs neither. It builds from this repository alone with `gcc`,
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

@@ -57,4 +57,4 @@ Kept under the tag `c4-close`. What campaign 4 added, in plain words:
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

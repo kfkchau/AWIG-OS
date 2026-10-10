@@ -1,6 +1,6 @@
-# AWIG OS: the architecture
+# Awig OS: the architecture
 
-This document holds the technical design of AWIG OS. The philosophy it implements lives in the [README](./README.md). This is the machine that carries it.
+This document holds the technical design of Awig OS. The philosophy it implements lives in the [README](./README.md). This is the machine that carries it.
 
 ---
 
@@ -58,11 +58,11 @@ Who, by signature; what code, by fingerprint; sane memory, by the record chain; 
 **The machine cannot lie about what it runs.**
 Our own kernel, with no Linux beneath it, checks its body, its record, its constitution and its keys before its first act, witnessed by two bodies, and refuses to start on a mismatch. The kernel's own definition is rows; its tie to them, their digest, is generated into its source and checked at every waking. BUILT, in a virtual machine.
 
-AWIG OS does not prescribe what your rules should say. It guarantees how rules exist, who may act, and that nothing acts unseen. The human owner stands above the whole, never inside it.
+Awig OS does not prescribe what your rules should say. It guarantees how rules exist, who may act, and that nothing acts unseen. The human owner stands above the whole, never inside it.
 
 ## 2. Build method: the record first, and two kernels under one definition
 
-AWIG OS is built record-first. The kernel's definition, the twelve kinds of work it may do, lives as rows in the record. At build, the kernel's tie to those rows, their digest and their count, is generated into its source; the kernel's own code is written by hand and read whole. At every waking the kernel checks its running parts against that digest, or refuses its first act. Delete the generated tie and regenerate it, and the same bytes come back. Two kernels can carry one definition. The active route today is the Python governing layer under a Linux carrier, which runs the full estate; beside it stands the freestanding C body, our kernel, which boots with no Linux beneath it and closed campaign 7: the same acts run under both performers, the numbers read side by side. Nothing above the seam knows which performer is beneath it. A compatibility layer preserves interfaces; the seam preserves meaning: the same act, decided by the same rule, leaves the same row whichever performer carries it out.
+Awig OS is built record-first. The kernel's definition, the twelve kinds of work it may do, lives as rows in the record. At build, the kernel's tie to those rows, their digest and their count, is generated into its source; the kernel's own code is written by hand and read whole. At every waking the kernel checks its running parts against that digest, or refuses its first act. Delete the generated tie and regenerate it, and the same bytes come back. Two kernels can carry one definition. The active route today is the Python governing layer under a Linux carrier, which runs the full estate; beside it stands the freestanding C body, our kernel, which boots with no Linux beneath it and closed campaign 7: the same acts run under both performers, the numbers read side by side. Nothing above the seam knows which performer is beneath it. A compatibility layer preserves interfaces; the seam preserves meaning: the same act, decided by the same rule, leaves the same row whichever performer carries it out.
 
 An earlier route, replacing a minimal Linux core subsystem by subsystem, is history and is marked as history in `design/16`. The route in force is `design/47` and `design/54`, and the design map at `design/README.md` says which is which.
 
@@ -70,11 +70,11 @@ The governing layer is an executable specification in the sense that the kernel 
 
 ## 2a. Why a kernel of our own, and not seL4 or Linux
 
-Because the claim is about the record, not the scheduler. seL4 proves isolation; Linux provides everything; neither makes the record the only truth. Those systems secure objects, deciding whether a process may touch a file; this governs transitions, deciding whether a change of state is legitimate and writing down why. AWIG OS needs a core whose only writable surface is the record's declared acts (append, write-once, one writer) and where every device effect and every device discovery is a row. Carving that out of Linux means carrying millions of lines that can act without becoming rows; proving it on seL4 means the record law living as a guest on someone else's object model. A small core of our own, read whole and signed, keeps the trusted base enumerable: source files a person can read in a sitting. Linux still serves, where it serves best: as an enclosed driver worker, its crossings declared, refused in its own language, and recorded. That moves the hard problem to the seam: a worker that acts outside its grant, lies about completion, or completes an effect and crashes before its row is written. The design papers name each case, [`STATUS.md`](./STATUS.md) says which are built, and the effect with an unknown outcome is carried from the outside reviews.
+Because the claim is about the record, not the scheduler. seL4 proves isolation; Linux provides everything; neither makes the record the only truth. Those systems secure objects, deciding whether a process may touch a file; this governs transitions, deciding whether a change of state is legitimate and writing down why. Awig OS needs a core whose only writable surface is the record's declared acts (append, write-once, one writer) and where every device effect and every device discovery is a row. Carving that out of Linux means carrying millions of lines that can act without becoming rows; proving it on seL4 means the record law living as a guest on someone else's object model. A small core of our own, read whole and signed, keeps the trusted base enumerable: source files a person can read in a sitting. Linux still serves, where it serves best: as an enclosed driver worker, its crossings declared, refused in its own language, and recorded. That moves the hard problem to the seam: a worker that acts outside its grant, lies about completion, or completes an effect and crashes before its row is written. The design papers name each case, [`STATUS.md`](./STATUS.md) says which are built, and the effect with an unknown outcome is carried from the outside reviews.
 
 ## 3. The theory it runs on
 
-The [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) is the home of the theory; its root is the [Same Coin Ontological Thesis (SCOT)](https://github.com/kfkchau/SCOT), and its grammar is the [Common Governance Language (CGL)](https://github.com/kfkchau/Common-Governance-Language). Under it the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/) is a kernel for governing rules themselves: rules about rules, who may make them, how they change, and how a change is recorded. AWIG OS is that kernel as an operating system: the rule lifecycle becomes the system's change process, the ontology becomes its information schema, and the roles (rule users, rule makers, decision makers) become accounts with recorded, traceable permissions.
+The [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard) is the home of the theory; its root is the [Same Coin Ontological Thesis (SCOT)](https://github.com/kfkchau/SCOT), and its grammar is the [Common Governance Language (CGL)](https://github.com/kfkchau/Common-Governance-Language). Under it the [Open Meta-Governance Standard (OMGS)](https://github.com/kfkchau/Open-Meta-Governance-Standard/) is a kernel for governing rules themselves: rules about rules, who may make them, how they change, and how a change is recorded. Awig OS is that kernel as an operating system: the rule lifecycle becomes the system's change process, the ontology becomes its information schema, and the roles (rule users, rule makers, decision makers) become accounts with recorded, traceable permissions.
 
 OMGS is CC BY 4.0. Anyone can implement it, in any system, open or closed, without contacting this project.
 
@@ -99,5 +99,5 @@ Two things about the numbers. The commits named in `code/RENDER-STAMP.json` and 
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
+Part of the [Awig OS](./README.md) project, delivered under the [Open Governance Standard](https://github.com/kfkchau/Open-Governance-Standard).
 For attribution, citation, or inquiries: [https://au.linkedin.com/in/kfkchau](https://au.linkedin.com/in/kfkchau)

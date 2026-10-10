@@ -4,7 +4,7 @@ This folder holds one video and the evidence that it is the same video that was 
 
 ## What the video is
 
-An 8.3-second phone recording of the laptop screen during the first boot of the AWIG-OS kernel from a USB stick on the author's own laptop, on 3 October 2026. It shows the kernel's output scrolling and the boot ending in a halt. It is published unedited, exactly as shot. The file is `first-real-boot-2026-10-03.mov`.
+An 8.3-second phone recording of the laptop screen during the first boot of the Awig OS kernel from a USB stick on the author's own laptop, on 3 October 2026. It shows the kernel's output scrolling and the boot ending in a halt. It is published unedited, exactly as shot. The file is `first-real-boot-2026-10-03.mov`.
 
 ## The chain
 

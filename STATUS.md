@@ -1,4 +1,4 @@
-# Where AWIG OS stands
+# Where Awig OS stands
 
 Dated 20 September 2026. If this page and the code disagree, the code is right and this page is out of date.
 
@@ -85,7 +85,7 @@ Read this before trusting it with anything that matters.
 
 > Real cryptography is in this code and is off until you turn it on. Install the one vetted library it names and every key is real: signatures, key wrapping and sealed content are done by that library, never by our own code, and the signing seed never touches the disk. Install nothing, and the code runs exactly as the previous release did, with keys that are stand-ins of the right shape; anything that asks for a real signature is then refused rather than faked, so a real key can never quietly become a stand-in. Two limits stay true in both states: a reader who has the disk can read the sealed bytes of the secrets store, and an administrator of the running machine can read the program's memory, where the keys that open sealed content live. Protect the disk and the machine by other means; this code does not.
 
-- **The kernel runs in a virtual machine only, and the day-to-day record does not run on it yet.** The kernel boots alone, with no Linux beneath it, and runs the same acts; the record that matters still runs on the Linux-hosted governing layer until the side-by-side stretch agrees whole and the move is taken. One real laptop has booted it from a USB stick at the author's hands, on 3 October 2026, with the firmware's Secure Boot off (with it on, the firmware refuses the unsigned image, as it should); no stranger's machine yet, one processor, a small set of devices.
+- **The kernel runs in a virtual machine only, and the day-to-day record does not run on it yet.** The kernel boots alone, with no Linux beneath it, and runs the same acts; the record that matters still runs on the Linux-hosted governing layer until the side-by-side stretch agrees whole and the move is taken. One real laptop has booted it from a USB stick at the author's hands, on 3 October 2026, with the firmware's Secure Boot off (with it on, the firmware refuses the unsigned image, as it should); no stranger's machine yet, one processor, a small set of devices. The evidence folder holds the phone video of that boot, with its provenance. Lines marked FAIL on that screen are combined checks that include a record-filesystem reading, which does not pass when no record disk is mounted; the lab's passing boots print the same lines, and the run itself completed.
 - **One machine, one user.** Every speed figure we publish comes from one computer with one user at a time.
 - **The record can be wrong while every view of it is right.** Once, two things created at the same instant produced two entries for one act. The checks run from the record outward, never the other way.
 - **A known defect: rename and replay.** Some programs save a file by writing a new one and renaming it over the old. The record then holds two entries for one file and the rebuild merges them. This is why the filmed demo of August, running real `git` on a Linux mount of the record, stops at `git add` and never reaches `git commit`; the seed demo in `code/` runs no `git`. Renaming a folder with contents, and renaming one of two names for the same file, were also wrong and are repaired in this code.
@@ -125,4 +125,4 @@ Email kelvin@rootrebuilder.org, or open an issue on this repository. Questions, 
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.

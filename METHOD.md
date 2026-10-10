@@ -36,7 +36,7 @@ The row: actor, action, object, payload, and the rule it cites, which is the the
 
 ## Then everything else, quickly
 
-Keys and custody. The border between two machines. Institutions with separated powers. And the kernel: nine days in September, from a blank page, because its own definition is rows in the record and its code is generated from them; delete the code and regenerate it and the same bytes come back.
+Keys and custody. The border between two machines. Institutions with separated powers. And the kernel: nine days in September, from a blank page, because its definition was already rows in the record; the digest of those rows is generated into its source and checked at every waking, and the C is written by hand against them.
 
 Why derivation is fast and safe here: the system stores no current state to corrupt, so a fix changes one reading and every dependent answer follows by itself. The rulebook has been amended fifty-five times in this copy and never once as surgery on a live world. Every amendment landed at a founding, a fresh world, and was proven by tests that founded it fresh. Changing the rules of the rules was the safest kind of change we made.
 
@@ -77,4 +77,4 @@ Two AI subscriptions, about AU$600 a month, and about seven hours a day of one p
 ---
 
 © Kelvin Chau, 2026 · This document: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-Part of the [AWIG OS](./README.md) project.
+Part of the [Awig OS](./README.md) project.
