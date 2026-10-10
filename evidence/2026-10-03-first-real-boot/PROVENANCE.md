@@ -56,4 +56,6 @@ The second line prints the same git object id that the private repository record
 
 A stranger can verify that this public file has the SHA-256 and the git object id written here. A stranger cannot read the private repository, so they cannot fetch the 3 October push record themselves. The original commit is not signed, so GitHub's record ties the push to the author's account but the commit itself carries no signature. The author can show the full record and the original commit to a verifier by giving read access to the private repository or by sharing a screen, and GitHub's own records of the push stand as the server-side source.
 
+What the video shows cannot yet be reproduced by a stranger: the public tree builds the self-check image, which boots in QEMU and prints on the serial line; the fuller build on this stick, with its on-screen output, ships with the campaign 9 release, as STATUS.md says.
+
 The video's embedded metadata includes the phone model and the location where it was shot, left in place deliberately so that the published file is identical to the stored one.
