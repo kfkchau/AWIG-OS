@@ -1,6 +1,8 @@
 # Third-party code
 
-No bytes of anyone else's code are included in this repository. Everything under `code/` is this project's own, under the licences in [`LICENSING.md`](./LICENSING.md).
+The `code/` folder is this project's own, under the licences in [`LICENSING.md`](./LICENSING.md); no bytes of anyone else's code are in it.
+
+The test stick image in `test-stick/` is different: it is a built artefact that carries other people's software, read from the image's own bytes. GRUB 2.12-1ubuntu7.3, the boot loader, under the GPL, source Ubuntu's `grub2` package for that version. Ubuntu's Linux kernel `vmlinuz-6.8.0-134-generic` with twelve of its driver modules (listed in the image's own `cargo/MANIFEST`), under the GPL, source Ubuntu's `linux` package for 6.8.0-134, carried as cargo for a later probe. Inside `sealed.img`, the standard Python 3.12 interpreter and its library with the loader and C library pieces it needs, the same inputs the table below names for the full kernel build, under the PSF licence and the LGPL. All of it is offered here as those licences ask; the project's own parts of the image are GPL-3.0-or-later.
 
 The full kernel build, the one that runs an interpreter and a network connection, takes two inputs from your own machine at build time. `code/src/body/build.sh` stages them and pins each by its fingerprint; the kernel checks the pins at boot and refuses to start on a mismatch.
 

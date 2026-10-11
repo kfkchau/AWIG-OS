@@ -2,6 +2,10 @@
 
 What each public marker contains, in plain words. Every figure names the machine it came from.
 
+## The test stick: one bootable image for strangers to try, 11 October 2026
+
+Not a release of the system. One USB image, the one written to the stick that booted the author's laptop on 3 October 2026 (SHA-256 `1f16d486…923a95`), published in [`test-stick/`](./test-stick/README.md) so that other machines can be tried and their result filed. On that laptop it booted, printed its checks, and halted; it has no install step. Boot it only on a machine you can afford to lose: the page says why, and what to expect on the screen. The plain kernel for a virtual machine stays the v0.7.0 file below; the `body.img` inside the stick is a different build of the sources, with no boot of its own filed. The stick carries GRUB and an Ubuntu Linux kernel as cargo for a later probe; both are named in `THIRD-PARTY.md`. The source that builds this exact image ships with the campaign 9 release and is available from the author on request until then; what it was built from is on [`test-stick/BUILD.md`](./test-stick/BUILD.md), with one input beside the image.
+
 ## `milestone-0-seed`: the seed, 30 August 2026
 
 The first runnable piece, kept as a tag on the last commit that carried the `seed` folder. Two files and Python 3. One rule runs in the common format, one permission runs and leaves a record you can verify, and a stranger can check both. The folder has since been replaced by the fuller `code` folder below. Its history stays under this tag.
@@ -17,7 +21,7 @@ The `code` folder is replaced whole. The previous contents stay under the tag `c
 
 **Checked how.** On a Windows laptop under Debian in WSL 2 (Python 3.13.5), clean copy, nothing of ours installed, 20 September 2026: sixteen checks of sixteen; the shipped suite 170 test files run, 170 passed, 0 failed, 67 skipped; the same with the real locks installed (PyNaCl 1.6.2). The build team's leak scan and sixteen checks agree on its own render of the same commit. The plain kernel was built there with gcc 14.2.0 and booted in QEMU 10.0.13: 120 lines on the serial line, every check PASS, the last line `BODY-HALT`. Tests that need the build team's virtual machine skip here in three named classes, each skip saying what it needs.
 
-**What it does not claim.** The kernel runs in a virtual machine only and is narrow by design. It is slower than Linux and the page prints by how much. The record that matters still runs on Linux until a side-by-side stretch agrees whole. Every program born on the record with its rules sealed is campaign 8 and is not built. No bytes of anyone else's code are in this folder; the full kernel build takes two inputs from your own machine, named in [`THIRD-PARTY.md`](./THIRD-PARTY.md).
+**What it does not claim.** The kernel was built and tested in a virtual machine and is narrow by design; one real laptop has since booted it, as the test stick section at the top of this page says. It is slower than Linux and the page prints by how much. The record that matters still runs on Linux until a side-by-side stretch agrees whole. Every program born on the record with its rules sealed is campaign 8 and is not built. No bytes of anyone else's code are in this folder; the full kernel build takes two inputs from your own machine, named in [`THIRD-PARTY.md`](./THIRD-PARTY.md).
 
 ## `c5-close`: the engine after campaign 5, rulebook version 1.50.0, 13 September 2026 (3.1 the same day: one chance-prone test skipped, named in its skip row)
 

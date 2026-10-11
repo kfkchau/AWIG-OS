@@ -1,0 +1,4 @@
+1f16d486b42787f9fb57fae847129fb030f0765496e4d36469ebbbd2ed923a95  awig-os-test-stick-1-DISPOSABLE-MACHINE-ONLY.img
+0ebf8b8f70ed3e03b2e8f016ccd0febf9f6e949ee3670c86e4490833f1de5db3  awig-os-test-stick-1-DISPOSABLE-MACHINE-ONLY.img.xz
+5163f63e09df2c2bd886c9886025676d1370c54846d00dfb199820a4b2e4a2b8  record-segment-385226.bin
+46a884077c6452da7c853a1a281d0ec92597d634434b91f04f6b18233d2f89f2  body.img (inside the image, on its boot partition; the image's cargo/MANIFEST states it)

@@ -6,7 +6,7 @@ You will get an acknowledgement within a few days. We agree a disclosure date wi
 
 ## Read this before you report
 
-Awig OS is at an early stage. Do not put real secrets behind it yet. The kernel in `code/src/body` runs in a virtual machine only; do not run it on a real computer.
+Awig OS is at an early stage. Do not put real secrets behind it yet. The kernel in `code/src/body` is built and tested in a virtual machine. One real laptop has booted it; a test image is published for machines you can afford to lose, and nothing else. Do not run it on a computer that holds anything you need.
 
 The locks are real when you install them. Nothing is installed by default, and by default the keys are stand-ins of the right shape, as before. Install the named library and signing and sealing are real cryptography. Either way, whoever holds the disk or administers the running machine can read what it holds. In the build team's exact words:
 
@@ -29,7 +29,7 @@ The locks are real when you install them. Nothing is installed by default, and b
 - Reading the disk or the running program's memory. Known, and stated above.
 - An administrator editing the record file. Known. The chain shows where, and cannot stop it.
 - Timing and hardware side channels, and denial of service. Out of scope until stated otherwise.
-- The kernel on real hardware, on more than one processor, or with devices beyond the few it names. Not built yet, and `STATUS.md` says so.
+- The kernel on real hardware beyond one laptop's single boot, on more than one processor, or with devices beyond the few it names. Not built yet, and `STATUS.md` says so.
 
 ---
 

@@ -6,7 +6,7 @@ Being built now, in two parallel lines:
 
 **Actors.** Every program, human login, AI session or driver becomes an actor by one recorded act: its identity sealed, its rule set fixed at birth, its permission the intersection of what it declared, what its invoker holds, and what the rules of the place allow. Refusals recorded like decisions.
 
-**The installer.** One file, written to a USB stick, that boots an ordinary machine into the kernel, probes the hardware, writes what it found to the stick's own record, and touches no disk. Installing onto a disk is a later, deliberate act with the owner present. The same line of work carries the speed pass: the kernel's memory serving and disk reading tuned piece by piece, each change behind the existing tests, the numbers re-published with the image.
+**The installer.** One file, written to a USB stick, that boots an ordinary machine into the kernel, probes the hardware, writes what it found to the stick's own record, and is meant to touch no disk; the test stick published in `test-stick/` is an early image on this line and has not been proven to. Installing onto a disk is a later, deliberate act with the owner present. The same line of work carries the speed pass: the kernel's memory serving and disk reading tuned piece by piece, each change behind the existing tests, the numbers re-published with the image.
 
 Next, in order, each started only when the work before it closes:
 
